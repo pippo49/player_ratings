@@ -140,9 +140,9 @@ def scrape_all_divisions(verbose: bool = True) -> list[Match]:
             if verbose:
                 print(f"{len(matches)} matches parsed.")
         except requests.HTTPError as e:
-            print(f"HTTP error: {e}")
+            print(f"HTTP error fetching Division {div_num} ({url}): {e}")
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error fetching Division {div_num} ({url}): {type(e).__name__}: {e}")
 
         time.sleep(REQUEST_DELAY)
 

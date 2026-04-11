@@ -1,6 +1,7 @@
 """ELO rating engine for Central League London table tennis players."""
 
-from dataclasses import dataclass, field
+from collections import Counter
+from dataclasses import dataclass
 from datetime import date
 
 from models import Match, PlayerResult
@@ -53,8 +54,6 @@ def _expected_score(rating: float, opponent_rating: float) -> float:
 
 def _seed_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
     """Build initial ratings seeded by the division each player has played most in."""
-    from collections import Counter
-
     # First pass: count matches per division and per team for each player
     div_counts: dict[str, Counter] = {}   # player_id -> Counter of divisions
     team_counts: dict[str, Counter] = {}  # player_id -> Counter of team names
@@ -89,10 +88,13 @@ def _seed_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
 def _run_single_pass(
     matches: list[Match],
     ratings: dict[str, PlayerRating],
-    reset_stats: bool = False,
 ) -> dict[str, float]:
     """
     Process all matches once, updating ratings in place.
+
+    Stats (matches_played, singles_won, singles_played) are reset at the
+    start of each pass so the K-factor decision reflects only matches
+    processed so far within this replay — not cumulative across iterations.
 
     Each player's result is compared against each individual opponent's
     rating. When a team has fewer than 3 players, walkover wins are
@@ -100,11 +102,10 @@ def _run_single_pass(
 
     Returns a dict of {player_id: new_rating} so callers can measure convergence.
     """
-    if reset_stats:
-        for r in ratings.values():
-            r.matches_played = 0
-            r.singles_won = 0
-            r.singles_played = 0
+    for r in ratings.values():
+        r.matches_played = 0
+        r.singles_won = 0
+        r.singles_played = 0
 
     # Reset ratings to division seed at the start of each full pass so the
     # iterative calculation converges from a clean baseline each time.
@@ -122,8 +123,7 @@ def _run_single_pass(
         if not all(p.player_id in ratings for p in home_players + away_players):
             continue
 
-        def _update(player: PlayerResult, opponents: list[PlayerResult],
-                    own_team_size: int) -> None:
+        def _update(player: PlayerResult, opponents: list[PlayerResult]) -> None:
             pr = ratings[player.player_id]
             n_opponents = len(opponents)
 
@@ -149,10 +149,10 @@ def _run_single_pass(
             pr.singles_played += n_opponents
 
         for player in home_players:
-            _update(player, away_players, len(home_players))
+            _update(player, away_players)
 
         for player in away_players:
-            _update(player, home_players, len(away_players))
+            _update(player, home_players)
 
     return {pid: pr.rating for pid, pr in ratings.items()}
 
@@ -175,8 +175,8 @@ def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
 
     prev_ratings: dict[str, float] = {pid: pr.rating for pid, pr in ratings.items()}
 
-    for iteration in range(MAX_ITERATIONS):
-        new_ratings = _run_single_pass(matches, ratings, reset_stats=(iteration == MAX_ITERATIONS - 1))
+    for _ in range(MAX_ITERATIONS):
+        new_ratings = _run_single_pass(matches, ratings)
 
         max_change = max(
             abs(new_ratings[pid] - prev_ratings.get(pid, DIVISION_SEED.get(ratings[pid].division, 1500)))
@@ -186,8 +186,6 @@ def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
         prev_ratings = new_ratings.copy()
 
         if max_change < CONVERGENCE_THRESHOLD:
-            # Final pass to get accurate stats (matches_played, wins, etc.)
-            _run_single_pass(matches, ratings, reset_stats=True)
             break
 
     return ratings

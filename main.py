@@ -16,8 +16,10 @@ def _print_table(players, title: str) -> None:
     for rank, pr in enumerate(players, 1):
         win_pct = f"{pr.win_rate*100:.1f}%"
         reliable = "" if pr.reliable else "*"
+        name = pr.name[:24] if len(pr.name) > 25 else pr.name
+        team = pr.team[:19] if len(pr.team) > 20 else pr.team
         print(
-            f"{rank:<5} {pr.name:<25} {pr.team:<20} {pr.division:>3} "
+            f"{rank:<5} {name:<25} {team:<20} {pr.division:>3} "
             f"{pr.rating:>7.1f} {pr.singles_played:>4} {win_pct:>6}{reliable}"
         )
     print("  M = singles matches played | * fewer than 15 singles matches")
@@ -59,8 +61,9 @@ def _load_or_scrape(args) -> list:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Central League London ELO Ratings")
     parser.add_argument("search", nargs="*", help="Search for a player by name")
-    parser.add_argument("--update", action="store_true", help="Scrape and add only new matches to the cache")
-    parser.add_argument("--refresh", action="store_true", help="Full re-download of all matches (replaces cache)")
+    fetch_group = parser.add_mutually_exclusive_group()
+    fetch_group.add_argument("--update", action="store_true", help="Scrape and add only new matches to the cache")
+    fetch_group.add_argument("--refresh", action="store_true", help="Full re-download of all matches (replaces cache)")
     parser.add_argument("--division", "-d", type=int, choices=range(1, 8), help="Show full table for a division (1-7)")
     parser.add_argument("--team", "-t", type=str, help="Search for a team by name")
     args = parser.parse_args()

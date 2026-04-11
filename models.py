@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date
 
 
@@ -38,12 +38,3 @@ class Match:
         # A 0-0 result is ambiguous; assume not played if all zeros
         return False
 
-    def player_fractional_score(self, player: PlayerResult) -> float:
-        """Return a player's result as a fraction of singles matches won (0.0–1.0)."""
-        return player.games_won / 3.0
-
-    def opposing_players(self, player: PlayerResult) -> list[PlayerResult]:
-        """Return the 3 opposing players for a given player."""
-        if player in self.home.players:
-            return self.away.players
-        return self.home.players

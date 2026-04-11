@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Cached match data
+data/
+
+# Analysis results
+analysis_results/
+
+# PDF files 
+*.pdf*

@@ -232,17 +232,17 @@ Each team match consists of 9 singles matches (3 players per side, round-robin).
 
 ### Initial seeding
 
-Players are seeded based on the division they have played the most matches in:
+Players are seeded based on the division they have played the most matches in. Division 4 is the 1500 baseline, ±100 per division:
 
 | Division | Seed rating |
 |----------|-------------|
-| 1        | 1950        |
-| 2        | 1800        |
-| 3        | 1650        |
+| 1        | 1800        |
+| 2        | 1700        |
+| 3        | 1600        |
 | 4        | 1500        |
-| 5        | 1350        |
-| 6        | 1200        |
-| 7        | 1050        |
+| 5        | 1400        |
+| 6        | 1300        |
+| 7        | 1200        |
 
 ### ELO calculation
 

@@ -9,12 +9,12 @@ const state = {
   players: new Map(),   // id -> player
   teams: new Map(),     // name -> team
   view: "players",
-  playerQuery: "",
-  playerDiv: 0,         // 0 = all
+  playerQuery: "Philip Parsons",
+  playerDiv: 5,          // 0 = all
   reliableOnly: false,
   teamQuery: "",
-  teamDiv: 0,
-  us: "",
+  teamDiv: 5,
+  us: "Apex 4",
   them: "",
   callUp: new Set(),        // lower club sides players can be drawn from
   unavailable: new Set(),   // player ids ticked out for this fixture
@@ -123,6 +123,11 @@ async function loadRatings() {
   $("#min-matches-label").textContent = `(${data.min_matches}+ matches)`;
   // Scraping needs the local server; a hosted snapshot cannot do it.
   $("#btn-update").classList.toggle("hidden", !data.live);
+  $("#q-player").value = state.playerQuery;
+  $("#pick-us").value = state.us;
+  const defaultTeam = resolveTeam(state.us);
+  const nearest = defaultTeam && feederTeams(defaultTeam)[0];
+  if (nearest) state.callUp.add(nearest.name);
   renderMeta();
   buildChips();
   buildTeamOptions();
@@ -641,7 +646,7 @@ function fixtureCard(us, squad) {
 
   const field = el("div", "field");
   const input = el("input", "search");
-  input.setAttribute("list", "team-options");
+  input.setAttribute("list", "opponent-options");
   input.placeholder = "Opponent…";
   input.value = state.them;
   input.autocomplete = "off";
@@ -652,10 +657,26 @@ function fixtureCard(us, squad) {
   field.append(input);
   card.append(field);
 
+  // Only teams from the same division are real opponents.
+  const oppOptions = $("#opponent-options");
+  oppOptions.textContent = "";
+  state.data.teams
+    .filter((t) => t.division === us.division && t.name !== us.name)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach((t) => {
+      const opt = el("option");
+      opt.value = t.name;
+      oppOptions.append(opt);
+    });
+
   const them = resolveTeam(state.them);
   if (!them) return card;
   if (them.name === us.name) {
     card.append(noteCard("Pick a different team."));
+    return card;
+  }
+  if (them.division !== us.division) {
+    card.append(noteCard(`Pick a team from Division ${us.division}.`));
     return card;
   }
 

@@ -10,7 +10,12 @@ from datetime import date, datetime, timezone
 
 from elo import DIVISION_SEED, MIN_MATCHES, PlayerRating, calculate_ratings
 from models import Match
-from season_transition import DIVISION_OVERRIDES, ROSTER_OVERRIDES, SEASON_LABEL
+from season_transition import (
+    CALL_UP_PROMOTION_THRESHOLD,
+    DIVISION_OVERRIDES,
+    ROSTER_OVERRIDES,
+    SEASON_LABEL,
+)
 
 # A team match is 9 singles plus 1 doubles, so 10 points are on offer.
 SINGLES_PER_MATCH = 9
@@ -89,6 +94,32 @@ def _last_played(matches: list[Match]) -> date | None:
     return max(dates) if dates else None
 
 
+def _infer_call_up_promotions(
+    rosters: dict[str, dict[str, int]],
+    divisions: dict[str, int],
+) -> dict[str, str]:
+    """{player_id: team} for players assumed to move up to a higher-division
+    club-mate team next season, based on frequent call-ups last season.
+
+    A player qualifies for a team if they made more than
+    CALL_UP_PROMOTION_THRESHOLD appearances for it. Among the teams they
+    qualify for, the highest division (lowest division number) wins — so a
+    player who mostly played for their own lower side but was called up
+    often enough to a higher one is assumed promoted, even though the lower
+    side has more total appearances.
+    """
+    qualifying: dict[str, list[tuple[int, str]]] = defaultdict(list)
+    for team, roster in rosters.items():
+        division = divisions.get(team)
+        if division is None:
+            continue
+        for pid, appearances in roster.items():
+            if appearances > CALL_UP_PROMOTION_THRESHOLD:
+                qualifying[pid].append((division, team))
+
+    return {pid: min(teams)[1] for pid, teams in qualifying.items()}
+
+
 def _apply_season_overrides(
     ratings: dict[str, PlayerRating],
     rosters: dict[str, dict[str, int]],
@@ -106,6 +137,14 @@ def _apply_season_overrides(
     division — including players who were not individually overridden but
     whose team was promoted or relegated.
     """
+    # Frequent-call-up inference uses last season's divisions (who counts as
+    # "higher" is a 2025/26 question), before promotion/relegation moves the
+    # teams themselves for next season.
+    promotions = _infer_call_up_promotions(rosters, divisions)
+    for pid, team in promotions.items():
+        if pid in ratings:
+            ratings[pid].team = team
+
     divisions.update(DIVISION_OVERRIDES)
 
     for team, roster in ROSTER_OVERRIDES.items():

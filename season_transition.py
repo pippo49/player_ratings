@@ -19,6 +19,13 @@ Apex 4, whose 2026/27 squad is confirmed.
 
 SEASON_LABEL = "Winter 2026/27"
 
+# A player who turned out more than this many times for a club-mate team in
+# a higher division (lower division number) than another team they also
+# played for is assumed to play for that higher team next season — a
+# frequent call-up reads as a promotion, not a one-off fill-in. Applies
+# automatically to every team, not just the ones in ROSTER_OVERRIDES below.
+CALL_UP_PROMOTION_THRESHOLD = 4
+
 # {team_name: new_division}, computed from the Winter 2025/26 final tables.
 # Only teams whose division actually changes are listed.
 DIVISION_OVERRIDES = {

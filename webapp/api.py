@@ -135,7 +135,10 @@ def _apply_season_overrides(
 
     A player's `.division` badge always follows their *current* team's new
     division — including players who were not individually overridden but
-    whose team was promoted or relegated.
+    whose team was promoted or relegated. Each player ends up on exactly one
+    team's projected roster — their final `.team` — even if the 2025/26 data
+    has them turning out for others too, so a club-mate team they are no
+    longer expected to play for does not still list them as available.
     """
     # Frequent-call-up inference uses last season's divisions (who counts as
     # "higher" is a 2025/26 question), before promotion/relegation moves the
@@ -167,6 +170,14 @@ def _apply_season_overrides(
     for pr in ratings.values():
         if pr.team in divisions:
             pr.division = divisions[pr.team]
+
+    # A player belongs to one projected team next season. Drop them from
+    # every other team's roster so a club-mate side they used to be called
+    # up for does not still list them as an available player.
+    for pid, pr in ratings.items():
+        for team, roster in rosters.items():
+            if team != pr.team:
+                roster.pop(pid, None)
 
 
 def build_payload(matches: list[Match]) -> dict:

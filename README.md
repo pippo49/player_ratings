@@ -8,6 +8,9 @@ ELO rating system for table tennis players in the Central London Table Tennis Le
 2. **Calculates** an ELO rating for every player using an iterative convergence algorithm
 3. **Outputs** ranked tables per division and overall, with search by player, team, or division
 
+There are two front ends over the same engine: a command line tool (`main.py`)
+and a phone-friendly web app (`webapp/`).
+
 ## Setup
 
 Requires Python 3.14+ and [uv](https://docs.astral.sh/uv/):
@@ -16,7 +19,63 @@ Requires Python 3.14+ and [uv](https://docs.astral.sh/uv/):
 uv sync
 ```
 
-## Usage
+## Web app
+
+A mobile-first web front end covering the same lookups, plus a lineup planner.
+
+```bash
+.venv/bin/python3 -m webapp.server            # http://localhost:8000
+.venv/bin/python3 -m webapp.server --port 9000
+```
+
+On startup it prints two addresses — one for this machine and one for your
+phone. Open the second on a phone connected to the same Wi-Fi. On iOS,
+*Share → Add to Home Screen* gives it an icon and a full-screen window.
+
+### Tabs
+
+| Tab | Replaces | What it does |
+|-----|----------|--------------|
+| **Players** | `main.py "name"`, `-d N` | Search by player or team name, filter by division, toggle to rated players only (15+ matches). Tap a player for rank, win rate and singles record. |
+| **Teams** | `main.py -t "team"` | Search teams, ranked by the average of their top three. Tap a team for its full squad. |
+| **Lineup** | — | Pick your team and the opposition, untick anyone unavailable, and see the best three to select. |
+
+The refresh button in the header runs the same scrape as `--update` /
+`--refresh`, reporting progress per division while it runs and recalculating
+ratings when it finishes.
+
+### The lineup planner
+
+Team matches are three a side, so all nine singles are a round robin between
+the two trios — which means only the *set* of three matters, not the order you
+put them in. For every possible trio from your available players, the planner
+scores all nine pairings with the standard ELO expectation:
+
+```
+P(A beats B) = 1 / (1 + 10^((rating_B - rating_A) / 400))
+```
+
+Summing those gives the expected singles won, and treating the nine as
+independent gives the chance of winning the rubber outright (5+ of 9). The
+trio with the highest expected score is suggested, along with the next four
+alternatives and a head-to-head grid.
+
+The opposition is assumed to field its three strongest available players.
+Untick anyone you know is out on either side and the suggestion updates.
+
+Two caveats worth keeping in mind: treating each singles as independent
+ignores form and head-to-head history on the night, so the rubber odds are a
+guide rather than a forecast; and ratings marked `*` come from fewer than 15
+singles, so a trio built around them is less certain than the number suggests.
+
+### Planning for 2026/27
+
+Ratings carry over from Winter 2025/26 — the last full season of results —
+so the planner is usable for the season starting in October. Team and
+division labels are also from 2025/26, so a team that has moved up or down
+still shows its old division until the new season's results are scraped.
+
+## Command line usage
 
 ```bash
 # Full league tables (overall top 20 + top 10 per division)
@@ -114,3 +173,13 @@ Because early matches in the season are evaluated against division-seeded rating
 - `elo.py` — ELO rating engine with iterative convergence
 - `models.py` — data classes (`Match`, `TeamResult`, `PlayerResult`)
 - `cache.py` — JSON serialisation and match deduplication
+- `warne_cup_compare.py` — compares ratings against Warne Cup handicaps
+- `webapp/` — the web app
+  - `server.py` — stdlib HTTP server, static files and two JSON endpoints
+  - `api.py` — builds the single payload the front end runs on
+  - `static/` — `index.html`, `app.js`, `styles.css` (no build step)
+
+The web app adds no dependencies: the server is `http.server` from the
+standard library, and the front end is plain JavaScript. Searching, filtering
+and the lineup maths all run in the browser over one payload, so the only
+requests after load are the refresh button’s.

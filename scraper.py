@@ -2,6 +2,7 @@
 
 import re
 import time
+from collections.abc import Callable
 from datetime import date
 
 import requests
@@ -123,9 +124,20 @@ def _parse_matches(html: str, division: int) -> list[Match]:
     return matches
 
 
-def scrape_all_divisions(verbose: bool = True) -> list[Match]:
-    """Fetch and parse fixtures for all 7 divisions. Returns played matches only."""
+def scrape_all_divisions(
+    verbose: bool = True,
+    progress: Callable[[int, int, int | None, str | None], None] | None = None,
+) -> list[Match]:
+    """Fetch and parse fixtures for all 7 divisions. Returns played matches only.
+
+    *progress*, if given, is called once per division as
+    ``progress(division, total_divisions, matches_parsed, error)`` — with
+    ``matches_parsed`` None and ``error`` set when that division failed. It
+    lets callers (such as the web app) report progress somewhere other than
+    stdout while the scrape is still running.
+    """
     all_matches: list[Match] = []
+    total = len(DIVISION_NAMES)
 
     for div_name in DIVISION_NAMES:
         div_num = DIVISION_NUMBER[div_name]
@@ -139,10 +151,16 @@ def scrape_all_divisions(verbose: bool = True) -> list[Match]:
             all_matches.extend(matches)
             if verbose:
                 print(f"{len(matches)} matches parsed.")
+            if progress:
+                progress(div_num, total, len(matches), None)
         except requests.HTTPError as e:
             print(f"HTTP error fetching Division {div_num} ({url}): {e}")
+            if progress:
+                progress(div_num, total, None, f"HTTP error: {e}")
         except Exception as e:
             print(f"Error fetching Division {div_num} ({url}): {type(e).__name__}: {e}")
+            if progress:
+                progress(div_num, total, None, f"{type(e).__name__}: {e}")
 
         time.sleep(REQUEST_DELAY)
 

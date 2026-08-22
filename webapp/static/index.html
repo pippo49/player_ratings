@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CL London Ratings</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f6df6'/%3E%3Ctext x='16' y='23' font-size='19' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='white'%3EE%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div class="top-title">
+      <h1>CL London Ratings</h1>
+      <p id="meta" class="meta">Loading…</p>
+    </div>
+    <button id="btn-update" class="icon-btn" title="Fetch latest results" aria-label="Fetch latest results">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- ── Players ─────────────────────────────────────────── -->
+  <section id="view-players" class="view">
+    <div class="controls">
+      <input id="q-player" class="search" type="search" inputmode="search"
+             placeholder="Search player name…" autocomplete="off" enterkeyhint="search">
+      <div id="chips-player" class="chips" role="group" aria-label="Division filter"></div>
+      <label class="switch">
+        <input id="reliable-only" type="checkbox">
+        <span>Rated players only <em id="min-matches-label"></em></span>
+      </label>
+    </div>
+    <p id="count-players" class="count"></p>
+    <div id="list-players" class="list"></div>
+  </section>
+
+  <!-- ── Teams ───────────────────────────────────────────── -->
+  <section id="view-teams" class="view hidden">
+    <div class="controls">
+      <input id="q-team" class="search" type="search" inputmode="search"
+             placeholder="Search team name…" autocomplete="off" enterkeyhint="search">
+      <div id="chips-team" class="chips" role="group" aria-label="Division filter"></div>
+    </div>
+    <p id="count-teams" class="count"></p>
+    <div id="list-teams" class="list"></div>
+  </section>
+
+  <!-- ── Lineup ──────────────────────────────────────────── -->
+  <section id="view-lineup" class="view hidden">
+    <div class="controls">
+      <div class="field">
+        <label for="pick-us">Your team</label>
+        <input id="pick-us" class="search" list="team-options" placeholder="Start typing…"
+               autocomplete="off" enterkeyhint="done">
+      </div>
+      <div class="field">
+        <label for="pick-them">Opponent</label>
+        <input id="pick-them" class="search" list="team-options" placeholder="Start typing…"
+               autocomplete="off" enterkeyhint="done">
+      </div>
+      <datalist id="team-options"></datalist>
+    </div>
+    <div id="lineup-body"></div>
+  </section>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-view="players" role="tab">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+    <span>Players</span>
+  </button>
+  <button class="tab" data-view="teams" role="tab">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-6h6v6"/></svg>
+    <span>Teams</span>
+  </button>
+  <button class="tab" data-view="lineup" role="tab">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16"/><path d="M20 4v16"/><path d="M12 4v16"/><circle cx="8" cy="9" r="2"/><circle cx="16" cy="15" r="2"/></svg>
+    <span>Lineup</span>
+  </button>
+</nav>
+
+<!-- ── Sheets ────────────────────────────────────────────── -->
+<div id="scrim" class="scrim hidden"></div>
+
+<div id="sheet" class="sheet hidden" role="dialog" aria-modal="true">
+  <div class="sheet-grab"></div>
+  <div id="sheet-body"></div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

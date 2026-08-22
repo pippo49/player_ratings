@@ -268,6 +268,7 @@ Because early matches in the season are evaluated against division-seeded rating
     `sw.js`, `manifest.json`, icons and `ratings.json` (no build step)
 - `data/matches.json` — scraped match data, committed
 - `.github/workflows/deploy.yml` — publishes the bundle to GitHub Pages
+- `NEXT_SEASON.md` — what needs changing when the 2026/27 fixtures go up
 
 The web app adds no dependencies: the server is `http.server` from the standard
 library, and the front end is plain JavaScript. Searching, filtering and the

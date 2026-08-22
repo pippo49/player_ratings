@@ -259,7 +259,6 @@ Because early matches in the season are evaluated against division-seeded rating
 - `elo.py` — ELO rating engine with iterative convergence
 - `models.py` — data classes (`Match`, `TeamResult`, `PlayerResult`)
 - `cache.py` — JSON serialisation and match deduplication
-- `warne_cup_compare.py` — compares ratings against Warne Cup handicaps
 - `check_doubles.py` — verifies the doubles point can be recovered from a scrape
 - `webapp/` — the web app
   - `server.py` — stdlib HTTP server for local use and scraping

@@ -28,12 +28,16 @@ which is **committed to the repo**. That means it can be hosted anywhere, works
 offline once loaded, and updates by re-running a scrape and committing the
 result.
 
-The repo ships without that file — run a scrape first to create it:
+The repo ships without that file. Either run a scrape locally:
 
 ```bash
 .venv/bin/python3 main.py --refresh
 git add data webapp/static/ratings.json && git commit -m "Add ratings snapshot"
 ```
+
+…or let Actions do it: once Pages is enabled, Actions → Publish → **Run
+workflow** scrapes, commits the snapshot and deploys, with no terminal
+involved. The whole setup can be done from a browser that way.
 
 ### Publishing it
 

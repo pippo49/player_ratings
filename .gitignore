@@ -9,8 +9,8 @@ wheels/
 # Virtual environments
 .venv
 
-# Cached match data
-data/
+# Scraped match data and the exported ratings snapshot are committed on
+# purpose, so the web app can be hosted as static files and used offline.
 
 # Analysis results
 analysis_results/

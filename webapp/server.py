@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 from cache import load_matches, merge_matches, save_matches
 from scraper import scrape_all_divisions
 from webapp.api import build_payload
+from webapp.export import export
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -31,6 +32,8 @@ CONTENT_TYPES = {
     ".css": "text/css; charset=utf-8",
     ".json": "application/json; charset=utf-8",
     ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".webmanifest": "application/manifest+json",
 }
 
 
@@ -121,6 +124,8 @@ class UpdateJob:
             self._say(f"Recalculating ratings over {len(matches)} matches…")
             store.replace(matches)
             store.payload()  # warm the cache before the client asks for it
+            export(verbose=False)
+            self._say("Static snapshot updated — commit it to publish.")
 
             with self._lock:
                 self.added = added
@@ -189,8 +194,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if route in ("/", "/index.html"):
             self._static("index.html")
-        elif route == "/api/ratings":
-            self._json(self.store.payload())
+        elif route == "/ratings.json":
+            # Served live, overriding the committed snapshot of the same name,
+            # so a running server always shows the freshest ratings.
+            self._json({**self.store.payload(), "live": True})
         elif route == "/api/update":
             self._json(self.job.snapshot())
         elif route.count("/") == 1:

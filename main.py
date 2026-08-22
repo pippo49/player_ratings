@@ -5,6 +5,7 @@ import argparse
 from cache import load_matches, merge_matches, save_matches
 from elo import calculate_ratings, lookup_player, lookup_team, top_players
 from scraper import scrape_all_divisions
+from webapp.export import export
 
 
 def _print_table(players, title: str) -> None:
@@ -31,6 +32,7 @@ def _load_or_scrape(args) -> list:
         print("Full refresh — scraping all 7 divisions…\n")
         matches = scrape_all_divisions(verbose=True)
         save_matches(matches)
+        export()
         return matches
 
     cached = load_matches()
@@ -44,6 +46,7 @@ def _load_or_scrape(args) -> list:
         else:
             matches = scraped
         save_matches(matches)
+        export()
         return matches
 
     if cached:
@@ -55,6 +58,7 @@ def _load_or_scrape(args) -> list:
     print("No cached data found — scraping all 7 divisions…\n")
     matches = scrape_all_divisions(verbose=True)
     save_matches(matches)
+    export()
     return matches
 
 

@@ -21,16 +21,56 @@ uv sync
 
 ## Web app
 
-A mobile-first web front end covering the same lookups, plus a lineup planner.
+A mobile-first web front end covering the same lookups, plus season planning.
+
+The whole app is static files plus one data file, `webapp/static/ratings.json`,
+which is **committed to the repo**. That means it can be hosted anywhere, works
+offline once loaded, and updates by re-running a scrape and committing the
+result.
+
+The repo ships without that file — run a scrape first to create it:
+
+```bash
+.venv/bin/python3 main.py --refresh
+git add data webapp/static/ratings.json && git commit -m "Add ratings snapshot"
+```
+
+### Using it offline on match day
+
+Host `webapp/static/` on any static host — Cloudflare Pages, Netlify or GitHub
+Pages all work, and all are free (note GitHub Pages needs a paid plan while
+this repo is private). Open the URL on your phone once, then
+*Share → Add to Home Screen*. A service worker caches the whole bundle, so it
+opens and works with no signal at the venue.
+
+The service worker needs HTTPS, which every one of those hosts gives you. It
+will **not** register over plain `http://` on a LAN address, so the local
+server below is for updating data, not for offline use.
+
+### Running it locally
 
 ```bash
 .venv/bin/python3 -m webapp.server            # http://localhost:8000
 .venv/bin/python3 -m webapp.server --port 9000
 ```
 
-On startup it prints two addresses — one for this machine and one for your
-phone. Open the second on a phone connected to the same Wi-Fi. On iOS,
-*Share → Add to Home Screen* gives it an icon and a full-screen window.
+On startup it prints an address for this machine and one for your phone on the
+same Wi-Fi. In this mode the refresh button appears and ratings are served from
+a live calculation rather than the committed snapshot.
+
+### Updating the data
+
+Any fresh fetch rewrites `webapp/static/ratings.json` automatically:
+
+```bash
+.venv/bin/python3 main.py --update      # scrape, then re-export
+.venv/bin/python3 -m webapp.export      # re-export from the cache alone
+git add data webapp/static/ratings.json && git commit -m "Update ratings" && git push
+```
+
+The refresh button in the running web app does the same thing, and says so when
+the snapshot has been rewritten. Pushing is what publishes it — the hosted site
+redeploys from the commit, and phones pick it up next time they have signal.
 
 ### Tabs
 
@@ -40,80 +80,69 @@ phone. Open the second on a phone connected to the same Wi-Fi. On iOS,
 | **Teams** | `main.py -t "team"` | Search teams, ranked by the average of their top three. Tap a team for its full squad. |
 | **Select** | — | Pick the team you captain, mark who is available, and project the season against a promotion target. |
 
-The refresh button in the header runs the same scrape as `--update` /
-`--refresh`, reporting progress per division while it runs and recalculating
-ratings when it finishes.
-
 ### Match format and scoring
 
 A team match is **9 singles plus 1 doubles**, so 10 points are on offer and
-5–5 is a draw. The scraped pages give each player's singles wins and the
-team's total score, so the doubles point is recovered as the difference:
+5–5 is a draw.
 
-```
-doubles_point = total_score - sum(singles won by that team's players)
-```
+**The doubles is not modelled.** The scraped data does not say which two
+players formed the pair, so predicting it would be inventing a number. The app
+projects the 9 singles and converts your target by assuming the doubles splits
+evenly: a 7.0 of 10 target becomes 6.5 of 9 singles.
 
-That should always be 0 or 1. Run `check_doubles.py` after a scrape to
-confirm it holds; the Select tab shows a warning if it does not.
+That conversion depends on the format being what we think it is. The doubles
+point should always be recoverable as a team's total minus its singles wins,
+split 0/1 between the sides. Run `check_doubles.py` after a scrape to confirm;
+the Select tab warns if it does not hold.
 
-Note that `elo.py` rates **singles only** — the doubles point is not fed back
-into player ratings, because the scraped data does not say which two players
-formed the pair.
+`elo.py` rates singles only, for the same reason.
 
 ### The Select tab
 
-Three things, in order:
-
-**Call-ups.** Lower sides from the same club whose players you can draw on.
-The side directly below is included by default; tick others on if your league
+**Call-ups.** Lower sides from the same club whose players you can draw on. The
+side directly below is included by default; tick others on if your league
 allows it.
 
-**Season outlook.** Your strongest available three against every other team
-in your division, each assumed to field its best three. Shows expected points
-per fixture, the season average, and whether that clears the promotion target
-(default 7.0 of 10, editable).
+**Season outlook.** Your strongest available three against every other team in
+your division, each assumed to field its best three. Shows expected singles per
+fixture, the season average, and whether that clears the target, with fixtures
+sorted hardest-first.
 
-**A single fixture.** One opponent broken down: expected points, chance of
-winning the team match, the split between the 9 singles and the doubles, and
-a head-to-head grid.
+**A single fixture.** One opponent broken down, with a head-to-head grid.
 
 ### Why there is no lineup optimiser
 
-Because all nine singles are a round robin, expected points decompose into one
+Because all nine singles are a round robin, expected singles decompose into one
 independent term per selected player:
 
 ```
-E[points] = Σᵢ Σⱼ P(aᵢ beats bⱼ) + P(doubles)  =  Σᵢ f(aᵢ) + P(doubles)
+E[singles] = Σᵢ Σⱼ P(aᵢ beats bⱼ)  =  Σᵢ f(aᵢ)
 ```
 
 Each `f(aᵢ)` depends only on that player's rating and the fixed opposing trio,
-and is strictly increasing in rating. So the trio maximising expected points is
-always your three highest-rated available players — searching every combination
-provably cannot beat a sort. This was checked empirically across 3,080 team
-pairings, optimising for expected points and for win probability separately:
-neither ever disagreed with picking the top three by rating.
+and is strictly increasing in rating. So the best trio is always your three
+highest-rated available players — searching every combination provably cannot
+beat a sort. This was checked across 3,080 team pairings, optimising for
+expected score and for win probability separately; neither ever disagreed.
 
 The interesting question is therefore not *which three* but *whether the three
-you have are enough* — which is what the season outlook answers.
+you have are enough*, which is what the season outlook answers.
 
 ### Modelling assumptions
 
-- Each singles is treated as independent, so match odds ignore form and
+- Each singles is treated as independent, so projections ignore form and
   head-to-head history on the night.
-- The doubles pair is assumed to be each side's strongest two, with pair
-  strength modelled as the mean of their singles ratings. On league data this
-  is close to a coin flip, so it moves the projection by about half a point.
-- Opponents are assumed to field their strongest three, which is a
-  worst-case read.
+- Opponents are assumed to field their strongest three, which is a worst-case
+  read.
 - Ratings marked `*` come from fewer than 15 singles and are less certain.
+- Nothing accounts for league rules on how often a player may be called up.
 
 ### Planning for 2026/27
 
-Ratings carry over from Winter 2025/26 — the last full season of results —
-so the Select tab is usable for the season starting in October. Team and
-division labels are also from 2025/26, so a team that has moved up or down
-still shows its old division until the new season's results are scraped.
+Ratings carry over from Winter 2025/26 — the last full season of results — so
+the Select tab is usable for the season starting in October. Team and division
+labels are also from 2025/26, so a team that has moved up or down still shows
+its old division until the new season's results are scraped.
 
 ## Command line usage
 
@@ -143,7 +172,11 @@ still shows its old division until the new season's results are scraped.
 
 ### Caching
 
-Match data is cached locally in `data/matches.json` after the first run. Subsequent runs load from cache instantly. Use `--update` to scrape for new results and merge them into the cache, or `--refresh` to re-download everything from scratch.
+Match data lives in `data/matches.json` and is **committed to the repo** once
+you have run a scrape, so a fresh clone works without scraping again. Use
+`--update` to scrape for
+new results and merge them in, or `--refresh` to re-download everything. Either
+one also rewrites `webapp/static/ratings.json`; commit both to publish.
 
 ### Output columns
 
@@ -216,11 +249,14 @@ Because early matches in the season are evaluated against division-seeded rating
 - `warne_cup_compare.py` — compares ratings against Warne Cup handicaps
 - `check_doubles.py` — verifies the doubles point can be recovered from a scrape
 - `webapp/` — the web app
-  - `server.py` — stdlib HTTP server, static files and two JSON endpoints
+  - `server.py` — stdlib HTTP server for local use and scraping
   - `api.py` — builds the single payload the front end runs on
-  - `static/` — `index.html`, `app.js`, `styles.css` (no build step)
+  - `export.py` — writes that payload to `static/ratings.json` for committing
+  - `static/` — the deployable bundle: `index.html`, `app.js`, `styles.css`,
+    `sw.js`, `manifest.json`, icons and `ratings.json` (no build step)
+- `data/matches.json` — scraped match data, committed
 
-The web app adds no dependencies: the server is `http.server` from the
-standard library, and the front end is plain JavaScript. Searching, filtering
-and the lineup maths all run in the browser over one payload, so the only
-requests after load are the refresh button’s.
+The web app adds no dependencies: the server is `http.server` from the standard
+library, and the front end is plain JavaScript. Searching, filtering and the
+selection maths all run in the browser over one payload, so a hosted copy needs
+no back end at all.

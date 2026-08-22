@@ -39,65 +39,20 @@ function expected(a, b) {
 }
 
 /**
- * Distribution over the number of singles won out of `probs.length`,
- * treating each singles match as independent. Returns an array where
- * index k is P(exactly k wins).
- */
-function winDistribution(probs) {
-  let dist = [1];
-  for (const p of probs) {
-    const next = new Array(dist.length + 1).fill(0);
-    for (let k = 0; k < dist.length; k++) {
-      next[k] += dist[k] * (1 - p);
-      next[k + 1] += dist[k] * p;
-    }
-    dist = next;
-  }
-  return dist;
-}
-
-/**
- * Evaluate a team match: 9 singles as a round robin between the two trios,
- * plus the doubles point, for 10 points in total.
+ * Evaluate the 9 singles as a round robin between the two trios.
  *
- * The doubles pairing is assumed to be each side's strongest two, and its
- * strength is modelled as the mean of their singles ratings.
+ * The doubles is deliberately not modelled — the scraped data does not say
+ * which two players paired up, so any prediction would be invented. It is
+ * treated as an even split when translating a 10-point target below.
  */
 function evaluateLineup(ours, theirs) {
-  const singles = [];
+  let expectedSingles = 0;
   const grid = ours.map((a) => theirs.map((b) => {
     const p = expected(a.rating, b.rating);
-    singles.push(p);
+    expectedSingles += p;
     return p;
   }));
-
-  const pair = (side) => {
-    const top = side.map((p) => p.rating).sort((a, b) => b - a).slice(0, 2);
-    return top.reduce((sum, r) => sum + r, 0) / top.length;
-  };
-  const doublesProb = expected(pair(ours), pair(theirs));
-
-  const expectedSingles = singles.reduce((sum, p) => sum + p, 0);
-  const dist = winDistribution(singles.concat([doublesProb]));
-  const points = singles.length + 1;
-  const needed = Math.floor(points / 2) + 1;
-
-  let win = 0, draw = 0;
-  for (let k = 0; k < dist.length; k++) {
-    if (k >= needed) win += dist[k];
-    else if (points % 2 === 0 && k === points / 2) draw += dist[k];
-  }
-
-  return {
-    grid,
-    doublesProb,
-    expectedSingles,
-    expectedPoints: expectedSingles + doublesProb,
-    points,
-    winProb: win,
-    drawProb: draw,
-    dist,
-  };
+  return { grid, expectedSingles };
 }
 
 /**
@@ -126,12 +81,6 @@ function shortName(name) {
 
 const fmtPct = (p) => `${Math.round(p * 100)}%`;
 
-/** Like fmtPct, but never rounds a real chance away to a flat 0% or 100%. */
-function fmtChance(p) {
-  if (p > 0 && p < 0.005) return "<1%";
-  if (p < 1 && p > 0.995) return ">99%";
-  return fmtPct(p);
-}
 const fmtScore = (n) => n.toFixed(1);
 
 function ordinal(n) {
@@ -161,7 +110,9 @@ function relativeTime(iso) {
    ════════════════════════════════════════════════════════ */
 
 async function loadRatings() {
-  const res = await fetch("/api/ratings");
+  // Relative so the bundle works from a subpath, and so the same call hits
+  // the live server or the committed snapshot without knowing which.
+  const res = await fetch("ratings.json", { cache: "no-cache" });
   if (!res.ok) throw new Error(`Ratings request failed (${res.status})`);
   const data = await res.json();
 
@@ -170,6 +121,8 @@ async function loadRatings() {
   state.teams = new Map(data.teams.map((t) => [t.name, t]));
 
   $("#min-matches-label").textContent = `(${data.min_matches}+ matches)`;
+  // Scraping needs the local server; a hosted snapshot cannot do it.
+  $("#btn-update").classList.toggle("hidden", !data.live);
   renderMeta();
   buildChips();
   buildTeamOptions();
@@ -184,6 +137,7 @@ function renderMeta() {
   }
   const parts = [d.season, `${d.match_count} matches`, `${d.player_count} players`];
   if (d.last_match_date) parts.push(`to ${formatDate(d.last_match_date)}`);
+  if (!d.live && d.generated_at) parts.push(`updated ${formatDate(d.generated_at)}`);
   $("#meta").textContent = parts.join(" · ");
 }
 
@@ -237,7 +191,7 @@ function renderPlayers() {
   host.textContent = "";
 
   if (!state.data.match_count) {
-    host.append(emptyState("No results downloaded yet.", "Tap the refresh button to fetch the season."));
+    host.append(emptyState("No results yet.", noDataHint()));
     $("#count-players").textContent = "";
     return;
   }
@@ -294,6 +248,13 @@ function playerRow(p, rank) {
   return row;
 }
 
+/** A hosted snapshot has no refresh button, so it needs different advice. */
+function noDataHint() {
+  return state.data && state.data.live
+    ? "Tap the refresh button to fetch the season."
+    : "This copy was published without data — run a scrape and commit it.";
+}
+
 function emptyState(title, detail) {
   const box = el("div", "empty");
   box.append(document.createTextNode(title));
@@ -330,7 +291,7 @@ function renderTeams() {
   host.textContent = "";
 
   if (!state.data.match_count) {
-    host.append(emptyState("No results downloaded yet.", "Tap the refresh button to fetch the season."));
+    host.append(emptyState("No results yet.", noDataHint()));
     $("#count-teams").textContent = "";
     return;
   }
@@ -449,7 +410,7 @@ function renderLineup() {
   host.textContent = "";
 
   if (!state.data.match_count) {
-    host.append(emptyState("No results downloaded yet.", "Tap the refresh button to fetch the season."));
+    host.append(emptyState("No results yet.", noDataHint()));
     return;
   }
 
@@ -546,28 +507,29 @@ function seasonOutlook(team, squad) {
     .map((t) => {
       const theirs = bestTrio(squadFor(t));
       if (theirs.length < 3) return null;
-      const result = evaluateLineup(trio, theirs);
-      return { team: t, ...result };
+      return { team: t, ...evaluateLineup(trio, theirs) };
     })
     .filter(Boolean)
-    .sort((a, b) => a.expectedPoints - b.expectedPoints);
+    .sort((a, b) => a.expectedSingles - b.expectedSingles);
 
   const average = rivals.length
-    ? rivals.reduce((sum, r) => sum + r.expectedPoints, 0) / rivals.length
+    ? rivals.reduce((sum, r) => sum + r.expectedSingles, 0) / rivals.length
     : 0;
   return { trio, rivals, average };
 }
 
 function seasonCard(team, squad) {
   const { trio, rivals, average } = seasonOutlook(team, squad);
-  const target = state.target;
+  // The target is set in match points (of 10). The doubles is not modelled,
+  // so an even split on it is assumed when converting to a singles target.
+  const target = state.target - 0.5;
 
   const card = el("div", "card");
   const h = el("h2");
   h.textContent = "Season outlook";
   const hint = el("p", "hint");
   hint.textContent =
-    `Your strongest available three against every other side in Division ` +
+    "Your strongest available three against every other side in Division " +
     `${team.division}, assuming each fields its best three.`;
   card.append(h, hint);
 
@@ -580,23 +542,25 @@ function seasonCard(team, squad) {
   const avg = el("b");
   avg.textContent = fmtScore(average);
   const of = el("span");
-  of.textContent = `of ${state.data.points_per_match} per match`;
+  of.textContent = `of ${state.data.singles_per_match} singles per match`;
   score.append(avg, of);
   card.append(score);
 
   const verdict = el("div", "prob");
   const strong = el("strong");
-  const gap = average - target;
-  strong.textContent = gap >= 0 ? "On track" : "Short of target";
-  strong.className = gap >= 0 ? "good" : "bad";
+  // Round before judging, so a gap that displays as 0.0 does not read as a miss.
+  const gap = Math.round((average - target) * 10) / 10;
+  const onTrack = gap >= 0;
+  strong.textContent = onTrack ? "On track" : "Short of target";
+  strong.className = onTrack ? "good" : "bad";
   verdict.append(strong, document.createTextNode(
-    ` — ${gap >= 0 ? "+" : ""}${gap.toFixed(1)} against a ${fmtScore(target)} target`
+    ` — ${gap > 0 ? "+" : ""}${gap.toFixed(1)} against ${fmtScore(target)} singles`
   ));
   card.append(verdict);
 
   const bar = el("div", "bar");
   const fill = el("i");
-  fill.style.width = `${Math.min(100, Math.round((average / state.data.points_per_match) * 100))}%`;
+  fill.style.width = `${Math.min(100, Math.round((average / state.data.singles_per_match) * 100))}%`;
   if (gap < 0) fill.classList.add("short");
   bar.append(fill);
   card.append(bar);
@@ -621,7 +585,7 @@ function seasonCard(team, squad) {
   const table = el("table");
   const thead = el("thead");
   const hrow = el("tr");
-  ["Opponent", "Pts", "Win"].forEach((label) => {
+  ["Opponent", "Singles", "of 9"].forEach((label) => {
     const th = el("th");
     th.textContent = label;
     hrow.append(th);
@@ -633,11 +597,11 @@ function seasonCard(team, squad) {
     const tr = el("tr");
     const th = el("th");
     th.textContent = r.team.name;
-    const pts = el("td", `pc ${r.expectedPoints >= target ? "win" : "lose"}`);
-    pts.textContent = fmtScore(r.expectedPoints);
-    const win = el("td", "pc");
-    win.textContent = fmtChance(r.winProb);
-    tr.append(th, pts, win);
+    const pts = el("td", `pc ${r.expectedSingles >= target ? "win" : "lose"}`);
+    pts.textContent = fmtScore(r.expectedSingles);
+    const share = el("td", "pc");
+    share.textContent = fmtPct(r.expectedSingles / state.data.singles_per_match);
+    tr.append(th, pts, share);
     tbody.append(tr);
   });
   table.append(thead, tbody);
@@ -646,19 +610,20 @@ function seasonCard(team, squad) {
 
   const foot = el("p", "hint");
   foot.textContent =
-    `Averaging ${fmtScore(target)} is the promotion target you set. Points are 9 ` +
-    "singles plus the doubles. Fixtures you are expected to fall short in are the " +
-    "ones where a call-up changes the season.";
+    `A ${fmtScore(state.target)} of ${state.data.points_per_match} target means ` +
+    `${fmtScore(target)} of ${state.data.singles_per_match} singles, taking an even ` +
+    "split on the doubles — which is not modelled, since the data does not say who " +
+    "paired up. Fixtures you fall short in are where a call-up changes the season.";
   card.append(foot);
 
   // The doubles point is inferred, not scraped directly. Say so when it looks wrong.
   const doubles = state.data.doubles;
-  if (doubles && !doubles.trustworthy) {
+  if (doubles && !doubles.format_holds) {
     const warn = el("p", "hint warn-note");
     warn.textContent =
-      `The doubles point could not be recovered from ${doubles.anomalies} of ` +
-      `${doubles.matches} matches, so the 10th point is a guess here. ` +
-      "Run check_doubles.py for the detail.";
+      `${doubles.anomalies} of ${doubles.matches} matches do not fit the ` +
+      "9 singles + 1 doubles format, so the conversion between singles and " +
+      "match points may be wrong. Run check_doubles.py for the detail.";
     card.append(warn);
   }
   return card;
@@ -703,29 +668,25 @@ function fixtureCard(us, squad) {
   const trio = bestTrio(squad);
   const result = evaluateLineup(trio, theirs);
 
+  const singles = state.data.singles_per_match;
   const score = el("div", "scoreline");
   const ours = el("b");
-  ours.textContent = fmtScore(result.expectedPoints);
+  ours.textContent = fmtScore(result.expectedSingles);
   const dash = el("span");
   dash.textContent = "–";
   const other = el("b");
-  other.textContent = fmtScore(result.points - result.expectedPoints);
+  other.textContent = fmtScore(singles - result.expectedSingles);
   score.append(ours, dash, other);
+  card.append(score);
 
   const prob = el("div", "prob");
+  prob.append(document.createTextNode(`Expected singles, of ${singles}. `));
   const strong = el("strong");
-  strong.textContent = fmtChance(result.winProb);
-  prob.append(strong, document.createTextNode(" chance of winning the team match"));
-  if (result.drawProb > 0.005) {
-    prob.append(document.createTextNode(` · ${fmtChance(result.drawProb)} draw at 5–5`));
-  }
-  card.append(score, prob);
-
-  const split = el("p", "hint");
-  split.textContent =
-    `${fmtScore(result.expectedSingles)} of 9 singles, plus ` +
-    `${fmtChance(result.doublesProb)} on the doubles.`;
-  card.append(split);
+  const needed = state.target - 0.5;
+  strong.textContent = result.expectedSingles >= needed ? "Above target" : "Below target";
+  strong.className = result.expectedSingles >= needed ? "good" : "bad";
+  prob.append(strong);
+  card.append(prob);
 
   card.append(matrixTable(result, trio, theirs));
   return card;
@@ -929,7 +890,7 @@ async function startUpdate(mode, actions, log) {
   $("#btn-update").classList.add("busy");
 
   try {
-    const res = await fetch("/api/update", {
+    const res = await fetch("api/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode }),
@@ -945,7 +906,7 @@ function pollUpdate(actions, log) {
   if (state.polling) clearInterval(state.polling);
   state.polling = setInterval(async () => {
     try {
-      const status = await (await fetch("/api/update")).json();
+      const status = await (await fetch("api/update")).json();
       log.textContent = status.log.join("\n");
       log.scrollTop = log.scrollHeight;
       if (!status.running) {

@@ -18,64 +18,32 @@ SINGLES_PER_MATCH = 9
 POINTS_PER_MATCH = 10
 
 
-def _expected(rating: float, opponent: float) -> float:
-    return 1.0 / (1.0 + 10.0 ** ((opponent - rating) / 400.0))
+def _doubles_report(matches: list[Match]) -> dict:
+    """Check that the 9 singles + 1 doubles format holds across the data.
 
-
-def _pair_rating(ratings: dict[str, PlayerRating], players) -> float | None:
-    """Doubles strength of a side, modelled as the mean of its top two singles ratings."""
-    known = sorted(
-        (ratings[p.player_id].rating for p in players if p.player_id in ratings),
-        reverse=True,
-    )
-    if len(known) < 2:
-        return None
-    return sum(known[:2]) / 2
-
-
-def _doubles_report(matches: list[Match], ratings: dict[str, PlayerRating]) -> dict:
-    """Check that the doubles point can be recovered, and how well the model predicts it.
-
-    The scraped data gives each player's singles wins and the team's total. The
-    doubles point is whatever is left over, so it should always be 0 or 1. Any
-    other value means the assumption does not hold for that match and the
-    doubles model should not be trusted.
+    The doubles itself is not modelled or predicted — the scraped data does
+    not say which two players formed the pair. This only confirms the format
+    is what we think it is, so the points arithmetic is on solid ground: the
+    doubles point is whatever the team total has over its singles wins, and
+    the two sides should always split it 0/1.
     """
-    recovered = anomalies = home_wins = correct = 0
-    brier = 0.0
-    scored = 0
+    recovered = anomalies = home_wins = 0
 
     for match in matches:
-        home_singles = sum(p.games_won for p in match.home.players)
-        away_singles = sum(p.games_won for p in match.away.players)
-        home_point = match.home.total_score - home_singles
-        away_point = match.away.total_score - away_singles
-
+        home_point = match.home.total_score - sum(p.games_won for p in match.home.players)
+        away_point = match.away.total_score - sum(p.games_won for p in match.away.players)
         if {home_point, away_point} != {0, 1}:
             anomalies += 1
             continue
         recovered += 1
-        home_won = home_point == 1
-        home_wins += home_won
-
-        home_pair = _pair_rating(ratings, match.home.players)
-        away_pair = _pair_rating(ratings, match.away.players)
-        if home_pair is None or away_pair is None:
-            continue
-        predicted = _expected(home_pair, away_pair)
-        brier += (predicted - float(home_won)) ** 2
-        correct += (predicted >= 0.5) == home_won
-        scored += 1
+        home_wins += home_point == 1
 
     return {
         "matches": len(matches),
         "recovered": recovered,
         "anomalies": anomalies,
         "home_win_rate": round(home_wins / recovered, 4) if recovered else None,
-        "model_scored": scored,
-        "model_accuracy": round(correct / scored, 4) if scored else None,
-        "model_brier": round(brier / scored, 4) if scored else None,
-        "trustworthy": bool(recovered) and anomalies / max(len(matches), 1) < 0.02,
+        "format_holds": bool(recovered) and anomalies / max(len(matches), 1) < 0.02,
     }
 
 
@@ -125,7 +93,7 @@ def _last_played(matches: list[Match]) -> date | None:
 def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""
     ratings = calculate_ratings(matches)
-    doubles = _doubles_report(matches, ratings)
+    doubles = _doubles_report(matches)
     rosters = _rosters(matches)
     divisions = _team_divisions(matches)
 

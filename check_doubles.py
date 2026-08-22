@@ -1,19 +1,16 @@
-"""Verify that the doubles point can be recovered from the scraped data.
+"""Verify that the 9 singles + 1 doubles match format holds in the data.
 
-A team match is 9 singles plus 1 doubles, so 10 points are on offer. The
-scraped pages give each player's singles wins and the team's total, which
-means the doubles point is whatever is left over:
+The doubles itself is not predicted anywhere — the scraped pages do not say
+which two players paired up. What this checks is the arithmetic that lets a
+target in match points be stated in singles: if a match is 9 singles plus 1
+doubles, then the doubles point is whatever a team's total has over its
+singles wins, and the two sides must split it 0/1.
 
-    doubles_point = total_score - sum(singles won by that team's players)
-
-That should always be 0 or 1, and the two sides should always split it. If
-this script reports anomalies, the assumption does not hold and the web
-app's doubles model should not be trusted — run it after a scrape and
-before relying on the points projection.
+If this reports anomalies, the format is not what the app assumes and the
+conversion between singles and match points is wrong. Run it after a scrape.
 """
 
 from cache import load_matches
-from elo import calculate_ratings
 from webapp.api import _doubles_report
 
 
@@ -23,7 +20,7 @@ def main() -> None:
         print("No cached matches — run `main.py --refresh` first.")
         return
 
-    report = _doubles_report(matches, calculate_ratings(matches))
+    report = _doubles_report(matches)
 
     print(f"Matches examined            : {report['matches']}")
     print(f"Doubles point recovered     : {report['recovered']}")
@@ -43,16 +40,14 @@ def main() -> None:
 
     if report["home_win_rate"] is not None:
         print(f"\nHome side wins the doubles  : {report['home_win_rate'] * 100:.1f}%")
-    if report["model_accuracy"] is not None:
-        print(f"Model accuracy              : {report['model_accuracy'] * 100:.1f}%")
-        print(f"Model Brier score           : {report['model_brier']:.4f}  (0.25 = coin flip)")
 
     print()
-    if report["trustworthy"]:
-        print("The doubles point is recoverable — the points projection is on solid ground.")
+    if report["format_holds"]:
+        print("The 9 singles + 1 doubles format holds — the singles/points")
+        print("conversion in the web app is sound.")
     else:
-        print("The doubles point could NOT be reliably recovered.")
-        print("Treat the 10th point in the web app as a guess until this is resolved.")
+        print("The format does NOT hold across this data.")
+        print("The web app's conversion between singles and match points may be wrong.")
 
 
 if __name__ == "__main__":

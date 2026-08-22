@@ -168,6 +168,7 @@ main { padding: 12px 14px 24px; }
   color: var(--text-dim);
 }
 .provisional { color: var(--warn); }
+.warn-note { color: var(--warn) !important; }
 
 .empty {
   padding: 34px 16px;
@@ -199,7 +200,11 @@ main { padding: 12px 14px 24px; }
 .prob strong { color: var(--text); font-size: 15px; }
 
 .bar { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 12px 0 4px; }
-.bar i { display: block; height: 100%; background: var(--accent); }
+.bar i { display: block; height: 100%; background: var(--good); }
+.bar i.short { background: var(--warn); }
+.prob strong.good { color: var(--good); }
+.prob strong.bad { color: var(--warn); }
+.scoreline span { white-space: nowrap; }
 
 .picks { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .pick {

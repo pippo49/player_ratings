@@ -38,40 +38,80 @@ phone. Open the second on a phone connected to the same Wi-Fi. On iOS,
 |-----|----------|--------------|
 | **Players** | `main.py "name"`, `-d N` | Search by player or team name, filter by division, toggle to rated players only (15+ matches). Tap a player for rank, win rate and singles record. |
 | **Teams** | `main.py -t "team"` | Search teams, ranked by the average of their top three. Tap a team for its full squad. |
-| **Lineup** | — | Pick your team and the opposition, untick anyone unavailable, and see the best three to select. |
+| **Select** | — | Pick the team you captain, mark who is available, and project the season against a promotion target. |
 
 The refresh button in the header runs the same scrape as `--update` /
 `--refresh`, reporting progress per division while it runs and recalculating
 ratings when it finishes.
 
-### The lineup planner
+### Match format and scoring
 
-Team matches are three a side, so all nine singles are a round robin between
-the two trios — which means only the *set* of three matters, not the order you
-put them in. For every possible trio from your available players, the planner
-scores all nine pairings with the standard ELO expectation:
+A team match is **9 singles plus 1 doubles**, so 10 points are on offer and
+5–5 is a draw. The scraped pages give each player's singles wins and the
+team's total score, so the doubles point is recovered as the difference:
 
 ```
-P(A beats B) = 1 / (1 + 10^((rating_B - rating_A) / 400))
+doubles_point = total_score - sum(singles won by that team's players)
 ```
 
-Summing those gives the expected singles won, and treating the nine as
-independent gives the chance of winning the rubber outright (5+ of 9). The
-trio with the highest expected score is suggested, along with the next four
-alternatives and a head-to-head grid.
+That should always be 0 or 1. Run `check_doubles.py` after a scrape to
+confirm it holds; the Select tab shows a warning if it does not.
 
-The opposition is assumed to field its three strongest available players.
-Untick anyone you know is out on either side and the suggestion updates.
+Note that `elo.py` rates **singles only** — the doubles point is not fed back
+into player ratings, because the scraped data does not say which two players
+formed the pair.
 
-Two caveats worth keeping in mind: treating each singles as independent
-ignores form and head-to-head history on the night, so the rubber odds are a
-guide rather than a forecast; and ratings marked `*` come from fewer than 15
-singles, so a trio built around them is less certain than the number suggests.
+### The Select tab
+
+Three things, in order:
+
+**Call-ups.** Lower sides from the same club whose players you can draw on.
+The side directly below is included by default; tick others on if your league
+allows it.
+
+**Season outlook.** Your strongest available three against every other team
+in your division, each assumed to field its best three. Shows expected points
+per fixture, the season average, and whether that clears the promotion target
+(default 7.0 of 10, editable).
+
+**A single fixture.** One opponent broken down: expected points, chance of
+winning the team match, the split between the 9 singles and the doubles, and
+a head-to-head grid.
+
+### Why there is no lineup optimiser
+
+Because all nine singles are a round robin, expected points decompose into one
+independent term per selected player:
+
+```
+E[points] = Σᵢ Σⱼ P(aᵢ beats bⱼ) + P(doubles)  =  Σᵢ f(aᵢ) + P(doubles)
+```
+
+Each `f(aᵢ)` depends only on that player's rating and the fixed opposing trio,
+and is strictly increasing in rating. So the trio maximising expected points is
+always your three highest-rated available players — searching every combination
+provably cannot beat a sort. This was checked empirically across 3,080 team
+pairings, optimising for expected points and for win probability separately:
+neither ever disagreed with picking the top three by rating.
+
+The interesting question is therefore not *which three* but *whether the three
+you have are enough* — which is what the season outlook answers.
+
+### Modelling assumptions
+
+- Each singles is treated as independent, so match odds ignore form and
+  head-to-head history on the night.
+- The doubles pair is assumed to be each side's strongest two, with pair
+  strength modelled as the mean of their singles ratings. On league data this
+  is close to a coin flip, so it moves the projection by about half a point.
+- Opponents are assumed to field their strongest three, which is a
+  worst-case read.
+- Ratings marked `*` come from fewer than 15 singles and are less certain.
 
 ### Planning for 2026/27
 
 Ratings carry over from Winter 2025/26 — the last full season of results —
-so the planner is usable for the season starting in October. Team and
+so the Select tab is usable for the season starting in October. Team and
 division labels are also from 2025/26, so a team that has moved up or down
 still shows its old division until the new season's results are scraped.
 
@@ -174,6 +214,7 @@ Because early matches in the season are evaluated against division-seeded rating
 - `models.py` — data classes (`Match`, `TeamResult`, `PlayerResult`)
 - `cache.py` — JSON serialisation and match deduplication
 - `warne_cup_compare.py` — compares ratings against Warne Cup handicaps
+- `check_doubles.py` — verifies the doubles point can be recovered from a scrape
 - `webapp/` — the web app
   - `server.py` — stdlib HTTP server, static files and two JSON endpoints
   - `api.py` — builds the single payload the front end runs on

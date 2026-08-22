@@ -16,7 +16,9 @@ const state = {
   teamDiv: 0,
   us: "",
   them: "",
-  benched: { us: new Set(), them: new Set() },
+  callUp: new Set(),        // lower club sides players can be drawn from
+  unavailable: new Set(),   // player ids ticked out for this fixture
+  target: 7,                // points per match needed for promotion
   polling: null,
 };
 
@@ -54,41 +56,60 @@ function winDistribution(probs) {
   return dist;
 }
 
-/** Evaluate one 3-a-side round robin: every one of ours plays every one of theirs. */
+/**
+ * Evaluate a team match: 9 singles as a round robin between the two trios,
+ * plus the doubles point, for 10 points in total.
+ *
+ * The doubles pairing is assumed to be each side's strongest two, and its
+ * strength is modelled as the mean of their singles ratings.
+ */
 function evaluateLineup(ours, theirs) {
-  const probs = [];
+  const singles = [];
   const grid = ours.map((a) => theirs.map((b) => {
     const p = expected(a.rating, b.rating);
-    probs.push(p);
+    singles.push(p);
     return p;
   }));
-  const expectedWins = probs.reduce((sum, p) => sum + p, 0);
-  const dist = winDistribution(probs);
-  const total = probs.length;
-  // A 9-point match is won outright at 5; a drawn rubber is possible only
-  // when both sides are short, so handle any even total generically.
-  const needed = Math.floor(total / 2) + 1;
+
+  const pair = (side) => {
+    const top = side.map((p) => p.rating).sort((a, b) => b - a).slice(0, 2);
+    return top.reduce((sum, r) => sum + r, 0) / top.length;
+  };
+  const doublesProb = expected(pair(ours), pair(theirs));
+
+  const expectedSingles = singles.reduce((sum, p) => sum + p, 0);
+  const dist = winDistribution(singles.concat([doublesProb]));
+  const points = singles.length + 1;
+  const needed = Math.floor(points / 2) + 1;
+
   let win = 0, draw = 0;
   for (let k = 0; k < dist.length; k++) {
     if (k >= needed) win += dist[k];
-    else if (total % 2 === 0 && k === total / 2) draw += dist[k];
+    else if (points % 2 === 0 && k === points / 2) draw += dist[k];
   }
-  return { grid, expectedWins, winProb: win, drawProb: draw, total };
+
+  return {
+    grid,
+    doublesProb,
+    expectedSingles,
+    expectedPoints: expectedSingles + doublesProb,
+    points,
+    winProb: win,
+    drawProb: draw,
+    dist,
+  };
 }
 
-/** Every k-sized combination of `items`. */
-function combinations(items, k) {
-  const out = [];
-  const pick = (start, chosen) => {
-    if (chosen.length === k) { out.push(chosen.slice()); return; }
-    for (let i = start; i <= items.length - (k - chosen.length); i++) {
-      chosen.push(items[i]);
-      pick(i + 1, chosen);
-      chosen.pop();
-    }
-  };
-  pick(0, []);
-  return out;
+/**
+ * The best trio is simply the three highest-rated available players.
+ *
+ * Because all nine singles are a round robin, expected points decompose into
+ * one independent term per selected player, so maximising the total is just
+ * picking the three largest terms — and each term is increasing in rating.
+ * Searching every combination provably cannot beat a sort.
+ */
+function bestTrio(squad) {
+  return squad.slice().sort((a, b) => b.rating - a.rating).slice(0, 3);
 }
 
 /* ════════════════════════════════════════════════════════
@@ -356,7 +377,7 @@ function renderTeams() {
 }
 
 /* ════════════════════════════════════════════════════════
-   Lineup view
+   Selection view
    ════════════════════════════════════════════════════════ */
 
 function buildTeamOptions() {
@@ -373,6 +394,11 @@ function buildTeamOptions() {
     });
 }
 
+/** "Apex 4" -> "Apex". Club teams are named for the club plus a number. */
+function clubOf(name) {
+  return name.replace(/\s+\d+[A-Za-z]?$/, "").trim();
+}
+
 /** Resolve a typed team name to a team, tolerating case and partial entry. */
 function resolveTeam(query) {
   if (!query.trim()) return null;
@@ -384,13 +410,38 @@ function resolveTeam(query) {
 
 function squadFor(team) {
   return team.players
-    .map((m) => ({ ...state.players.get(m.id), appearances: m.appearances }))
+    .map((m) => ({ ...state.players.get(m.id), appearances: m.appearances, from: team.name }))
     .filter((p) => p.id)
     .sort((a, b) => b.rating - a.rating);
 }
 
-function available(team, side) {
-  return squadFor(team).filter((p) => !state.benched[side].has(p.id));
+/**
+ * Teams in the same club playing at a lower standard, whose players can be
+ * called up. A higher division number is a lower standard.
+ */
+function feederTeams(team) {
+  const club = clubOf(team.name);
+  return state.data.teams
+    .filter((t) => t.name !== team.name && clubOf(t.name) === club && t.division > team.division)
+    .sort((a, b) => a.division - b.division);
+}
+
+/** The full pool available to a captain: their own squad plus any called-up feeders. */
+function pooledSquad(team) {
+  const seen = new Set();
+  const pool = [];
+  for (const source of [team, ...feederTeams(team).filter((t) => state.callUp.has(t.name))]) {
+    for (const p of squadFor(source)) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      pool.push(p);
+    }
+  }
+  return pool.sort((a, b) => b.rating - a.rating);
+}
+
+function availableFrom(pool) {
+  return pool.filter((p) => !state.unavailable.has(p.id));
 }
 
 function renderLineup() {
@@ -403,39 +454,35 @@ function renderLineup() {
   }
 
   const us = resolveTeam(state.us);
-  const them = resolveTeam(state.them);
-
-  if (!us || !them) {
+  if (!us) {
     host.append(introCard());
     return;
   }
-  if (us.name === them.name) {
-    host.append(noteCard("Pick two different teams."));
-    return;
-  }
 
-  const ourSquad = available(us, "us");
-  const theirSquad = available(them, "them");
+  host.append(callUpCard(us));
 
-  if (ourSquad.length < 3 || theirSquad.length < 3) {
-    host.append(noteCard("Both sides need at least three available players."));
+  const pool = pooledSquad(us);
+  const squad = availableFrom(pool);
+
+  if (squad.length < 3) {
+    host.append(noteCard("At least three players need to be available."));
   } else {
-    host.append(resultCard(ourSquad, theirSquad, us, them));
+    host.append(seasonCard(us, squad));
+    host.append(fixtureCard(us, squad));
   }
 
-  host.append(squadCard(us, "us", "Your squad — untick anyone unavailable"));
-  host.append(squadCard(them, "them", "Their squad — untick anyone you know is out"));
+  host.append(squadCard(us, pool));
 }
 
 function introCard() {
   const card = el("div", "card");
   const h = el("h2");
-  h.textContent = "Pick your team and the opposition";
+  h.textContent = "Pick the team you select for";
   const p = el("p", "hint");
   p.textContent =
-    "Ratings carry over from " + state.data.season + ", so they are the best guide to " +
-    "form going into 2026/27. Choose both teams and every three-player lineup is " +
-    "scored against theirs, all nine singles at a time.";
+    `Ratings carry over from ${state.data.season}, so they are the best guide to ` +
+    "form going into 2026/27. Choose your team and anyone you can call up from " +
+    "a lower club side, and every fixture is scored over all 10 points.";
   card.append(h, p);
   return card;
 }
@@ -448,50 +495,114 @@ function noteCard(text) {
   return card;
 }
 
-function resultCard(ourSquad, theirSquad, us, them) {
-  // Their likely three: strongest available. Ours: whichever trio scores best.
-  const theirBest = theirSquad.slice(0, 3);
-  // Bound the search — beyond the top 20 available, nobody makes a best lineup.
-  const candidates = ourSquad.slice(0, 20);
-  const ranked = combinations(candidates, 3)
-    .map((trio) => ({ trio, ...evaluateLineup(trio, theirBest) }))
-    .sort((a, b) => b.expectedWins - a.expectedWins);
-
-  const best = ranked[0];
+/** Lower club sides whose players this captain can call up. */
+function callUpCard(team) {
   const card = el("div", "card");
-
   const h = el("h2");
-  h.textContent = "Best lineup";
+  h.textContent = "Call-ups";
+  card.append(h);
+
+  const feeders = feederTeams(team);
+  if (!feeders.length) {
+    const p = el("p", "hint");
+    p.textContent = `No lower ${clubOf(team.name)} side found in the data.`;
+    card.append(p);
+    return card;
+  }
+
   const hint = el("p", "hint");
-  hint.textContent = `${us.name} vs ${them.name} — against their strongest three available.`;
+  hint.textContent = "Lower club sides you can draw players from.";
+  card.append(hint);
+
+  const box = el("div", "squad");
+  feeders.forEach((t) => {
+    const label = el("label");
+    const check = el("input");
+    check.type = "checkbox";
+    check.checked = state.callUp.has(t.name);
+    check.onchange = () => {
+      if (check.checked) state.callUp.add(t.name);
+      else state.callUp.delete(t.name);
+      renderLineup();
+    };
+    const nm = el("span", "nm");
+    nm.textContent = t.name;
+    const rt = el("span", "rt");
+    rt.textContent = `Div ${t.division}`;
+    label.append(check, nm, rt);
+    box.append(label);
+  });
+  card.append(box);
+  return card;
+}
+
+/* ── Season outlook ───────────────────────────────────── */
+
+/** Expected points against every other team in the division, and the average. */
+function seasonOutlook(team, squad) {
+  const trio = bestTrio(squad);
+  const rivals = state.data.teams
+    .filter((t) => t.division === team.division && t.name !== team.name)
+    .map((t) => {
+      const theirs = bestTrio(squadFor(t));
+      if (theirs.length < 3) return null;
+      const result = evaluateLineup(trio, theirs);
+      return { team: t, ...result };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.expectedPoints - b.expectedPoints);
+
+  const average = rivals.length
+    ? rivals.reduce((sum, r) => sum + r.expectedPoints, 0) / rivals.length
+    : 0;
+  return { trio, rivals, average };
+}
+
+function seasonCard(team, squad) {
+  const { trio, rivals, average } = seasonOutlook(team, squad);
+  const target = state.target;
+
+  const card = el("div", "card");
+  const h = el("h2");
+  h.textContent = "Season outlook";
+  const hint = el("p", "hint");
+  hint.textContent =
+    `Your strongest available three against every other side in Division ` +
+    `${team.division}, assuming each fields its best three.`;
   card.append(h, hint);
 
-  const score = el("div", "scoreline");
-  const ours = el("b");
-  ours.textContent = fmtScore(best.expectedWins);
-  const dash = el("span");
-  dash.textContent = "–";
-  const theirs = el("b");
-  theirs.textContent = fmtScore(best.total - best.expectedWins);
-  score.append(ours, dash, theirs);
-
-  const prob = el("div", "prob");
-  const strong = el("strong");
-  strong.textContent = fmtChance(best.winProb);
-  prob.append(strong, document.createTextNode(" chance of winning the rubber"));
-  if (best.drawProb > 0.005) {
-    prob.append(document.createTextNode(` · ${fmtChance(best.drawProb)} draw`));
+  if (!rivals.length) {
+    card.append(noteCard("No other teams in this division to compare against."));
+    return card;
   }
+
+  const score = el("div", "scoreline");
+  const avg = el("b");
+  avg.textContent = fmtScore(average);
+  const of = el("span");
+  of.textContent = `of ${state.data.points_per_match} per match`;
+  score.append(avg, of);
+  card.append(score);
+
+  const verdict = el("div", "prob");
+  const strong = el("strong");
+  const gap = average - target;
+  strong.textContent = gap >= 0 ? "On track" : "Short of target";
+  strong.className = gap >= 0 ? "good" : "bad";
+  verdict.append(strong, document.createTextNode(
+    ` — ${gap >= 0 ? "+" : ""}${gap.toFixed(1)} against a ${fmtScore(target)} target`
+  ));
+  card.append(verdict);
 
   const bar = el("div", "bar");
   const fill = el("i");
-  fill.style.width = `${Math.round(best.winProb * 100)}%`;
+  fill.style.width = `${Math.min(100, Math.round((average / state.data.points_per_match) * 100))}%`;
+  if (gap < 0) fill.classList.add("short");
   bar.append(fill);
-
-  card.append(score, prob, bar);
+  card.append(bar);
 
   const picks = el("div", "picks");
-  best.trio.forEach((p, i) => {
+  trio.forEach((p, i) => {
     const pick = el("div", "pick");
     const num = el("span", "num");
     num.textContent = i + 1;
@@ -504,22 +615,123 @@ function resultCard(ourSquad, theirSquad, us, them) {
   });
   card.append(picks);
 
-  card.append(matrixTable(best, theirBest));
+  const wrap = el("div", "table-wrap");
+  const caption = el("p", "hint");
+  caption.textContent = "Expected points per fixture, hardest first";
+  const table = el("table");
+  const thead = el("thead");
+  const hrow = el("tr");
+  ["Opponent", "Pts", "Win"].forEach((label) => {
+    const th = el("th");
+    th.textContent = label;
+    hrow.append(th);
+  });
+  thead.append(hrow);
 
-  const footnote = el("p", "hint");
-  footnote.textContent =
-    "Expected singles won out of " + best.total + ". Each singles is treated as " +
-    "independent, so the rubber odds are a guide rather than a guarantee. " +
-    "* marks a provisional rating from few matches.";
-  card.append(footnote);
+  const tbody = el("tbody");
+  rivals.forEach((r) => {
+    const tr = el("tr");
+    const th = el("th");
+    th.textContent = r.team.name;
+    const pts = el("td", `pc ${r.expectedPoints >= target ? "win" : "lose"}`);
+    pts.textContent = fmtScore(r.expectedPoints);
+    const win = el("td", "pc");
+    win.textContent = fmtChance(r.winProb);
+    tr.append(th, pts, win);
+    tbody.append(tr);
+  });
+  table.append(thead, tbody);
+  wrap.append(caption, table);
+  card.append(wrap);
 
-  if (ranked.length > 1) {
-    card.append(alternatives(ranked.slice(1, 5)));
+  const foot = el("p", "hint");
+  foot.textContent =
+    `Averaging ${fmtScore(target)} is the promotion target you set. Points are 9 ` +
+    "singles plus the doubles. Fixtures you are expected to fall short in are the " +
+    "ones where a call-up changes the season.";
+  card.append(foot);
+
+  // The doubles point is inferred, not scraped directly. Say so when it looks wrong.
+  const doubles = state.data.doubles;
+  if (doubles && !doubles.trustworthy) {
+    const warn = el("p", "hint warn-note");
+    warn.textContent =
+      `The doubles point could not be recovered from ${doubles.anomalies} of ` +
+      `${doubles.matches} matches, so the 10th point is a guess here. ` +
+      "Run check_doubles.py for the detail.";
+    card.append(warn);
   }
   return card;
 }
 
-function matrixTable(best, theirBest) {
+/* ── One fixture in detail ────────────────────────────── */
+
+function fixtureCard(us, squad) {
+  const card = el("div", "card");
+  const h = el("h2");
+  h.textContent = "A single fixture";
+  const hint = el("p", "hint");
+  hint.textContent = "Pick an opponent to see the match broken down.";
+  card.append(h, hint);
+
+  const field = el("div", "field");
+  const input = el("input", "search");
+  input.setAttribute("list", "team-options");
+  input.placeholder = "Opponent…";
+  input.value = state.them;
+  input.autocomplete = "off";
+  input.oninput = debounce(() => {
+    state.them = input.value;
+    renderLineup();
+  }, 150);
+  field.append(input);
+  card.append(field);
+
+  const them = resolveTeam(state.them);
+  if (!them) return card;
+  if (them.name === us.name) {
+    card.append(noteCard("Pick a different team."));
+    return card;
+  }
+
+  const theirs = bestTrio(squadFor(them));
+  if (theirs.length < 3) {
+    card.append(noteCard("Not enough rated players for that team."));
+    return card;
+  }
+
+  const trio = bestTrio(squad);
+  const result = evaluateLineup(trio, theirs);
+
+  const score = el("div", "scoreline");
+  const ours = el("b");
+  ours.textContent = fmtScore(result.expectedPoints);
+  const dash = el("span");
+  dash.textContent = "–";
+  const other = el("b");
+  other.textContent = fmtScore(result.points - result.expectedPoints);
+  score.append(ours, dash, other);
+
+  const prob = el("div", "prob");
+  const strong = el("strong");
+  strong.textContent = fmtChance(result.winProb);
+  prob.append(strong, document.createTextNode(" chance of winning the team match"));
+  if (result.drawProb > 0.005) {
+    prob.append(document.createTextNode(` · ${fmtChance(result.drawProb)} draw at 5–5`));
+  }
+  card.append(score, prob);
+
+  const split = el("p", "hint");
+  split.textContent =
+    `${fmtScore(result.expectedSingles)} of 9 singles, plus ` +
+    `${fmtChance(result.doublesProb)} on the doubles.`;
+  card.append(split);
+
+  card.append(matrixTable(result, trio, theirs));
+  return card;
+}
+
+function matrixTable(result, trio, theirBest) {
   const wrap = el("div", "table-wrap");
   const caption = el("p", "hint");
   caption.textContent = "Head-to-head win chance";
@@ -537,13 +749,13 @@ function matrixTable(best, theirBest) {
   thead.append(hrow);
 
   const tbody = el("tbody");
-  best.trio.forEach((p, i) => {
+  trio.forEach((p, i) => {
     const tr = el("tr");
     const th = el("th");
     th.textContent = shortName(p.name);
     th.title = `${p.name} (${fmtRating(p.rating)})`;
     tr.append(th);
-    best.grid[i].forEach((prob) => {
+    result.grid[i].forEach((prob) => {
       const td = el("td", `pc ${prob >= 0.5 ? "win" : "lose"}`);
       td.textContent = fmtPct(prob);
       tr.append(td);
@@ -556,48 +768,33 @@ function matrixTable(best, theirBest) {
   return wrap;
 }
 
-function alternatives(rest) {
-  const box = el("div", "alts");
-  const h = el("p", "hint");
-  h.textContent = "Next best trios";
-  box.append(h);
-  rest.forEach((r) => {
-    const row = el("div", "alt");
-    const nm = el("span", "nm");
-    nm.textContent = r.trio.map((p) => p.name).join(", ");
-    const sc = el("span", "sc");
-    sc.textContent = `${fmtScore(r.expectedWins)} · ${fmtChance(r.winProb)}`;
-    row.append(nm, sc);
-    box.append(row);
-  });
-  return box;
-}
-
-function squadCard(team, side, title) {
+function squadCard(team, pool) {
   const card = el("div", "card");
   const h = el("h2");
-  h.textContent = team.name;
+  h.textContent = "Availability";
   const hint = el("p", "hint");
-  hint.textContent = title;
+  hint.textContent = "Untick anyone who cannot play.";
   card.append(h, hint);
 
   const box = el("div", "squad");
-  squadFor(team).forEach((p) => {
+  pool.forEach((p) => {
     const label = el("label");
-    const box2 = el("input");
-    box2.type = "checkbox";
-    box2.checked = !state.benched[side].has(p.id);
-    if (!box2.checked) label.classList.add("out");
-    box2.onchange = () => {
-      if (box2.checked) state.benched[side].delete(p.id);
-      else state.benched[side].add(p.id);
+    const check = el("input");
+    check.type = "checkbox";
+    check.checked = !state.unavailable.has(p.id);
+    if (!check.checked) label.classList.add("out");
+    check.onchange = () => {
+      if (check.checked) state.unavailable.delete(p.id);
+      else state.unavailable.add(p.id);
       renderLineup();
     };
     const nm = el("span", "nm");
     nm.textContent = p.name + (p.reliable ? "" : " *");
     const rt = el("span", "rt");
-    rt.textContent = `${fmtRating(p.rating)} · ${p.appearances} app`;
-    label.append(box2, nm, rt);
+    rt.textContent = p.from === team.name
+      ? fmtRating(p.rating)
+      : `${fmtRating(p.rating)} · ${p.from}`;
+    label.append(check, nm, rt);
     box.append(label);
   });
   card.append(box);
@@ -672,11 +869,13 @@ function openTeamSheet(t) {
     const actions = el("div", "sheet-actions");
     const action = el("button", "action primary");
     action.type = "button";
-    action.textContent = "Plan a lineup for this team";
+    action.textContent = "Select for this team";
     action.onclick = () => {
       state.us = t.name;
       $("#pick-us").value = t.name;
-      state.benched.us = new Set();
+      const nearest = feederTeams(t)[0];
+      state.callUp = new Set(nearest ? [nearest.name] : []);
+      state.unavailable = new Set();
       closeSheet();
       switchView("lineup");
     };
@@ -826,15 +1025,22 @@ function wire() {
 
   $("#pick-us").oninput = debounce((e) => {
     state.us = e.target.value;
-    state.benched.us = new Set();
+    // A new team means a new club, so call-ups and availability start clean.
+    state.callUp = new Set();
+    state.unavailable = new Set();
+    const team = resolveTeam(state.us);
+    // Default to the side directly below — the usual call-up route. Any
+    // others can be ticked on explicitly.
+    const nearest = team && feederTeams(team)[0];
+    if (nearest) state.callUp.add(nearest.name);
     renderLineup();
   }, 150);
 
-  $("#pick-them").oninput = debounce((e) => {
-    state.them = e.target.value;
-    state.benched.them = new Set();
+  $("#target").oninput = debounce((e) => {
+    const value = parseFloat(e.target.value);
+    state.target = Number.isFinite(value) ? Math.min(10, Math.max(0, value)) : 7;
     renderLineup();
-  }, 150);
+  }, 200);
 
   $("#btn-update").onclick = openUpdateSheet;
   $("#scrim").onclick = closeSheet;

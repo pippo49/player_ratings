@@ -237,6 +237,10 @@ main { padding: 12px 14px 24px; }
 .squad .rt { font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 13px; }
 .squad label.out .nm { opacity: 0.45; text-decoration: line-through; }
 
+/* A player name that opens their stats sheet on tap/click. */
+.nm-link { cursor: pointer; }
+.nm-link:hover, .nm-link:focus-visible { text-decoration: underline; }
+
 .table-wrap { overflow-x: auto; margin: 0 -14px; padding: 0 14px; }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
 th, td { padding: 7px 8px; text-align: right; white-space: nowrap; }

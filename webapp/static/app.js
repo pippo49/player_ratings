@@ -575,8 +575,9 @@ function seasonCard(team, squad) {
     const pick = el("div", "pick");
     const num = el("span", "num");
     num.textContent = i + 1;
-    const nm = el("span", "nm");
+    const nm = el("span", "nm nm-link");
     nm.textContent = p.name + (p.reliable ? "" : " *");
+    nm.onclick = () => openPlayerSheet(p);
     const rt = el("span", "rt");
     rt.textContent = fmtRating(p.rating);
     pick.append(num, nm, rt);
@@ -723,9 +724,10 @@ function matrixTable(result, trio, theirBest) {
   const hrow = el("tr");
   hrow.append(el("th"));
   theirBest.forEach((p) => {
-    const th = el("th");
+    const th = el("th", "nm-link");
     th.textContent = shortName(p.name);
     th.title = `${p.name} (${fmtRating(p.rating)})`;
+    th.onclick = () => openPlayerSheet(p);
     hrow.append(th);
   });
   thead.append(hrow);
@@ -733,9 +735,10 @@ function matrixTable(result, trio, theirBest) {
   const tbody = el("tbody");
   trio.forEach((p, i) => {
     const tr = el("tr");
-    const th = el("th");
+    const th = el("th", "nm-link");
     th.textContent = shortName(p.name);
     th.title = `${p.name} (${fmtRating(p.rating)})`;
+    th.onclick = () => openPlayerSheet(p);
     tr.append(th);
     result.grid[i].forEach((prob) => {
       const td = el("td", `pc ${prob >= 0.5 ? "win" : "lose"}`);
@@ -770,8 +773,15 @@ function squadCard(team, pool) {
       else state.unavailable.add(p.id);
       renderLineup();
     };
-    const nm = el("span", "nm");
+    const nm = el("span", "nm nm-link");
     nm.textContent = p.name + (p.reliable ? "" : " *");
+    // Inside a <label>, a click on any child also toggles the checkbox
+    // unless stopped — this should open the stats sheet instead.
+    nm.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openPlayerSheet(p);
+    };
     const rt = el("span", "rt");
     rt.textContent = p.from === team.name
       ? fmtRating(p.rating)

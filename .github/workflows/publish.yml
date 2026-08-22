@@ -1,0 +1,102 @@
+# Scrape the league weekly and publish the app to GitHub Pages.
+#
+# Runs on three triggers:
+#   schedule          — fetch new results, commit them, publish
+#   workflow_dispatch — the same, on demand
+#   push to master    — publish only, for changes made from a terminal
+#
+# One-time setup: Settings -> Pages -> Source: "GitHub Actions". Until that is
+# done the deploy job has nowhere to publish to and will fail.
+#
+# Scrape and deploy live in one workflow on purpose. A push made with the
+# default GITHUB_TOKEN does not trigger other workflows, so a separate deploy
+# workflow would never fire after the scrape job commits.
+name: Publish
+
+on:
+  schedule:
+    # Mondays 07:00 UTC — after the week's fixtures have been posted.
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - "webapp/static/**"
+      - ".github/workflows/publish.yml"
+
+permissions:
+  contents: write   # the scrape job commits new ratings
+  pages: write
+  id-token: write
+
+# Let a running publish finish rather than cancelling it mid-deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    # A push has nothing new to fetch — it is already the new data.
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # uv reads .python-version and fetches the interpreter if the runner
+      # does not already have it.
+      - run: uv sync
+
+      - name: Scrape for new results
+        run: uv run python main.py --update
+
+      - name: Verify the match format still holds
+        run: uv run python check_doubles.py
+
+      - name: Commit if anything changed
+        run: |
+          if git diff --quiet -- data webapp/static/ratings.json; then
+            echo "No new results — nothing to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data webapp/static/ratings.json
+            git commit -m "Update ratings from scheduled scrape"
+            git push
+            echo "Committed new results."
+          fi
+
+  deploy:
+    needs: [scrape]
+    # Runs after a successful scrape, and on push where scrape is skipped.
+    if: always() && needs.scrape.result != 'failure' && needs.scrape.result != 'cancelled'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Fresh checkout, so a commit the scrape job just pushed is included.
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Check a ratings snapshot is present
+        run: |
+          if [ ! -f webapp/static/ratings.json ]; then
+            echo "::warning::webapp/static/ratings.json is missing — the site will \
+          deploy but show no data. Run 'python main.py --refresh' and commit the result."
+          else
+            echo "Snapshot present: $(wc -c < webapp/static/ratings.json) bytes"
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: webapp/static
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

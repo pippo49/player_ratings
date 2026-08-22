@@ -37,15 +37,30 @@ git add data webapp/static/ratings.json && git commit -m "Add ratings snapshot"
 
 ### Publishing it
 
-`.github/workflows/deploy.yml` publishes `webapp/static/` to GitHub Pages on
-every push to `master` that touches the bundle. One-time setup:
+`.github/workflows/publish.yml` scrapes the league every Monday, commits any
+new results, and publishes `webapp/static/` to GitHub Pages. It also publishes
+on any push to `master` that touches the bundle, and can be run on demand from
+the Actions tab. One-time setup:
 
 1. The repository must be **public** — Pages needs a paid plan on private repos.
+   (Actions minutes are also unlimited on public repos; private repos get 2,000
+   a month, which is still far more than a weekly scrape uses.)
 2. Settings → Pages → Source: **GitHub Actions**.
 
-The workflow uploads the folder as an artifact rather than serving it directly,
-because Pages can only serve a repo's root or `/docs`. Cloudflare Pages and
-Netlify are alternatives that work with private repos on their free tiers.
+With that in place the weekly refresh needs nothing from you — the site updates
+itself and phones pick it up next time they have signal. Running `--update`
+from a terminal still works and still publishes, for when you want results
+immediately rather than waiting for Monday.
+
+Scraping and deploying live in one workflow because a push made with the
+default `GITHUB_TOKEN` does not trigger other workflows, so a separate deploy
+workflow would never fire after the scrape commits. The bundle is uploaded as
+an artifact rather than served directly, because Pages can only serve a repo's
+root or `/docs`.
+
+To change the schedule, edit the `cron` line; to stop it, disable the workflow
+in the Actions tab. Cloudflare Pages and Netlify are alternatives that work
+with private repos on their free tiers.
 
 ### Using it offline on match day
 
@@ -267,7 +282,7 @@ Because early matches in the season are evaluated against division-seeded rating
   - `static/` — the deployable bundle: `index.html`, `app.js`, `styles.css`,
     `sw.js`, `manifest.json`, icons and `ratings.json` (no build step)
 - `data/matches.json` — scraped match data, committed
-- `.github/workflows/deploy.yml` — publishes the bundle to GitHub Pages
+- `.github/workflows/publish.yml` — weekly scrape and GitHub Pages deploy
 - `NEXT_SEASON.md` — what needs changing when the 2026/27 fixtures go up
 
 The web app adds no dependencies: the server is `http.server` from the standard

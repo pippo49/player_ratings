@@ -171,10 +171,15 @@ you have are enough*, which is what the season outlook answers.
 
 ### Planning for 2026/27
 
-Ratings carry over from Winter 2025/26 — the last full season of results — so
-the Select tab is usable for the season starting in October. Team and division
-labels are also from 2025/26, so a team that has moved up or down still shows
-its old division until the new season's results are scraped.
+Ratings carry over unchanged from Winter 2025/26 — the last full season of
+results — as each player's starting point for the new season; nobody is
+reseeded just for moving division. Team divisions already reflect the
+2026/27 promotion/relegation outcome (top 2 promoted, bottom 2 relegated,
+per division, from the official final tables — Division 1 has no promotion
+and Division 7 no relegation). Rosters are unchanged from 2025/26 except
+where a squad change is actually confirmed (currently just Apex 4) — see
+`season_transition.py`. Everything else updates once the league publishes
+real 2026/27 results and the scraper is pointed at the new season.
 
 ## Command line usage
 

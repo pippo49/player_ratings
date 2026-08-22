@@ -4,6 +4,17 @@ Written August 2026, while the app only had Winter 2025/26 data. The app is
 correct for a single season; carrying two seasons needs the work below. Nothing
 here is urgent until the 2026/27 fixture pages go up on tabletennis365.
 
+**Update, August 2026:** the 2025/26 season finished (last match 24 April
+2026) and Apex 4's 2026/27 squad is already confirmed, so a stopgap for
+section 3 landed early: `season_transition.py` holds a static
+promotion/relegation division map (computed from the real final tables) and
+a roster override for Apex 4, applied in `webapp/api.py::_apply_season_overrides`.
+This covers division labels for every team and the roster for Apex 4 only —
+every other team's roster is still last season's until real 2026/27 results
+come in. It is a hand-maintained bridge, not the season-aware rewrite below;
+once section 2 (season-aware scraping) is done, `season_transition.py` and
+its call site should be deleted.
+
 The short version: the caching and merging already work across seasons, but
 the **scraper is pinned to one season**, **team and division labels go stale**,
 and the **rating model is not actually carry-over**. The third is a design

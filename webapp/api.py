@@ -8,10 +8,9 @@ team roster, and a little metadata about the data set.
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 
-from elo import MIN_MATCHES, PlayerRating, calculate_ratings
+from elo import DIVISION_SEED, MIN_MATCHES, PlayerRating, calculate_ratings
 from models import Match
-
-SEASON_LABEL = "Winter 2025/26"
+from season_transition import DIVISION_OVERRIDES, ROSTER_OVERRIDES, SEASON_LABEL
 
 # A team match is 9 singles plus 1 doubles, so 10 points are on offer.
 SINGLES_PER_MATCH = 9
@@ -90,12 +89,54 @@ def _last_played(matches: list[Match]) -> date | None:
     return max(dates) if dates else None
 
 
+def _apply_season_overrides(
+    ratings: dict[str, PlayerRating],
+    rosters: dict[str, dict[str, int]],
+    divisions: dict[str, int],
+) -> None:
+    """Apply the next season's known division moves and roster changes.
+
+    Mutates *ratings*, *rosters* and *divisions* in place. Division changes
+    come from promotion/relegation and apply to every listed team. Roster
+    changes replace a team's squad entirely, only where actually confirmed
+    (see season_transition.py) — every other team keeps its 2025/26 roster
+    until real 2026/27 results exist.
+
+    A player's `.division` badge always follows their *current* team's new
+    division — including players who were not individually overridden but
+    whose team was promoted or relegated.
+    """
+    divisions.update(DIVISION_OVERRIDES)
+
+    for team, roster in ROSTER_OVERRIDES.items():
+        new_division = divisions.get(team, 0)
+        rosters[team] = {entry["id"]: 0 for entry in roster}
+        for entry in roster:
+            if entry.get("new"):
+                ratings[entry["id"]] = PlayerRating(
+                    name=entry["name"],
+                    player_id=entry["id"],
+                    rating=float(entry.get("rating", DIVISION_SEED[new_division])),
+                    division=new_division,
+                    team=team,
+                )
+            else:
+                # Carried over from another team (e.g. a lower club side) —
+                # keep their rating and stats, just move the label.
+                ratings[entry["id"]].team = team
+
+    for pr in ratings.values():
+        if pr.team in divisions:
+            pr.division = divisions[pr.team]
+
+
 def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""
     ratings = calculate_ratings(matches)
     doubles = _doubles_report(matches)
     rosters = _rosters(matches)
     divisions = _team_divisions(matches)
+    _apply_season_overrides(ratings, rosters, divisions)
 
     players = sorted(
         (_player_dict(pr) for pr in ratings.values()),

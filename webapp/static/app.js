@@ -491,8 +491,15 @@ function callUpCard(team) {
       else state.callUp.delete(t.name);
       renderLineup();
     };
-    const nm = el("span", "nm");
+    const nm = el("span", "nm nm-link");
     nm.textContent = t.name;
+    // Inside a <label>, a click on any child also toggles the checkbox
+    // unless stopped — this should open the team's squad instead.
+    nm.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openTeamSheet(t);
+    };
     const rt = el("span", "rt");
     rt.textContent = `Div ${t.division}`;
     label.append(check, nm, rt);
@@ -601,8 +608,9 @@ function seasonCard(team, squad) {
   const tbody = el("tbody");
   rivals.forEach((r) => {
     const tr = el("tr");
-    const th = el("th");
+    const th = el("th", "nm-link");
     th.textContent = r.team.name;
+    th.onclick = () => openTeamSheet(r.team);
     const pts = el("td", `pc ${r.expectedSingles >= target ? "win" : "lose"}`);
     pts.textContent = fmtScore(r.expectedSingles);
     const share = el("td", "pc");
@@ -680,6 +688,16 @@ function fixtureCard(us, squad) {
     card.append(noteCard(`Pick a team from Division ${us.division}.`));
     return card;
   }
+
+  const themLink = el("p", "hint");
+  themLink.append(document.createTextNode("Opponent: "));
+  const themName = el("span", "nm-link");
+  themName.textContent = `${them.name} squad`;
+  themName.setAttribute("role", "link");
+  themName.tabIndex = 0;
+  themName.onclick = () => openTeamSheet(them);
+  themLink.append(themName);
+  card.append(themLink);
 
   const theirs = bestTrio(squadFor(them));
   if (theirs.length < 3) {

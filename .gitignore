@@ -15,5 +15,10 @@ wheels/
 # Analysis results
 analysis_results/
 
-# PDF files 
+# PDF files
 *.pdf*
+
+# VS Code: share extension recommendations and settings, ignore the rest
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

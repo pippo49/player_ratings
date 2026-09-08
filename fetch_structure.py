@@ -39,14 +39,46 @@ TEAM_LINK = re.compile(r"/Results/Team/Statistics/")
 SECTIONS = ["Tables", "Fixtures", "Results"]
 
 
+def _team_id(href: str) -> str:
+    """The numeric team ID from a team statistics URL, or the URL itself."""
+    parts = href.rstrip("/").split("/")
+    for part in reversed(parts):
+        if part.isdigit():
+            return part
+    return href
+
+
 def _teams_on_page(html: str) -> list[str]:
+    """Team names on a page, one per team.
+
+    The same team is linked more than once per page — the layout carries an
+    abbreviated name for narrow screens alongside the full one ("Fulham
+    Brunsw 2" and "Fulham Brunswick 2"), and both are links. Keying on the
+    team ID in the URL rather than the link text collapses those, and the
+    longest variant is kept because that is the form the match pages use.
+    """
     soup = BeautifulSoup(html, "html.parser")
-    seen: dict[str, None] = {}
+    by_id: dict[str, set[str]] = {}
+    order: list[str] = []
     for link in soup.find_all("a", href=TEAM_LINK):
         name = link.get_text(strip=True)
-        if name:
-            seen.setdefault(name, None)
-    return list(seen)
+        if not name:
+            continue
+        team_id = _team_id(link["href"])
+        if team_id not in by_id:
+            by_id[team_id] = set()
+            order.append(team_id)
+        by_id[team_id].add(name)
+
+    names = []
+    for team_id in order:
+        variants = by_id[team_id]
+        best = max(sorted(variants), key=len)
+        if len(variants) > 1:
+            others = ", ".join(sorted(v for v in variants if v != best))
+            print(f"      {best!r} also listed as {others}")
+        names.append(best)
+    return names
 
 
 def fetch_division(season: str, division_name: str) -> list[str]:

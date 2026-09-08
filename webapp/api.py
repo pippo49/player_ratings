@@ -207,6 +207,16 @@ def _apply_season_overrides(
             if team != pr.team:
                 roster.pop(pid, None)
 
+    # A roster override replaces a squad outright, so anyone still labelled to
+    # that team but missing from the new squad has left it. Without this they
+    # keep showing under a team that will not pick them, and count towards
+    # that division's stats.
+    for pid, pr in ratings.items():
+        squad = ROSTER_OVERRIDES.get(pr.team)
+        if squad and pid not in {entry["id"] for entry in squad}:
+            pr.team = ""
+            pr.division = None
+
 
 def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""

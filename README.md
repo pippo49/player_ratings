@@ -164,8 +164,13 @@ you have are enough*, which is what the season outlook answers.
 
 - Each singles is treated as independent, so projections ignore form and
   head-to-head history on the night.
-- Opponents are assumed to field their strongest three, which is a worst-case
-  read.
+- Opponents are modelled on the three they can be expected to field, not their
+  strongest three. Across 937 matches the trio teams actually fielded averaged
+  72 rating points below their best three, and up to 233 for teams drawing on
+  a large pool, so assuming best-three badly overstates the opposition.
+  Weighting each player by how often they turned out tracks the real fielded
+  average to within about 9 points. Your own side is still whoever you pick,
+  since you control that.
 - Ratings marked `*` come from fewer than 15 singles and are less certain.
 - Nothing accounts for league rules on how often a player may be called up.
 

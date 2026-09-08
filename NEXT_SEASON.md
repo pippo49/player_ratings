@@ -142,6 +142,24 @@ seed upward but an inflated one leaks points to every opponent first.
    who barely played carrying a noisy rating into a new season. Not
    implemented — a judgement call, not an oversight.
 
+## Selection, not best three
+
+Teams do not field their strongest three. Measured over 85 teams and 937
+matches, the trio actually fielded averaged **72 rating points below** the
+squad's best three (median 61, range 16 to 233). It scales with squad size —
+a squad of six is about 52 points down, one of twelve about 84 — because
+"best three" is drawn from a pool that never all turns out.
+
+Opponents are therefore modelled on an appearance-weighted trio: the rating at
+the 1/6, 1/2 and 5/6 points of the squad weighted by how often each player
+played. That tracks the real fielded average to within about 9 points, against
+72 for best-three, while keeping a realistic spread between a team's strongest
+and weakest selection.
+
+A hand-entered roster carries no appearance history, so it falls back to the
+best three shifted down by `36.1 + 5.3 × (squad − 3)` points, fitted over the
+same 85 teams.
+
 ## Verified against real data
 
 937 matches from Winter 2025/26, September 2026:

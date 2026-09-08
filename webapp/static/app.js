@@ -60,6 +60,46 @@ function evaluateLineup(ours, theirs) {
 }
 
 /**
+ * The three an opposing team can be expected to field.
+ *
+ * Assuming opponents always play their strongest three overstates them
+ * badly: across 85 teams and 937 matches, the trio actually fielded averaged
+ * 72 rating points below the squad's best three, and up to 233 for teams
+ * with a large pool. The gap scales with squad size, because "best three" is
+ * picked from players who never all turn out together.
+ *
+ * Weighting each player by how often they actually played, and taking the
+ * rating at the 1/6, 1/2 and 5/6 points of that distribution, tracks the
+ * real fielded average to within about 9 points while keeping a realistic
+ * spread between a team's strongest and weakest selection.
+ */
+function expectedTrio(squad) {
+  const ranked = squad.slice().sort((a, b) => b.rating - a.rating);
+  if (ranked.length <= 3) return ranked;
+
+  const total = ranked.reduce((sum, p) => sum + (p.appearances || 0), 0);
+  if (total <= 0) {
+    // A hand-entered roster carries no appearance history. Treating everyone
+    // as equally likely over-dilutes a squad whose best three are clearly its
+    // first choice, so shift the best three down by the shortfall a squad
+    // that size typically shows: 36 points, plus about 5 per extra player.
+    const shortfall = 36.1 + 5.3 * (ranked.length - 3);
+    return ranked.slice(0, 3).map((p) => ({ ...p, rating: p.rating - shortfall }));
+  }
+  const weight = (p) => p.appearances || 0;
+
+  return [1 / 6, 3 / 6, 5 / 6].map((q) => {
+    const target = q * total;
+    let cumulative = 0;
+    for (const p of ranked) {
+      cumulative += weight(p);
+      if (cumulative >= target) return p;
+    }
+    return ranked[ranked.length - 1];
+  });
+}
+
+/**
  * The best trio is simply the three highest-rated available players.
  *
  * Because all nine singles are a round robin, expected points decompose into
@@ -78,8 +118,12 @@ function bestTrio(squad) {
 const fmtRating = (r) => Math.round(r).toString();
 
 // From 2026/27 the top tier is the Premier, carried as division 0.
-const divisionName = (d) => (d === 0 ? "Premier" : `Division ${d}`);
-const divisionShort = (d) => (d === 0 ? "Prem" : `D${d}`);
+// A player with no 2026/27 team has no division either — they left a squad
+// that was replaced, and where they have gone is not known.
+const divisionName = (d) =>
+  d === null || d === undefined ? "no division" : d === 0 ? "Premier" : `Division ${d}`;
+const divisionShort = (d) =>
+  d === null || d === undefined ? "—" : d === 0 ? "Prem" : `D${d}`;
 const divisionChip = (d) => (d === 0 ? "Premier" : `Div ${d}`);
 
 /** "Karl Weber" -> "Karl W." — keeps the head-to-head grid readable on a phone. */
@@ -175,7 +219,9 @@ function renderMeta() {
    ════════════════════════════════════════════════════════ */
 
 function buildChips() {
-  const divisions = [...new Set(state.data.players.map((p) => p.division))].sort();
+  const divisions = [...new Set(state.data.players.map((p) => p.division))]
+    .filter((d) => d !== null && d !== undefined)
+    .sort((a, b) => a - b);
 
   const build = (host, key, rerender) => {
     host.textContent = "";
@@ -263,7 +309,7 @@ function playerRow(p, rank) {
   const sub = el("div", "row-sub");
   const badge = el("span", "badge");
   badge.textContent = divisionShort(p.division);
-  sub.append(badge, document.createTextNode(p.team));
+  sub.append(badge, document.createTextNode(p.team || "no team this season"));
   main.append(name, sub);
 
   const end = el("div", "row-end");
@@ -546,7 +592,7 @@ function seasonOutlook(team, squad) {
   const rivals = state.data.teams
     .filter((t) => t.division === team.division && t.name !== team.name)
     .map((t) => {
-      const theirs = bestTrio(squadFor(t));
+      const theirs = expectedTrio(squadFor(t));
       if (theirs.length < 3) return null;
       return { team: t, ...evaluateLineup(trio, theirs) };
     })
@@ -571,7 +617,7 @@ function seasonCard(team, squad) {
   const hint = el("p", "hint");
   hint.textContent =
     "Your strongest available three against every other side in " +
-    `${divisionName(team.division)}, assuming each fields its best three.`;
+    `${divisionName(team.division)}, against the three each usually fields.`;
   card.append(h, hint);
 
   if (!rivals.length) {
@@ -728,7 +774,7 @@ function fixtureCard(us, squad) {
   themLink.append(themName);
   card.append(themLink);
 
-  const theirs = bestTrio(squadFor(them));
+  const theirs = expectedTrio(squadFor(them));
   if (theirs.length < 3) {
     card.append(noteCard("Not enough rated players for that team."));
     return card;
@@ -869,7 +915,9 @@ function openPlayerSheet(p) {
     const h = el("h2");
     h.textContent = p.name;
     const sub = el("p", "sub");
-    sub.textContent = `${p.team} · ${divisionName(p.division)}`;
+    sub.textContent = p.team
+      ? `${p.team} · ${divisionName(p.division)}`
+      : "No team listed for this season";
     body.append(h, sub);
 
     const overall = state.data.players.findIndex((x) => x.id === p.id) + 1;

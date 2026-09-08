@@ -18,6 +18,14 @@ on:
     # Mondays 07:00 UTC — after the week's fixtures have been posted.
     - cron: "0 7 * * 1"
   workflow_dispatch:
+    inputs:
+      fetch_structure:
+        description: >-
+          Season to fetch the published division structure for (e.g. 2026-27).
+          Leave blank to scrape results as normal. Structure runs commit the
+          team map and skip the deploy, since they change no published data.
+        type: string
+        default: ""
   push:
     branches: [master]
     paths:
@@ -50,10 +58,16 @@ jobs:
       # does not already have it.
       - run: uv sync
 
+      - name: Fetch the published division structure
+        if: inputs.fetch_structure != ''
+        run: uv run python fetch_structure.py "${{ inputs.fetch_structure }}"
+
       - name: Scrape for new results
+        if: inputs.fetch_structure == ''
         run: uv run python main.py --update
 
       - name: Verify the match format still holds
+        if: inputs.fetch_structure == ''
         run: uv run python check_doubles.py
 
       - name: Commit if anything changed
@@ -66,15 +80,26 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add data webapp/static/ratings.json
-            git commit -m "Update ratings from scheduled scrape"
-            git push
+            if [ -n "${{ inputs.fetch_structure }}" ]; then
+              git commit -m "Add published ${{ inputs.fetch_structure }} division structure"
+            else
+              git commit -m "Update ratings from scheduled scrape"
+            fi
+            git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" \
+              "HEAD:${{ github.ref_name }}"
             echo "Committed new results."
           fi
 
   deploy:
     needs: [scrape]
     # Runs after a successful scrape, and on push where scrape is skipped.
-    if: always() && needs.scrape.result != 'failure' && needs.scrape.result != 'cancelled'
+    # A structure fetch publishes nothing, and may be run from a branch, so
+    # it must never deploy over the live site.
+    if: >-
+      always()
+      && inputs.fetch_structure == ''
+      && needs.scrape.result != 'failure'
+      && needs.scrape.result != 'cancelled'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

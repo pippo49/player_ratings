@@ -1,5 +1,11 @@
 """Static overrides for moving from Winter 2025/26 into Winter 2026/27.
 
+The division map is now the published one, fetched by fetch_structure.py into
+data/teams_2026-27.json. The inferred promotion/relegation map below is kept
+only as a fallback, and it was wrong: it relegated Apex 4 to Division 5 where
+the league in fact kept them in Division 4.
+
+
 The 2025/26 season is finished and 2026/27 fixtures are not published yet, so
 there is no new match data to scrape (see NEXT_SEASON.md). Until then, the
 app shows a preseason projection: 2025/26 ratings carried over unchanged as

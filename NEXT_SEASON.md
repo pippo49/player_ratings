@@ -40,7 +40,19 @@ switched back on.
 
 ## Still to do
 
-1. **Fetch the published division map.** `DIVISION_OVERRIDES` falls back to a
+1. ~~**Fetch the published division map.**~~ Done — `data/teams_2026-27.json`
+   holds the real structure, fetched by running the publish workflow with its
+   `fetch_structure` input. 82 teams, 12 in most divisions. Re-run it if the
+   league moves anyone:
+
+   ```bash
+   .venv/bin/python3 fetch_structure.py 2026-27
+   ```
+
+   Or dispatch the workflow with `fetch_structure: 2026-27`, which is how it
+   was collected — the site is reachable from Actions runners.
+
+   **Superseded note.** `DIVISION_OVERRIDES` falls back to a
    map inferred from the 2025/26 final tables by applying promotion and
    relegation. That is known to be wrong: it puts 11 teams in Division 5 where
    the real 2026/27 division has 12. Leagues do not follow the rules exactly —
@@ -56,7 +68,18 @@ switched back on.
    teams, the page layout differs from 2025/26; run `probe_season.py 2026-27`
    to see what the pages actually contain and adjust `fetch_structure.TEAM_LINK`.
 
-2. **Confirm the URL slug.** `_season_slug` assumes `Winter_2026-27`. The probe
+2. **Reconcile renamed teams.** 29 teams from 2025/26 do not appear in the
+   published 2026/27 structure, and many are renames rather than withdrawals —
+   "Clissold 3 Jr" to "Clissold 3", "Fulham Brunswick 4" to
+   "Fulham Brunswick 4 Jr". A renamed team loses its carried roster and starts
+   empty, and its players keep last season's division badge. Apex 1 has gone
+   entirely, which may be a fold or a rename. Worth a pass matching old names
+   to new before the season starts.
+
+3. ~~**Confirm the URL slug.**~~ Confirmed: `Winter_2026-27` is correct, the
+   structure fetch worked against it.
+
+4. **Confirm the URL slug (historical note).** `_season_slug` assumes `Winter_2026-27`. The probe
    will 404 on every section if that is wrong.
 
 3. **Confirm fixtures parse once published.** `_parse_matches` expects the

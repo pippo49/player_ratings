@@ -8,6 +8,7 @@ from models import Match, PlayerResult
 
 # Starting ELO by division: Div 4 = 1500 as baseline, ±100 per division
 DIVISION_SEED = {
+    0: 1900,  # Premier, added for 2026/27 when the league went to eight tiers
     1: 1800,
     2: 1700,
     3: 1600,

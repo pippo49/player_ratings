@@ -25,6 +25,8 @@ from scraper import (
     DIVISION_NAMES,
     DIVISION_NUMBER,
     LEAGUE,
+    PREMIER_DIVISION,
+    PREMIER_SLUGS,
     REQUEST_DELAY,
     _season_slug,
 )
@@ -111,6 +113,20 @@ def fetch_division(season: str, division_name: str) -> list[str]:
 
 def fetch(season: str) -> dict[str, int]:
     structure: dict[str, int] = {}
+
+    # The top tier's slug is not known for certain; take the first that works.
+    print("  Premier")
+    for slug in PREMIER_SLUGS:
+        print(f"    trying slug {slug!r}")
+        teams = fetch_division(season, slug)
+        if teams:
+            print(f"    -> {slug!r} is the Premier slug")
+            for team in teams:
+                structure[team] = PREMIER_DIVISION
+            break
+    else:
+        print("    ! no Premier division found under any candidate slug")
+
     for division_name in DIVISION_NAMES:
         number = DIVISION_NUMBER[division_name]
         print(f"  Division {number} ({division_name})")

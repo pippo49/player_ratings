@@ -19,6 +19,12 @@ LEAGUE = "CentralLondon"
 SEASONS = ["2025-26", "2026-27"]
 CURRENT_SEASON = SEASONS[-1]
 
+# From 2026/27 the league runs eight tiers: a Premier division above
+# Divisions One to Seven (94 entries, max 12 per division). The URL slug for
+# the top tier is not certain, so candidates are tried in order and the first
+# that returns teams wins.
+PREMIER_SLUGS = ["Premier", "Premier_Division", "Premier_Div", "PremierDivision"]
+
 DIVISION_NAMES = [
     "Division_One",
     "Division_Two",
@@ -30,6 +36,13 @@ DIVISION_NAMES = [
 ]
 
 DIVISION_NUMBER = {name: i + 1 for i, name in enumerate(DIVISION_NAMES)}
+
+# Premier sits above Division One, so it numbers below it. Zero keeps the
+# existing 1-7 numbering meaningful for 2025/26 data, where those numbers
+# referred to a seven-tier league.
+PREMIER_DIVISION = 0
+for _slug in PREMIER_SLUGS:
+    DIVISION_NUMBER[_slug] = PREMIER_DIVISION
 
 REQUEST_DELAY = 1.0  # polite delay between requests (seconds)
 

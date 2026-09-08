@@ -11,8 +11,13 @@ from bs4 import BeautifulSoup, Tag
 from models import Match, PlayerResult, TeamResult
 
 BASE_URL = "https://www.tabletennis365.com"
-SEASON = "Winter_2025-26"
 LEAGUE = "CentralLondon"
+
+# Seasons the app knows about, oldest first. The last is the current one:
+# ratings carry forward from each season into the next. Add the new season
+# here when its pages go up on tabletennis365.
+SEASONS = ["2025-26", "2026-27"]
+CURRENT_SEASON = SEASONS[-1]
 
 DIVISION_NAMES = [
     "Division_One",
@@ -29,8 +34,13 @@ DIVISION_NUMBER = {name: i + 1 for i, name in enumerate(DIVISION_NAMES)}
 REQUEST_DELAY = 1.0  # polite delay between requests (seconds)
 
 
-def _fixtures_url(division: str) -> str:
-    return f"{BASE_URL}/{LEAGUE}/Fixtures/{SEASON}/{division}"
+def _season_slug(season: str) -> str:
+    """"2026-27" -> "Winter_2026-27", the form used in fixture URLs."""
+    return f"Winter_{season}"
+
+
+def _fixtures_url(division: str, season: str) -> str:
+    return f"{BASE_URL}/{LEAGUE}/Fixtures/{_season_slug(season)}/{division}"
 
 
 def _fetch_html(url: str) -> str:
@@ -85,7 +95,7 @@ def _parse_team_side(side_div: Tag) -> TeamResult | None:
     return TeamResult(name=team_name, players=players[:3], total_score=total_score)
 
 
-def _parse_matches(html: str, division: int) -> list[Match]:
+def _parse_matches(html: str, division: int, season: str) -> list[Match]:
     """Parse all played matches from a division fixtures page."""
     soup = BeautifulSoup(html, "html.parser")
     matches: list[Match] = []
@@ -117,51 +127,79 @@ def _parse_matches(html: str, division: int) -> list[Match]:
         if home is None or away is None:
             continue
 
-        match = Match(division=division, date=match_date, home=home, away=away, match_id=match_id)
+        match = Match(
+            division=division, date=match_date, home=home, away=away,
+            match_id=match_id, season=season,
+        )
         if match.played:
             matches.append(match)
 
     return matches
 
 
-def scrape_all_divisions(
-    verbose: bool = True,
-    progress: Callable[[int, int, int | None, str | None], None] | None = None,
-) -> list[Match]:
-    """Fetch and parse fixtures for all 7 divisions. Returns played matches only.
+def scrape_division_page(division_name: str, division: int, season: str) -> list[Match]:
+    """Fetch and parse one division's fixtures page for one season."""
+    html = _fetch_html(_fixtures_url(division_name, season))
+    matches = _parse_matches(html, division=division, season=season)
+    return matches
 
-    *progress*, if given, is called once per division as
-    ``progress(division, total_divisions, matches_parsed, error)`` — with
-    ``matches_parsed`` None and ``error`` set when that division failed. It
-    lets callers (such as the web app) report progress somewhere other than
-    stdout while the scrape is still running.
-    """
+
+def scrape_season(
+    season: str,
+    verbose: bool = True,
+    progress: Callable[[str, int, int, int | None, str | None], None] | None = None,
+) -> list[Match]:
+    """Fetch and parse fixtures for all 7 divisions of one season."""
     all_matches: list[Match] = []
     total = len(DIVISION_NAMES)
 
     for div_name in DIVISION_NAMES:
         div_num = DIVISION_NUMBER[div_name]
-        url = _fixtures_url(div_name)
+        url = _fixtures_url(div_name, season)
         if verbose:
-            print(f"Fetching Division {div_num} ({div_name})… ", end="", flush=True)
+            print(f"Fetching {season} Division {div_num} ({div_name})… ", end="", flush=True)
 
         try:
-            html = _fetch_html(url)
-            matches = _parse_matches(html, division=div_num)
+            matches = scrape_division_page(div_name, div_num, season)
             all_matches.extend(matches)
             if verbose:
                 print(f"{len(matches)} matches parsed.")
             if progress:
-                progress(div_num, total, len(matches), None)
+                progress(season, div_num, total, len(matches), None)
         except requests.HTTPError as e:
-            print(f"HTTP error fetching Division {div_num} ({url}): {e}")
+            # A season whose pages are not up yet 404s; that is not an error
+            # worth shouting about, just nothing to fetch.
+            note = "not published yet" if e.response is not None and e.response.status_code == 404 else str(e)
+            print(f"Division {div_num} ({season}): {note}")
             if progress:
-                progress(div_num, total, None, f"HTTP error: {e}")
+                progress(season, div_num, total, None, note)
         except Exception as e:
-            print(f"Error fetching Division {div_num} ({url}): {type(e).__name__}: {e}")
+            print(f"Error fetching {season} Division {div_num} ({url}): {type(e).__name__}: {e}")
             if progress:
-                progress(div_num, total, None, f"{type(e).__name__}: {e}")
+                progress(season, div_num, total, None, f"{type(e).__name__}: {e}")
 
         time.sleep(REQUEST_DELAY)
 
+    return all_matches
+
+
+def scrape_all_divisions(
+    verbose: bool = True,
+    progress: Callable[[str, int, int, int | None, str | None], None] | None = None,
+    seasons: list[str] | None = None,
+) -> list[Match]:
+    """Fetch and parse fixtures for every division of every known season.
+
+    Defaults to every season in SEASONS, so a run picks up both last
+    season's completed results and whatever the new one has so far.
+
+    *progress*, if given, is called once per division as
+    ``progress(season, division, total_divisions, matches_parsed, error)`` —
+    with ``matches_parsed`` None and ``error`` set when that division failed.
+    It lets callers (such as the web app) report progress somewhere other
+    than stdout while the scrape is still running.
+    """
+    all_matches: list[Match] = []
+    for season in (seasons or SEASONS):
+        all_matches.extend(scrape_season(season, verbose=verbose, progress=progress))
     return all_matches

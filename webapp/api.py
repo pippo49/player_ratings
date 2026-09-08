@@ -5,13 +5,16 @@ the server only ever has to hand over one document: every rated player, every
 team roster, and a little metadata about the data set.
 """
 
+import json
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 from elo import MIN_MATCHES, PlayerRating, calculate_ratings
 from models import Match
+from scraper import CURRENT_SEASON
 
-SEASON_LABEL = "Winter 2025/26"
+OVERRIDE_DIR = Path(__file__).resolve().parent.parent / "data"
 
 # A team match is 9 singles plus 1 doubles, so 10 points are on offer.
 SINGLES_PER_MATCH = 9
@@ -47,28 +50,117 @@ def _doubles_report(matches: list[Match]) -> dict:
     }
 
 
-def _rosters(matches: list[Match]) -> dict[str, dict[str, int]]:
-    """Return {team_name: {player_id: appearances}} across all matches.
+def season_label(season: str) -> str:
+    """"2026-27" -> "Winter 2026/27"."""
+    start, end = season.split("-")
+    return f"Winter {start}/{end}"
 
-    A player can turn out for more than one team over a season, so rosters are
-    built from the matches themselves rather than from each player's single
-    "most played for" team.
+
+def load_division_overrides(season: str) -> dict[str, int]:
+    """Load a hand-or-scraped map of {team name: division} for *season*.
+
+    Before a season's fixtures are published there are no matches to infer
+    structure from, but the divisions and teams are already known. This file
+    carries that: `data/teams_2026-27.json`, shaped
+    ``{"season": "2026-27", "teams": {"Apex 4": 3, ...}}``.
+
+    Returns an empty dict when the file is absent, which is the normal state
+    once real fixtures exist.
     """
-    rosters: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    path = OVERRIDE_DIR / f"teams_{season}.json"
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text())
+    return {name: int(div) for name, div in data.get("teams", {}).items()}
+
+
+def _seasons_desc(matches: list[Match]) -> list[str]:
+    """Seasons present in the data, most recent first."""
+    return sorted({m.season for m in matches}, reverse=True)
+
+
+def _rosters_by_season(matches: list[Match]) -> dict[str, dict[str, dict[str, int]]]:
+    """{season: {team: {player_id: appearances}}} across all matches."""
+    out: dict[str, dict[str, dict[str, int]]] = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(int))
+    )
     for match in matches:
         for side in (match.home, match.away):
             for player in side.players:
-                rosters[side.name][player.player_id] += 1
-    return {team: dict(players) for team, players in rosters.items()}
+                out[match.season][side.name][player.player_id] += 1
+    return {s: {t: dict(p) for t, p in teams.items()} for s, teams in out.items()}
 
 
-def _team_divisions(matches: list[Match]) -> dict[str, int]:
-    """Return {team_name: division it has played most matches in}."""
-    counts: dict[str, Counter] = defaultdict(Counter)
+def _divisions_by_season(matches: list[Match]) -> dict[str, dict[str, int]]:
+    """{season: {team: division it played most in that season}}."""
+    counts: dict[str, dict[str, Counter]] = defaultdict(lambda: defaultdict(Counter))
     for match in matches:
-        counts[match.home.name][match.division] += 1
-        counts[match.away.name][match.division] += 1
-    return {team: c.most_common(1)[0][0] for team, c in counts.items()}
+        counts[match.season][match.home.name][match.division] += 1
+        counts[match.season][match.away.name][match.division] += 1
+    return {
+        season: {team: c.most_common(1)[0][0] for team, c in teams.items()}
+        for season, teams in counts.items()
+    }
+
+
+def _resolve_teams(
+    matches: list[Match],
+    ratings: dict[str, PlayerRating],
+    season: str,
+) -> list[dict]:
+    """Build the team list for *season*, carrying rosters forward where needed.
+
+    A team that has already played this season uses this season's roster and
+    division. One that has not — the normal case before fixtures start —
+    keeps the squad it last fielded, and takes its division from the override
+    file if there is one. Each team says which season its roster came from so
+    the app can be honest about it.
+    """
+    rosters = _rosters_by_season(matches)
+    divisions = _divisions_by_season(matches)
+    overrides = load_division_overrides(season)
+    older = [s for s in _seasons_desc(matches) if s != season]
+
+    names = set(overrides) | set(rosters.get(season, {}))
+    if not overrides:
+        # No structure published yet — fall back to whoever played last.
+        for s in older:
+            names |= set(rosters.get(s, {}))
+            break
+
+    teams = []
+    for name in sorted(names):
+        roster = rosters.get(season, {}).get(name)
+        roster_season = season
+        if not roster:
+            for s in older:
+                if name in rosters.get(s, {}):
+                    roster, roster_season = rosters[s][name], s
+                    break
+        if not roster:
+            continue
+
+        division = (
+            overrides.get(name)
+            or divisions.get(season, {}).get(name)
+            or divisions.get(roster_season, {}).get(name)
+        )
+        if not division:
+            continue
+
+        members = [pid for pid in roster if pid in ratings]
+        if not members:
+            continue
+        members.sort(key=lambda pid: ratings[pid].rating, reverse=True)
+
+        teams.append({
+            "name": name,
+            "division": division,
+            "roster_season": roster_season,
+            "carried": roster_season != season,
+            "players": [{"id": pid, "appearances": roster[pid]} for pid in members],
+        })
+    return teams
 
 
 def _player_dict(pr: PlayerRating) -> dict:
@@ -94,35 +186,30 @@ def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""
     ratings = calculate_ratings(matches)
     doubles = _doubles_report(matches)
-    rosters = _rosters(matches)
-    divisions = _team_divisions(matches)
+    season = CURRENT_SEASON
 
-    players = sorted(
-        (_player_dict(pr) for pr in ratings.values()),
-        key=lambda p: p["rating"],
-        reverse=True,
-    )
+    teams = _resolve_teams(matches, ratings, season)
 
-    teams = []
-    for team, roster in sorted(rosters.items()):
-        member_ids = [pid for pid in roster if pid in ratings]
-        if not member_ids:
-            continue
-        member_ids.sort(key=lambda pid: ratings[pid].rating, reverse=True)
-        teams.append({
-            "name": team,
-            "division": divisions.get(team, 0),
-            "players": [
-                {"id": pid, "appearances": roster[pid]}
-                for pid in member_ids
-            ],
-        })
+    # A player's division follows their team. Without this, a promoted side
+    # would show its new division while its players still showed the old one.
+    team_division = {t["name"]: t["division"] for t in teams}
+    players = []
+    for pr in ratings.values():
+        entry = _player_dict(pr)
+        entry["division"] = team_division.get(pr.team, pr.division)
+        players.append(entry)
+    players.sort(key=lambda p: p["rating"], reverse=True)
+    carried = [t["name"] for t in teams if t["carried"]]
 
     last = _last_played(matches)
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "season": SEASON_LABEL,
+        "season": season_label(season),
+        "season_id": season,
+        "seasons": sorted({m.season for m in matches}),
+        "carried_rosters": len(carried),
         "match_count": len(matches),
+        "current_season_matches": sum(1 for m in matches if m.season == season),
         "player_count": len(players),
         "last_match_date": last.isoformat() if last else None,
         "min_matches": MIN_MATCHES,

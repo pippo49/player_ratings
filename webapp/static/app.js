@@ -135,8 +135,16 @@ function renderMeta() {
     $("#meta").textContent = "No results downloaded yet";
     return;
   }
-  const parts = [d.season, `${d.match_count} matches`, `${d.player_count} players`];
-  if (d.last_match_date) parts.push(`to ${formatDate(d.last_match_date)}`);
+  const parts = [d.season];
+  if (d.current_season_matches) {
+    parts.push(`${d.current_season_matches} matches`);
+    if (d.last_match_date) parts.push(`to ${formatDate(d.last_match_date)}`);
+  } else {
+    // Pre-season: nothing has been played yet, so say where the numbers came from.
+    const previous = (d.seasons || []).filter((s) => s !== d.season_id).pop();
+    parts.push(previous ? `ratings from ${previous.replace("-", "/")}` : "no results yet");
+  }
+  parts.push(`${d.player_count} players`);
   if (!d.live && d.generated_at) parts.push(`updated ${formatDate(d.generated_at)}`);
   $("#meta").textContent = parts.join(" · ");
 }
@@ -439,11 +447,15 @@ function introCard() {
   const card = el("div", "card");
   const h = el("h2");
   h.textContent = "Pick the team you select for";
+  const d = state.data;
+  const previous = (d.seasons || []).filter((s) => s !== d.season_id).pop();
   const p = el("p", "hint");
-  p.textContent =
-    `Ratings carry over from ${state.data.season}, so they are the best guide to ` +
-    "form going into 2026/27. Choose your team and anyone you can call up from " +
-    "a lower club side, and every fixture is scored over all 10 points.";
+  p.textContent = d.current_season_matches
+    ? "Choose your team and anyone you can call up from a lower club side, and " +
+      "every fixture is scored across all nine singles."
+    : `No ${d.season} results yet, so ratings and squads are carried from ` +
+      `${previous ? previous.replace("-", "/") : "last season"}. Pick your team to ` +
+      "see how the new division looks on last season's form.";
   card.append(h, p);
   return card;
 }
@@ -734,7 +746,13 @@ function squadCard(team, pool) {
   const h = el("h2");
   h.textContent = "Availability";
   const hint = el("p", "hint");
-  hint.textContent = "Untick anyone who cannot play.";
+  const carried = [...new Set(pool.map((p) => p.from))]
+    .map((name) => state.teams.get(name))
+    .filter((t) => t && t.carried);
+  hint.textContent = carried.length
+    ? `Untick anyone who cannot play. Squads are last season's — ` +
+      `${carried[0].roster_season.replace("-", "/")} — until new results come in.`
+    : "Untick anyone who cannot play.";
   card.append(h, hint);
 
   const box = el("div", "squad");

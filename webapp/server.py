@@ -109,9 +109,11 @@ class UpdateJob:
         try:
             existing = store.matches
             full = mode == "refresh" or not existing
+            from scraper import SEASONS
+            seasons = ", ".join(SEASONS)
             self._say(
-                "Re-downloading every division…" if full
-                else "Checking all divisions for new results…"
+                f"Re-downloading every division ({seasons})…" if full
+                else f"Checking all divisions for new results ({seasons})…"
             )
             scraped = self._scrape()
 
@@ -144,12 +146,14 @@ class UpdateJob:
 
     def _scrape(self) -> list:
         """Scrape every division, reporting progress one division at a time."""
-        def on_division(div: int, total: int, parsed: int | None, error: str | None) -> None:
+        def on_division(
+            season: str, div: int, total: int, parsed: int | None, error: str | None
+        ) -> None:
             if error:
                 brief = error if len(error) <= 90 else f"{error[:87]}…"
-                self._say(f"Division {div} of {total} failed — {brief}")
+                self._say(f"{season} Division {div} of {total} — {brief}")
             else:
-                self._say(f"Division {div} of {total} — {parsed} matches")
+                self._say(f"{season} Division {div} of {total} — {parsed} matches")
 
         matches = scrape_all_divisions(verbose=False, progress=on_division)
         if not matches:

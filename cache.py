@@ -19,6 +19,7 @@ def _match_to_dict(m: Match) -> dict:
 
     return {
         "match_id": m.match_id,
+        "season": m.season,
         "division": m.division,
         "date": m.date.isoformat() if m.date else None,
         "home": _team(m.home),
@@ -35,6 +36,7 @@ def _dict_to_match(d: dict) -> Match:
 
     return Match(
         match_id=d.get("match_id", ""),
+        season=d.get("season", "2025-26"),
         division=d["division"],
         date=date.fromisoformat(d["date"]) if d.get("date") else None,
         home=_team(d["home"]),
@@ -59,16 +61,21 @@ def load_matches() -> list[Match] | None:
 
 
 def merge_matches(existing: list[Match], new: list[Match]) -> tuple[list[Match], int]:
-    """Merge new matches into existing, deduplicating by match_id.
+    """Merge new matches into existing, deduplicating by (season, match_id).
+
+    The season is part of the key because match IDs are only known to be
+    unique within a season — if they restart each year, keying on the ID
+    alone would silently drop a new season's matches as duplicates.
 
     Returns (merged list, count of newly added matches).
     """
-    seen_ids = {m.match_id for m in existing if m.match_id}
+    seen = {(m.season, m.match_id) for m in existing if m.match_id}
     added = 0
     merged = list(existing)
     for m in new:
-        if m.match_id and m.match_id not in seen_ids:
+        key = (m.season, m.match_id)
+        if m.match_id and key not in seen:
             merged.append(m)
-            seen_ids.add(m.match_id)
+            seen.add(key)
             added += 1
     return merged, added

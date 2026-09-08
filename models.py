@@ -23,6 +23,9 @@ class Match:
     home: TeamResult
     away: TeamResult
     match_id: str = ""  # unique ID from MatchCard URL
+    # Seasons run "2025-26", "2026-27". Defaulted so caches written before
+    # the app handled more than one season still load.
+    season: str = "2025-26"
 
     @property
     def played(self) -> bool:

@@ -169,12 +169,21 @@ you have are enough*, which is what the season outlook answers.
 - Ratings marked `*` come from fewer than 15 singles and are less certain.
 - Nothing accounts for league rules on how often a player may be called up.
 
-### Planning for 2026/27
+### Seasons
 
-Ratings carry over from Winter 2025/26 — the last full season of results — so
-the Select tab is usable for the season starting in October. Team and division
-labels are also from 2025/26, so a team that has moved up or down still shows
-its old division until the new season's results are scraped.
+Ratings carry across seasons: each is converged on its own, seeded from the
+rating each player finished the previous one on. A player who sits a season out
+keeps their rating; a new player gets their division's seed. Match counts
+accumulate, so nobody reverts to provisional at a season boundary.
+
+`scraper.SEASONS` lists the seasons to fetch, oldest first, with the last being
+current. A season whose pages are not up yet is reported as "not published yet"
+rather than as an error.
+
+Before fixtures are published there are no matches to infer structure from, so
+`data/teams_<season>.json` can carry the division and team lists. Teams that
+have not played yet keep the squad they last fielded, and the app says so. See
+`NEXT_SEASON.md` for the format and the remaining work.
 
 ## Command line usage
 
@@ -279,6 +288,7 @@ Because early matches in the season are evaluated against division-seeded rating
 - `models.py` — data classes (`Match`, `TeamResult`, `PlayerResult`)
 - `cache.py` — JSON serialisation and match deduplication
 - `check_doubles.py` — verifies the doubles point can be recovered from a scrape
+- `probe_season.py` — reports what a season's pages contain, for a new season
 - `webapp/` — the web app
   - `server.py` — stdlib HTTP server for local use and scraping
   - `api.py` — builds the single payload the front end runs on
@@ -287,7 +297,7 @@ Because early matches in the season are evaluated against division-seeded rating
     `sw.js`, `manifest.json`, icons and `ratings.json` (no build step)
 - `data/matches.json` — scraped match data, committed
 - `.github/workflows/publish.yml` — weekly scrape and GitHub Pages deploy
-- `NEXT_SEASON.md` — what needs changing when the 2026/27 fixtures go up
+- `NEXT_SEASON.md` — how multiple seasons work, and what is still outstanding
 
 The web app adds no dependencies: the server is `http.server` from the standard
 library, and the front end is plain JavaScript. Searching, filtering and the

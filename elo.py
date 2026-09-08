@@ -52,33 +52,41 @@ def _expected_score(rating: float, opponent_rating: float) -> float:
     return 1.0 / (1.0 + 10.0 ** ((opponent_rating - rating) / 400.0))
 
 
-def _seed_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
-    """Build initial ratings seeded by the division each player has played most in."""
+def _seed_ratings(
+    matches: list[Match],
+    carried: dict[str, PlayerRating] | None = None,
+) -> dict[str, PlayerRating]:
+    """Build starting ratings for the players appearing in *matches*.
+
+    A player carried over from a previous season starts from the rating they
+    finished it on. Anyone new starts from the seed for the division they
+    play most in. Team and division are always taken from *these* matches,
+    so labels reflect the season being rated rather than a player's history.
+    """
+    carried = carried or {}
+
     # First pass: count matches per division and per team for each player
     div_counts: dict[str, Counter] = {}   # player_id -> Counter of divisions
     team_counts: dict[str, Counter] = {}  # player_id -> Counter of team names
     names: dict[str, str] = {}
 
     for match in matches:
-        for player in match.home.players:
-            names[player.player_id] = player.name
-            div_counts.setdefault(player.player_id, Counter())[match.division] += 1
-            team_counts.setdefault(player.player_id, Counter())[match.home.name] += 1
-        for player in match.away.players:
-            names[player.player_id] = player.name
-            div_counts.setdefault(player.player_id, Counter())[match.division] += 1
-            team_counts.setdefault(player.player_id, Counter())[match.away.name] += 1
+        for side in (match.home, match.away):
+            for player in side.players:
+                names[player.player_id] = player.name
+                div_counts.setdefault(player.player_id, Counter())[match.division] += 1
+                team_counts.setdefault(player.player_id, Counter())[side.name] += 1
 
-    # Build ratings seeded by most-played division
     ratings: dict[str, PlayerRating] = {}
     for pid, name in names.items():
         most_played_div = div_counts[pid].most_common(1)[0][0]
         most_played_team = team_counts[pid].most_common(1)[0][0]
-        seed = DIVISION_SEED[most_played_div]
+        previous = carried.get(pid)
+        seed = previous.rating if previous else float(DIVISION_SEED[most_played_div])
         ratings[pid] = PlayerRating(
             name=name,
             player_id=pid,
-            rating=float(seed),
+            rating=seed,
             division=most_played_div,
             team=most_played_team,
         )
@@ -88,6 +96,8 @@ def _seed_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
 def _run_single_pass(
     matches: list[Match],
     ratings: dict[str, PlayerRating],
+    seeds: dict[str, float],
+    experience: dict[str, int],
 ) -> dict[str, float]:
     """
     Process all matches once, updating ratings in place.
@@ -95,6 +105,11 @@ def _run_single_pass(
     Stats (matches_played, singles_won, singles_played) are reset at the
     start of each pass so the K-factor decision reflects only matches
     processed so far within this replay — not cumulative across iterations.
+    *experience* carries a player's team matches from previous seasons, so
+    someone already established does not go back to the high K-factor.
+
+    Ratings are reset to *seeds* rather than to the division baseline, which
+    is what lets a season start from the previous season's final ratings.
 
     Each player's result is compared against each individual opponent's
     rating. When a team has fewer than 3 players, walkover wins are
@@ -102,15 +117,11 @@ def _run_single_pass(
 
     Returns a dict of {player_id: new_rating} so callers can measure convergence.
     """
-    for r in ratings.values():
+    for pid, r in ratings.items():
         r.matches_played = 0
         r.singles_won = 0
         r.singles_played = 0
-
-    # Reset ratings to division seed at the start of each full pass so the
-    # iterative calculation converges from a clean baseline each time.
-    for pr in ratings.values():
-        pr.rating = float(DIVISION_SEED[pr.division])
+        r.rating = seeds[pid]
 
     # Replay matches in chronological order so the final pass gives
     # temporally-ordered ratings (latest form matters most).
@@ -141,7 +152,8 @@ def _run_single_pass(
             )
             actual_frac = real_wins / n_opponents
             expected_frac = total_expected / n_opponents
-            k = K_NEW if pr.matches_played < K_THRESHOLD else K_ESTABLISHED
+            played = experience.get(player.player_id, 0) + pr.matches_played
+            k = K_NEW if played < K_THRESHOLD else K_ESTABLISHED
             pr.rating += k * (actual_frac - expected_frac)
 
             pr.matches_played += 1
@@ -157,36 +169,68 @@ def _run_single_pass(
     return {pid: pr.rating for pid, pr in ratings.items()}
 
 
+def _rate_season(
+    matches: list[Match],
+    carried: dict[str, PlayerRating],
+) -> dict[str, PlayerRating]:
+    """Converge ratings over one season's matches, starting from *carried*."""
+    ratings = _seed_ratings(matches, carried)
+    seeds = {pid: pr.rating for pid, pr in ratings.items()}
+    experience = {
+        pid: carried[pid].matches_played for pid in ratings if pid in carried
+    }
+
+    prev_ratings = dict(seeds)
+    for _ in range(MAX_ITERATIONS):
+        new_ratings = _run_single_pass(matches, ratings, seeds, experience)
+        max_change = max(
+            abs(new_ratings[pid] - prev_ratings[pid]) for pid in new_ratings
+        )
+        prev_ratings = new_ratings.copy()
+        if max_change < CONVERGENCE_THRESHOLD:
+            break
+
+    # Match counts are a career total, so a player's rating stays "reliable"
+    # across a season boundary rather than resetting to provisional.
+    for pid, pr in ratings.items():
+        previous = carried.get(pid)
+        if previous:
+            pr.matches_played += previous.matches_played
+            pr.singles_won += previous.singles_won
+            pr.singles_played += previous.singles_played
+    return ratings
+
+
 def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
     """
-    Compute ELO ratings for all players using iterative convergence.
+    Compute ELO ratings for all players, season by season.
 
-    Algorithm:
-      1. Seed all players with their division's starting rating.
-      2. Repeatedly replay all matches, updating ratings each pass.
+    Each season is converged on its own, seeded from the ratings players
+    finished the previous season on. That keeps last season's standings as
+    the starting point while letting new results move them, rather than
+    replaying every season from division seeds each time — which would give
+    old results permanent weight and let a promotion retroactively rewrite a
+    player's history.
+
+    Within a season the algorithm is:
+      1. Seed each player from their carried-over rating, or their
+         division's starting rating if they are new.
+      2. Repeatedly replay the season's matches, updating ratings each pass.
       3. Stop when the maximum rating change between passes falls below
          CONVERGENCE_THRESHOLD, or after MAX_ITERATIONS.
 
-    The iterative approach compensates for the ordering problem: early
-    matches use division seeds, but after several passes the ratings reflect
-    actual head-to-head performance across all opponents.
+    Players who do not appear in a later season keep the rating, team and
+    division they finished their last one on.
     """
-    ratings = _seed_ratings(matches)
+    seasons = sorted({m.season for m in matches})
+    ratings: dict[str, PlayerRating] = {}
 
-    prev_ratings: dict[str, float] = {pid: pr.rating for pid, pr in ratings.items()}
-
-    for _ in range(MAX_ITERATIONS):
-        new_ratings = _run_single_pass(matches, ratings)
-
-        max_change = max(
-            abs(new_ratings[pid] - prev_ratings.get(pid, DIVISION_SEED.get(ratings[pid].division, 1500)))
-            for pid in new_ratings
-        )
-
-        prev_ratings = new_ratings.copy()
-
-        if max_change < CONVERGENCE_THRESHOLD:
-            break
+    for season in seasons:
+        season_matches = [m for m in matches if m.season == season]
+        if not season_matches:
+            continue
+        # Players who sat the season out keep their existing entry.
+        ratings = {**ratings, **_rate_season(season_matches, ratings)}
 
     return ratings
 

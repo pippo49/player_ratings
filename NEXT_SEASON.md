@@ -40,20 +40,21 @@ switched back on.
 
 ## Still to do
 
-1. **Replace the inferred division map with the published one.**
-   `DIVISION_OVERRIDES` was computed from the 2025/26 final tables by applying
-   promotion and relegation rules. The real 2026/27 divisions are now published,
-   so the two should be reconciled — the league does not always follow the
-   rules exactly (withdrawals, mergers, teams added). `probe_season.py` reports
-   what the new pages contain:
+1. **Fetch the published division map.** `DIVISION_OVERRIDES` falls back to a
+   map inferred from the 2025/26 final tables by applying promotion and
+   relegation. That is known to be wrong: it puts 11 teams in Division 5 where
+   the real 2026/27 division has 12. Leagues do not follow the rules exactly —
+   withdrawals, mergers and new teams all move sides around.
 
    ```bash
-   .venv/bin/python3 probe_season.py 2026-27
-   .venv/bin/python3 probe_season.py 2026-27 Division_Five   # just one
+   .venv/bin/python3 fetch_structure.py 2026-27
+   git add data/teams_2026-27.json && git commit -m "Add published 2026/27 divisions"
    ```
 
-   It tries the Fixtures, Tables and Results sections and prints HTTP status,
-   page title, and any team links found.
+   That writes `data/teams_2026-27.json`, which supersedes the inferred map
+   entirely — including dropping teams that have withdrawn. If it finds no
+   teams, the page layout differs from 2025/26; run `probe_season.py 2026-27`
+   to see what the pages actually contain and adjust `fetch_structure.TEAM_LINK`.
 
 2. **Confirm the URL slug.** `_season_slug` assumes `Winter_2026-27`. The probe
    will 404 on every section if that is wrong.

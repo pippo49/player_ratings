@@ -17,7 +17,13 @@ Roster changes are only applied where actually known. Right now that is just
 Apex 4, whose 2026/27 squad is confirmed.
 """
 
+import json
+from pathlib import Path
+
 SEASON_LABEL = "Winter 2026/27"
+SEASON = "2026-27"
+
+_DATA_DIR = Path(__file__).resolve().parent / "data"
 
 # A player who turned out more than this many times for a club-mate team in
 # a higher division (lower division number) than another team they also
@@ -26,9 +32,25 @@ SEASON_LABEL = "Winter 2026/27"
 # automatically to every team, not just the ones in ROSTER_OVERRIDES below.
 CALL_UP_PROMOTION_THRESHOLD = 4
 
-# {team_name: new_division}, computed from the Winter 2025/26 final tables.
-# Only teams whose division actually changes are listed.
-DIVISION_OVERRIDES = {
+def _published_divisions() -> dict[str, int]:
+    """The real {team: division} map for the season, if it has been fetched.
+
+    Written by fetch_structure.py from the league's own pages. It supersedes
+    the inferred map below entirely — the league does not always follow
+    promotion and relegation exactly, as withdrawals, mergers and new teams
+    all move sides around.
+    """
+    path = _DATA_DIR / f"teams_{SEASON}.json"
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text())
+    return {name: int(division) for name, division in data.get("teams", {}).items()}
+
+
+# {team_name: new_division}, inferred from the Winter 2025/26 final tables by
+# applying promotion and relegation. A fallback: superseded the moment
+# fetch_structure.py has written the published structure.
+_INFERRED_DIVISIONS = {
     "Morpeth 6": 2,
     "Morpeth 5": 2,
     "Flick TTC 1": 1,
@@ -54,6 +76,10 @@ DIVISION_OVERRIDES = {
     "Fusion 10 Jr": 6,
     "Flick TTC 4": 6,
 }
+
+# The published structure wins where it exists.
+DIVISION_OVERRIDES = _published_divisions() or _INFERRED_DIVISIONS
+DIVISIONS_ARE_PUBLISHED = bool(_published_divisions())
 
 # {team_name: [player entries]}. A listed team's roster is replaced entirely
 # (not merged with its 2025/26 roster). Each entry is either:

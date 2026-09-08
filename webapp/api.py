@@ -14,6 +14,7 @@ from scraper import CURRENT_SEASON
 from season_transition import (
     CALL_UP_PROMOTION_THRESHOLD,
     DIVISION_OVERRIDES,
+    DIVISIONS_ARE_PUBLISHED,
     ROSTER_OVERRIDES,
     SEASON_LABEL,
 )
@@ -162,6 +163,14 @@ def _apply_season_overrides(
             ratings[pid].team = team
 
     divisions.update(DIVISION_OVERRIDES)
+
+    # A published structure is the whole league, so a team missing from it has
+    # withdrawn or merged. Drop it, rather than leaving it in last season's
+    # division to distort the table it is no longer part of.
+    if DIVISIONS_ARE_PUBLISHED:
+        for team in [t for t in rosters if t not in DIVISION_OVERRIDES]:
+            del rosters[team]
+            divisions.pop(team, None)
 
     for team, roster in ROSTER_OVERRIDES.items():
         new_division = divisions.get(team, 0)

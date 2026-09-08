@@ -19,6 +19,10 @@ from season_transition import (
     SEASON_LABEL,
 )
 
+# Where a team's division genuinely is not known. Mid-table rather than 0,
+# which from 2026/27 means the Premier.
+UNKNOWN_DIVISION = 4
+
 # A team match is 9 singles plus 1 doubles, so 10 points are on offer.
 SINGLES_PER_MATCH = 9
 POINTS_PER_MATCH = 10
@@ -173,7 +177,9 @@ def _apply_season_overrides(
             divisions.pop(team, None)
 
     for team, roster in ROSTER_OVERRIDES.items():
-        new_division = divisions.get(team, 0)
+        # Division 0 is the Premier from 2026/27, so it cannot double as an
+        # "unknown" fallback — that would seed a new player at Premier level.
+        new_division = divisions.get(team, UNKNOWN_DIVISION)
         rosters[team] = {entry["id"]: 0 for entry in roster}
         for entry in roster:
             if entry.get("new"):
@@ -228,12 +234,15 @@ def build_payload(matches: list[Match]) -> dict:
     teams = []
     for team, roster in sorted(rosters.items()):
         member_ids = [pid for pid in roster if pid in ratings]
-        if not member_ids:
+        division = divisions.get(team)
+        # A team of no known division cannot be placed, and defaulting it to 0
+        # would file it under the Premier.
+        if not member_ids or division is None:
             continue
         member_ids.sort(key=lambda pid: ratings[pid].rating, reverse=True)
         teams.append({
             "name": team,
-            "division": divisions.get(team, 0),
+            "division": division,
             "players": [
                 {"id": pid, "appearances": roster[pid]}
                 for pid in member_ids

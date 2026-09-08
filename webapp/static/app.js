@@ -10,15 +10,19 @@ const state = {
   teams: new Map(),     // name -> team
   view: "players",
   playerQuery: "Philip Parsons",
-  playerDiv: 5,          // 0 = all
+  // Derived from the default team once data loads — a hardcoded number goes
+  // stale the moment the team is promoted or relegated, and an empty list is
+  // the first thing you would see.
+  playerDiv: null,       // null = all divisions
   reliableOnly: false,
   teamQuery: "",
-  teamDiv: 5,
+  teamDiv: null,         // null = all divisions
   us: "Apex 4",
   them: "",
   callUp: new Set(),        // lower club sides players can be drawn from
   unavailable: new Set(),   // player ids ticked out for this fixture
   target: 7,                // points per match needed for promotion
+  divisionsPinned: false,   // true once a division chip has been clicked
   polling: null,
 };
 
@@ -73,6 +77,11 @@ function bestTrio(squad) {
 
 const fmtRating = (r) => Math.round(r).toString();
 
+// From 2026/27 the top tier is the Premier, carried as division 0.
+const divisionName = (d) => (d === 0 ? "Premier" : `Division ${d}`);
+const divisionShort = (d) => (d === 0 ? "Prem" : `D${d}`);
+const divisionChip = (d) => (d === 0 ? "Premier" : `Div ${d}`);
+
 /** "Karl Weber" -> "Karl W." — keeps the head-to-head grid readable on a phone. */
 function shortName(name) {
   const parts = name.trim().split(/\s+/);
@@ -121,6 +130,13 @@ async function loadRatings() {
   state.teams = new Map(data.teams.map((t) => [t.name, t]));
 
   $("#min-matches-label").textContent = `(${data.min_matches}+ matches)`;
+
+  // Open on the division the default team is actually in this season.
+  if (!state.divisionsPinned) {
+    const home = state.teams.get(state.us);
+    state.playerDiv = home ? home.division : null;
+    state.teamDiv = state.playerDiv;
+  }
   // Scraping needs the local server; a hosted snapshot cannot do it.
   $("#btn-update").classList.toggle("hidden", !data.live);
   $("#q-player").value = state.playerQuery;
@@ -169,14 +185,15 @@ function buildChips() {
       chip.textContent = label;
       chip.setAttribute("aria-pressed", String(state[key] === value));
       chip.onclick = () => {
+        state.divisionsPinned = true;
         state[key] = value;
         build(host, key, rerender);
         rerender();
       };
       host.append(chip);
     };
-    add("All divisions", 0);
-    divisions.forEach((d) => add(`Div ${d}`, d));
+    add("All divisions", null);
+    divisions.forEach((d) => add(divisionChip(d), d));
   };
 
   build($("#chips-player"), "playerDiv", renderPlayers);
@@ -193,7 +210,7 @@ function matches(haystack, needle) {
 
 function filteredPlayers() {
   return state.data.players.filter((p) =>
-    (!state.playerDiv || p.division === state.playerDiv) &&
+    (state.playerDiv === null || p.division === state.playerDiv) &&
     (!state.reliableOnly || p.reliable) &&
     (!state.playerQuery || matches(p.name, state.playerQuery) || matches(p.team, state.playerQuery))
   );
@@ -245,7 +262,7 @@ function playerRow(p, rank) {
   }
   const sub = el("div", "row-sub");
   const badge = el("span", "badge");
-  badge.textContent = `D${p.division}`;
+  badge.textContent = divisionShort(p.division);
   sub.append(badge, document.createTextNode(p.team));
   main.append(name, sub);
 
@@ -293,7 +310,7 @@ function teamStrength(team) {
 function filteredTeams() {
   return state.data.teams
     .filter((t) =>
-      (!state.teamDiv || t.division === state.teamDiv) &&
+      (state.teamDiv === null || t.division === state.teamDiv) &&
       (!state.teamQuery || matches(t.name, state.teamQuery))
     )
     .sort((a, b) => teamStrength(b) - teamStrength(a));
@@ -331,7 +348,7 @@ function renderTeams() {
     name.textContent = t.name;
     const sub = el("div", "row-sub");
     const badge = el("span", "badge");
-    badge.textContent = `D${t.division}`;
+    badge.textContent = divisionShort(t.division);
     sub.append(badge, document.createTextNode(
       `${t.players.length} player${t.players.length === 1 ? "" : "s"} used`
     ));
@@ -363,7 +380,7 @@ function buildTeamOptions() {
     .forEach((t) => {
       const opt = el("option");
       opt.value = t.name;
-      opt.label = `Division ${t.division}`;
+      opt.label = divisionName(t.division);
       list.append(opt);
     });
 }
@@ -513,7 +530,7 @@ function callUpCard(team) {
       openTeamSheet(t);
     };
     const rt = el("span", "rt");
-    rt.textContent = `Div ${t.division}`;
+    rt.textContent = divisionChip(t.division);
     label.append(check, nm, rt);
     box.append(label);
   });
@@ -553,8 +570,8 @@ function seasonCard(team, squad) {
   h.textContent = "Season outlook";
   const hint = el("p", "hint");
   hint.textContent =
-    "Your strongest available three against every other side in Division " +
-    `${team.division}, assuming each fields its best three.`;
+    "Your strongest available three against every other side in " +
+    `${divisionName(team.division)}, assuming each fields its best three.`;
   card.append(h, hint);
 
   if (!rivals.length) {
@@ -697,7 +714,7 @@ function fixtureCard(us, squad) {
     return card;
   }
   if (them.division !== us.division) {
-    card.append(noteCard(`Pick a team from Division ${us.division}.`));
+    card.append(noteCard(`Pick a team from ${divisionName(us.division)}.`));
     return card;
   }
 
@@ -852,7 +869,7 @@ function openPlayerSheet(p) {
     const h = el("h2");
     h.textContent = p.name;
     const sub = el("p", "sub");
-    sub.textContent = `${p.team} · Division ${p.division}`;
+    sub.textContent = `${p.team} · ${divisionName(p.division)}`;
     body.append(h, sub);
 
     const overall = state.data.players.findIndex((x) => x.id === p.id) + 1;
@@ -874,7 +891,7 @@ function openPlayerSheet(p) {
     add(fmtPct(p.win_rate), "Singles win rate");
     add(`${p.won}/${p.played}`, "Singles won");
     add(ordinal(overall), "Overall rank");
-    add(ordinal(inDiv), `Rank in Division ${p.division}`);
+    add(ordinal(inDiv), `Rank in ${divisionName(p.division)}`);
     if (!p.reliable) {
       add(`${state.data.min_matches - p.played}`, "More matches to be rated");
     }
@@ -887,7 +904,7 @@ function openTeamSheet(t) {
     const h = el("h2");
     h.textContent = t.name;
     const sub = el("p", "sub");
-    sub.textContent = `Division ${t.division} · top-3 average ${fmtRating(teamStrength(t))}`;
+    sub.textContent = `${divisionName(t.division)} · top-3 average ${fmtRating(teamStrength(t))}`;
     body.append(h, sub);
 
     const list = el("div", "list");

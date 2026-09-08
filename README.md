@@ -171,19 +171,23 @@ you have are enough*, which is what the season outlook answers.
 
 ### Seasons
 
-Ratings carry across seasons: each is converged on its own, seeded from the
-rating each player finished the previous one on. A player who sits a season out
-keeps their rating; a new player gets their division's seed. Match counts
-accumulate, so nobody reverts to provisional at a season boundary.
+Ratings carry across seasons. Each season is converged on its own, seeded from
+the rating each player finished the previous one on, rather than replaying
+every season from division seeds. A player who sits a season out keeps their
+rating, team and division; a new player gets their division's seed. Match
+counts accumulate, so nobody reverts to provisional at a season boundary.
 
 `scraper.SEASONS` lists the seasons to fetch, oldest first, with the last being
-current. A season whose pages are not up yet is reported as "not published yet"
-rather than as an error.
+current. `--update` fetches all of them, so last season's completed results and
+the new season's trickle land in one pass. A season whose pages are not up yet
+is reported as "not published yet" rather than as an error.
 
-Before fixtures are published there are no matches to infer structure from, so
-`data/teams_<season>.json` can carry the division and team lists. Teams that
-have not played yet keep the squad they last fielded, and the app says so. See
-`NEXT_SEASON.md` for the format and the remaining work.
+Rosters and divisions come from the current season once it has results. Until
+then `season_transition.py` supplies the known division moves and any confirmed
+roster changes, and the app marks itself as showing a projection. That bridge
+disables itself automatically as soon as real results for the current season
+arrive — see `NEXT_SEASON.md`.
+
 
 ## Command line usage
 
@@ -241,17 +245,17 @@ Each team match consists of 9 singles matches (3 players per side, round-robin).
 
 ### Initial seeding
 
-Players are seeded based on the division they have played the most matches in:
+Players are seeded based on the division they have played the most matches in. Division 4 is the 1500 baseline, ±100 per division:
 
 | Division | Seed rating |
 |----------|-------------|
-| 1        | 1950        |
-| 2        | 1800        |
-| 3        | 1650        |
+| 1        | 1800        |
+| 2        | 1700        |
+| 3        | 1600        |
 | 4        | 1500        |
-| 5        | 1350        |
-| 6        | 1200        |
-| 7        | 1050        |
+| 5        | 1400        |
+| 6        | 1300        |
+| 7        | 1200        |
 
 ### ELO calculation
 
@@ -288,7 +292,6 @@ Because early matches in the season are evaluated against division-seeded rating
 - `models.py` — data classes (`Match`, `TeamResult`, `PlayerResult`)
 - `cache.py` — JSON serialisation and match deduplication
 - `check_doubles.py` — verifies the doubles point can be recovered from a scrape
-- `probe_season.py` — reports what a season's pages contain, for a new season
 - `webapp/` — the web app
   - `server.py` — stdlib HTTP server for local use and scraping
   - `api.py` — builds the single payload the front end runs on
@@ -297,7 +300,7 @@ Because early matches in the season are evaluated against division-seeded rating
     `sw.js`, `manifest.json`, icons and `ratings.json` (no build step)
 - `data/matches.json` — scraped match data, committed
 - `.github/workflows/publish.yml` — weekly scrape and GitHub Pages deploy
-- `NEXT_SEASON.md` — how multiple seasons work, and what is still outstanding
+- `NEXT_SEASON.md` — what needs changing when the 2026/27 fixtures go up
 
 The web app adds no dependencies: the server is `http.server` from the standard
 library, and the front end is plain JavaScript. Searching, filtering and the

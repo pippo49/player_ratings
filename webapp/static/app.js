@@ -9,12 +9,12 @@ const state = {
   players: new Map(),   // id -> player
   teams: new Map(),     // name -> team
   view: "players",
-  playerQuery: "",
-  playerDiv: 0,         // 0 = all
+  playerQuery: "Philip Parsons",
+  playerDiv: 5,          // 0 = all
   reliableOnly: false,
   teamQuery: "",
-  teamDiv: 0,
-  us: "",
+  teamDiv: 5,
+  us: "Apex 4",
   them: "",
   callUp: new Set(),        // lower club sides players can be drawn from
   unavailable: new Set(),   // player ids ticked out for this fixture
@@ -123,6 +123,11 @@ async function loadRatings() {
   $("#min-matches-label").textContent = `(${data.min_matches}+ matches)`;
   // Scraping needs the local server; a hosted snapshot cannot do it.
   $("#btn-update").classList.toggle("hidden", !data.live);
+  $("#q-player").value = state.playerQuery;
+  $("#pick-us").value = state.us;
+  const defaultTeam = resolveTeam(state.us);
+  const nearest = defaultTeam && feederTeams(defaultTeam)[0];
+  if (nearest) state.callUp.add(nearest.name);
   renderMeta();
   buildChips();
   buildTeamOptions();
@@ -498,8 +503,15 @@ function callUpCard(team) {
       else state.callUp.delete(t.name);
       renderLineup();
     };
-    const nm = el("span", "nm");
+    const nm = el("span", "nm nm-link");
     nm.textContent = t.name;
+    // Inside a <label>, a click on any child also toggles the checkbox
+    // unless stopped — this should open the team's squad instead.
+    nm.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openTeamSheet(t);
+    };
     const rt = el("span", "rt");
     rt.textContent = `Div ${t.division}`;
     label.append(check, nm, rt);
@@ -582,8 +594,9 @@ function seasonCard(team, squad) {
     const pick = el("div", "pick");
     const num = el("span", "num");
     num.textContent = i + 1;
-    const nm = el("span", "nm");
+    const nm = el("span", "nm nm-link");
     nm.textContent = p.name + (p.reliable ? "" : " *");
+    nm.onclick = () => openPlayerSheet(p);
     const rt = el("span", "rt");
     rt.textContent = fmtRating(p.rating);
     pick.append(num, nm, rt);
@@ -607,8 +620,9 @@ function seasonCard(team, squad) {
   const tbody = el("tbody");
   rivals.forEach((r) => {
     const tr = el("tr");
-    const th = el("th");
+    const th = el("th", "nm-link");
     th.textContent = r.team.name;
+    th.onclick = () => openTeamSheet(r.team);
     const pts = el("td", `pc ${r.expectedSingles >= target ? "win" : "lose"}`);
     pts.textContent = fmtScore(r.expectedSingles);
     const share = el("td", "pc");
@@ -653,7 +667,7 @@ function fixtureCard(us, squad) {
 
   const field = el("div", "field");
   const input = el("input", "search");
-  input.setAttribute("list", "team-options");
+  input.setAttribute("list", "opponent-options");
   input.placeholder = "Opponent…";
   input.value = state.them;
   input.autocomplete = "off";
@@ -664,12 +678,38 @@ function fixtureCard(us, squad) {
   field.append(input);
   card.append(field);
 
+  // Only teams from the same division are real opponents.
+  const oppOptions = $("#opponent-options");
+  oppOptions.textContent = "";
+  state.data.teams
+    .filter((t) => t.division === us.division && t.name !== us.name)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach((t) => {
+      const opt = el("option");
+      opt.value = t.name;
+      oppOptions.append(opt);
+    });
+
   const them = resolveTeam(state.them);
   if (!them) return card;
   if (them.name === us.name) {
     card.append(noteCard("Pick a different team."));
     return card;
   }
+  if (them.division !== us.division) {
+    card.append(noteCard(`Pick a team from Division ${us.division}.`));
+    return card;
+  }
+
+  const themLink = el("p", "hint");
+  themLink.append(document.createTextNode("Opponent: "));
+  const themName = el("span", "nm-link");
+  themName.textContent = `${them.name} squad`;
+  themName.setAttribute("role", "link");
+  themName.tabIndex = 0;
+  themName.onclick = () => openTeamSheet(them);
+  themLink.append(themName);
+  card.append(themLink);
 
   const theirs = bestTrio(squadFor(them));
   if (theirs.length < 3) {
@@ -714,9 +754,10 @@ function matrixTable(result, trio, theirBest) {
   const hrow = el("tr");
   hrow.append(el("th"));
   theirBest.forEach((p) => {
-    const th = el("th");
+    const th = el("th", "nm-link");
     th.textContent = shortName(p.name);
     th.title = `${p.name} (${fmtRating(p.rating)})`;
+    th.onclick = () => openPlayerSheet(p);
     hrow.append(th);
   });
   thead.append(hrow);
@@ -724,9 +765,10 @@ function matrixTable(result, trio, theirBest) {
   const tbody = el("tbody");
   trio.forEach((p, i) => {
     const tr = el("tr");
-    const th = el("th");
+    const th = el("th", "nm-link");
     th.textContent = shortName(p.name);
     th.title = `${p.name} (${fmtRating(p.rating)})`;
+    th.onclick = () => openPlayerSheet(p);
     tr.append(th);
     result.grid[i].forEach((prob) => {
       const td = el("td", `pc ${prob >= 0.5 ? "win" : "lose"}`);
@@ -746,12 +788,12 @@ function squadCard(team, pool) {
   const h = el("h2");
   h.textContent = "Availability";
   const hint = el("p", "hint");
-  const carried = [...new Set(pool.map((p) => p.from))]
-    .map((name) => state.teams.get(name))
-    .filter((t) => t && t.carried);
-  hint.textContent = carried.length
-    ? `Untick anyone who cannot play. Squads are last season's — ` +
-      `${carried[0].roster_season.replace("-", "/")} — until new results come in.`
+  const previous = (state.data.seasons || [])
+    .filter((s) => s !== state.data.season_id).pop();
+  hint.textContent = state.data.projected
+    ? "Untick anyone who cannot play. Squads are projected from " +
+      `${previous ? previous.replace("-", "/") : "last season"} until real ` +
+      "results come in."
     : "Untick anyone who cannot play.";
   card.append(h, hint);
 
@@ -767,8 +809,15 @@ function squadCard(team, pool) {
       else state.unavailable.add(p.id);
       renderLineup();
     };
-    const nm = el("span", "nm");
+    const nm = el("span", "nm nm-link");
     nm.textContent = p.name + (p.reliable ? "" : " *");
+    // Inside a <label>, a click on any child also toggles the checkbox
+    // unless stopped — this should open the stats sheet instead.
+    nm.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openPlayerSheet(p);
+    };
     const rt = el("span", "rt");
     rt.textContent = p.from === team.name
       ? fmtRating(p.rating)

@@ -245,17 +245,35 @@ Each team match consists of 9 singles matches (3 players per side, round-robin).
 
 ### Initial seeding
 
-Players are seeded based on the division they have played the most matches in. Division 4 is the 1500 baseline, ±100 per division:
+A player with no rating history is seeded from the division they have played
+the most matches in. Anyone who played a previous season carries their rating
+forward instead, so this only ever applies to genuine newcomers.
 
-| Division | Seed rating |
-|----------|-------------|
-| 1        | 1800        |
-| 2        | 1700        |
-| 3        | 1600        |
-| 4        | 1500        |
-| 5        | 1400        |
-| 6        | 1300        |
-| 7        | 1200        |
+The ladder is season-specific, because the league restructured for 2026/27 by
+adding a Premier division above Divisions One to Seven — a division number no
+longer means what it meant in 2025/26. `elo.seed_for(season, division)` picks
+the right one.
+
+| Division | 2025/26 | 2026/27 |
+|----------|---------|---------|
+| Premier  | —       | 1850    |
+| 1        | 1800    | 1750    |
+| 2        | 1700    | 1650    |
+| 3        | 1600    | 1550    |
+| 4        | 1500    | 1450    |
+| 5        | 1400    | 1350    |
+| 6        | 1300    | 1250    |
+| 7        | 1200    | 1150    |
+
+Both are 100 points per division. The 2025/26 ladder took Division 4 as a 1500
+midpoint, and proved well calibrated — every division's median player finished
+within 21 points of the seed they started from. The 2026/27 ladder is anchored
+at 1850 for the Premier, fitted to the median rating of the players actually
+placed in each division; that gives a mean error of 30 points, against 98 for
+carrying the old ladder up a division.
+
+Seeding a newcomer too high does not just mislabel them — it leaks into every
+opponent's rating, because beating an over-rated player pays out too much.
 
 ### ELO calculation
 

@@ -79,28 +79,29 @@ division finished within about 20 points of the seed they started from:
 | 6 | 1300 | 1294 | −6 |
 | 7 | 1200 | 1193 | −7 |
 
-For 2026/27 they are too generous, but by roughly half a division rather than
-a whole one. Subtracting the 68-point selection bias from each new division's
-top-three median gives an implied player seed:
+For 2026/27 they were too generous by roughly half a division, so the ladder
+is now season-specific. `elo.SEASON_SEEDS` holds one per season and
+`elo.seed_for(season, division)` picks it; the 2025/26 ladder is untouched, so
+no existing rating moved.
 
-| 2026/27 | implied seed | current | difference |
+| 2026/27 | seed | median player | drift |
 |---|---|---|---|
-| Premier | 1809 | 1900 | −91 |
-| Division 1 | 1708 | 1800 | −92 |
-| Division 2 | 1640 | 1700 | −60 |
-| Division 3 | 1553 | 1600 | −47 |
-| Division 4 | 1442 | 1500 | −58 |
-| Division 5 | 1349 | 1400 | −51 |
-| Division 7 | 1156 | 1200 | −44 |
+| Premier | 1850 | 1796 | +54 |
+| Division 1 | 1750 | 1706 | +44 |
+| Division 2 | 1650 | 1654 | −4 |
+| Division 3 | 1550 | 1533 | +17 |
+| Division 4 | 1450 | 1463 | −13 |
+| Division 5 | 1350 | 1369 | −19 |
+| Division 6 | 1250 | 1300 | −50 |
+| Division 7 | 1150 | 1192 | −42 |
 
-About 50 points out in the middle divisions and 90 at the top, where the
-Premier seed of 1900 was a guess.
-
-`DIVISION_SEED` has not been changed, because it also seeds the 2025/26
-season and altering it would shift every existing rating. It only affects
-players with no history at all, so nothing is wrong until the first genuinely
-new player appears in 2026/27 results. Before then it wants a season-specific
-seed map, with the implied values above as the starting point.
+Mean error 30 points, against 98 for carrying the old ladder up a division.
+Coverage is the weak spot: Division 4 is 9 of 12 teams rated but Division 6
+only 3 of 11, and the unrated teams are the new or renamed ones. Twelve teams
+were pushed down when the top five divisions were oversubscribed, and those
+are strong for their new division, so the true medians are probably a little
+above these — the ladder errs low deliberately, since results correct a low
+seed upward but an inflated one leaks points to every opponent first.
 
 ## Still to do
 

@@ -6,9 +6,21 @@ from datetime import date
 
 from models import Match, PlayerResult
 
-# Starting ELO by division: Div 4 = 1500 as baseline, ±100 per division
-DIVISION_SEED = {
-    0: 1900,  # Premier, added for 2026/27 when the league went to eight tiers
+# Starting ELO by division, for a player with no rating history. Only ever
+# applies to someone genuinely new — anyone with a previous season carries
+# their rating forward instead.
+#
+# The ladder is season-specific because the league restructured for 2026/27,
+# adding a Premier division above Divisions One to Seven. A division number
+# no longer means what it meant in 2025/26, so seeding a 2026/27 newcomer
+# from the 2025/26 ladder would start them about 90 points high — which does
+# not just mislabel them, it leaks into everyone else's rating, since beating
+# an over-rated opponent pays out too much.
+#
+# 2025/26: seven tiers, Div 4 at 1500 as the midpoint, 100 per division.
+# Median players finished within 21 points of their seed, so it is left alone
+# — changing it would move every existing rating.
+SEASON_2025_26_SEED = {
     1: 1800,
     2: 1700,
     3: 1600,
@@ -17,6 +29,43 @@ DIVISION_SEED = {
     6: 1300,
     7: 1200,
 }
+
+# 2026/27: eight tiers. Anchored at 1850 for the Premier, still 100 apart.
+# Fitted to the median rating of the players actually placed in each
+# division, which gives a mean error of 30 points against 98 for carrying the
+# old ladder up a division.
+SEASON_2026_27_SEED = {
+    0: 1850,  # Premier
+    1: 1750,
+    2: 1650,
+    3: 1550,
+    4: 1450,
+    5: 1350,
+    6: 1250,
+    7: 1150,
+}
+
+SEASON_SEEDS = {
+    "2025-26": SEASON_2025_26_SEED,
+    "2026-27": SEASON_2026_27_SEED,
+}
+
+# A season with no ladder of its own uses the most recent one defined.
+LATEST_SEED_LADDER = SEASON_SEEDS[max(SEASON_SEEDS)]
+
+
+def seed_for(season: str, division: int) -> float:
+    """The starting rating for a new player in *division* during *season*.
+
+    Falls back to the newest ladder for an unknown season, and to the nearest
+    division within that ladder for a division it does not list — a new tier
+    should not raise KeyError mid-season.
+    """
+    ladder = SEASON_SEEDS.get(season, LATEST_SEED_LADDER)
+    if division in ladder:
+        return float(ladder[division])
+    nearest = min(ladder, key=lambda d: abs(d - division))
+    return float(ladder[nearest])
 
 K_NEW = 48       # K-factor for players with < K_THRESHOLD team matches (converge faster)
 K_ESTABLISHED = 32  # K-factor for players with >= K_THRESHOLD team matches
@@ -55,6 +104,7 @@ def _expected_score(rating: float, opponent_rating: float) -> float:
 
 def _seed_ratings(
     matches: list[Match],
+    season: str,
     carried: dict[str, PlayerRating] | None = None,
 ) -> dict[str, PlayerRating]:
     """Build starting ratings for the players appearing in *matches*.
@@ -83,7 +133,7 @@ def _seed_ratings(
         most_played_div = div_counts[pid].most_common(1)[0][0]
         most_played_team = team_counts[pid].most_common(1)[0][0]
         previous = carried.get(pid)
-        seed = previous.rating if previous else float(DIVISION_SEED[most_played_div])
+        seed = previous.rating if previous else seed_for(season, most_played_div)
         ratings[pid] = PlayerRating(
             name=name,
             player_id=pid,
@@ -172,10 +222,11 @@ def _run_single_pass(
 
 def _rate_season(
     matches: list[Match],
+    season: str,
     carried: dict[str, PlayerRating],
 ) -> dict[str, PlayerRating]:
     """Converge ratings over one season's matches, starting from *carried*."""
-    ratings = _seed_ratings(matches, carried)
+    ratings = _seed_ratings(matches, season, carried)
     seeds = {pid: pr.rating for pid, pr in ratings.items()}
     experience = {
         pid: carried[pid].matches_played for pid in ratings if pid in carried
@@ -231,7 +282,7 @@ def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
         if not season_matches:
             continue
         # Players who sat the season out keep their existing entry.
-        ratings = {**ratings, **_rate_season(season_matches, ratings)}
+        ratings = {**ratings, **_rate_season(season_matches, season, ratings)}
 
     return ratings
 

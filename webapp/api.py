@@ -8,7 +8,7 @@ team roster, and a little metadata about the data set.
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 
-from elo import DIVISION_SEED, MIN_MATCHES, PlayerRating, calculate_ratings
+from elo import MIN_MATCHES, PlayerRating, calculate_ratings, seed_for
 from models import Match
 from scraper import CURRENT_SEASON
 from season_transition import (
@@ -186,7 +186,7 @@ def _apply_season_overrides(
                 ratings[entry["id"]] = PlayerRating(
                     name=entry["name"],
                     player_id=entry["id"],
-                    rating=float(entry.get("rating", DIVISION_SEED[new_division])),
+                    rating=float(entry.get("rating", seed_for(CURRENT_SEASON, new_division))),
                     division=new_division,
                     team=team,
                 )

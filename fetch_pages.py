@@ -1,13 +1,13 @@
-"""Report the structure of league pages, for writing parsers against.
+"""Report league page structure, for writing parsers against.
 
-The league site is only reachable from environments with open internet, and
-build artifacts from those runs are not reachable either, so this prints a
-compact structural summary to stdout where it can be read back from the job
-log. Deliberately bounded: histograms and short snippets, not whole pages.
+The site is only reachable with open internet, and artifact storage is not
+reachable from the development sandbox, so this prints a bounded summary to
+stdout to be read back from the job log.
 
     .venv/bin/python3 fetch_pages.py 2026-27
 """
 
+import json
 import re
 import sys
 import time
@@ -19,89 +19,96 @@ from bs4 import BeautifulSoup
 from scraper import BASE_URL, LEAGUE, REQUEST_DELAY, _season_slug
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ratings-bot/1.0)"}
+OLD_BASE = "https://old.tabletennis365.com"
 
-# What the 2025/26 parser relied on. Any of these at zero means it is broken.
-LEGACY = {
-    "div.home": ("div", "home"),
-    "div.away": ("div", "away"),
-    "div.playerName": ("div", "playerName"),
-    "div.score": ("div", "score"),
-}
+LEGACY = {"home": "home", "away": "away", "playerName": "playerName", "score": "score"}
 
 
 def get(url: str) -> str | None:
     try:
-        response = requests.get(url, headers=HEADERS, timeout=30)
+        r = requests.get(url, headers=HEADERS, timeout=30)
     except Exception as exc:
-        print(f"    request failed — {type(exc).__name__}: {exc}")
+        print(f"    FAILED {type(exc).__name__}: {exc}")
         return None
     finally:
         time.sleep(REQUEST_DELAY)
-    print(f"    HTTP {response.status_code}, {len(response.text)} bytes")
-    return response.text if response.status_code == 200 else None
+    print(f"    HTTP {r.status_code}, {len(r.text)} bytes")
+    return r.text if r.status_code == 200 else None
 
 
-def describe(html: str, label: str) -> BeautifulSoup:
-    soup = BeautifulSoup(html, "html.parser")
-    title = soup.find("title")
-    print(f"    title: {title.get_text(strip=True) if title else '(none)'}")
+def legacy_counts(soup) -> str:
+    return ", ".join(f"{k}={len(soup.find_all(class_=v))}" for k, v in LEGACY.items())
 
-    print("    legacy selectors:", ", ".join(
-        f"{name}={len(soup.find_all(tag, class_=cls))}"
-        for name, (tag, cls) in LEGACY.items()
-    ))
 
-    hrefs = Counter()
-    for a in soup.find_all("a", href=True):
-        # Group by the first three path segments, which identify the kind.
-        parts = [p for p in a["href"].split("?")[0].split("/") if p][:4]
-        hrefs["/" + "/".join(parts)] += 1
-    print("    link shapes:")
-    for shape, n in hrefs.most_common(12):
-        print(f"      {n:>4}  {shape}")
-
-    classes = Counter()
+def tt_classes(soup, limit=18) -> None:
+    c = Counter()
     for tag in soup.find_all(class_=True):
-        for c in tag.get("class", []):
-            classes[f"{tag.name}.{c}"] += 1
-    print("    common classes:")
-    for c, n in classes.most_common(20):
-        print(f"      {n:>4}  {c}")
-    return soup
+        for cls in tag.get("class", []):
+            if cls.startswith("tt-") and "langswitch" not in cls and "footer" not in cls:
+                c[f"{tag.name}.{cls}"] += 1
+    for name, n in c.most_common(limit):
+        print(f"      {n:>4}  {name}")
 
 
 def main() -> None:
     season = sys.argv[1] if len(sys.argv) > 1 else "2026-27"
     slug = _season_slug(season)
-    print(f"Structure report for {season} ({slug})")
 
-    for section in ("Fixtures", "Tables"):
-        url = f"{BASE_URL}/{LEAGUE}/{section}/{slug}/Division_Four"
-        print(f"\n=== {section} — Division_Four ===\n    {url}")
+    # 1. Does the old site still serve the layout the parser was written for?
+    print("=== OLD SITE — does the legacy layout survive? ===")
+    for section in ("Fixtures", "Results"):
+        url = f"{OLD_BASE}/{LEAGUE}/{section}/{slug}/Division_Four"
+        print(f"  {url}")
         html = get(url)
-        if not html:
-            continue
-        soup = describe(html, section)
+        if html:
+            soup = BeautifulSoup(html, "html.parser")
+            print(f"    legacy: {legacy_counts(soup)}")
+            print(f"    MatchCard links: {len(soup.find_all('a', href=re.compile('/MatchCard/')))}")
 
-        if section == "Fixtures":
-            body = soup.find("main") or soup.find("body")
-            text = re.sub(r"\s+", " ", body.get_text(" ", strip=True))[:900]
-            print(f"    text sample: {text}")
+    # 2. New tables page — the team list and their links.
+    print("\n=== NEW SITE — Tables/Division_Four ===")
+    html = get(f"{BASE_URL}/{LEAGUE}/Tables/{slug}/Division_Four")
+    team_url = None
+    if html:
+        soup = BeautifulSoup(html, "html.parser")
+        links = soup.find_all("a", class_="tt-team-link")
+        print(f"    tt-team-link count: {len(links)}")
+        for a in links[:14]:
+            print(f"      {a.get_text(strip=True)!r} -> {a.get('href')}")
+        if links:
+            href = links[0]["href"]
+            team_url = href if href.startswith("http") else BASE_URL + href
 
-            # Follow whatever looks like a team link, whatever its shape.
-            team = soup.find("a", href=re.compile(r"/Team|/Results/Team"))
-            if team:
-                href = team["href"]
-                team_url = href if href.startswith("http") else BASE_URL + href
-                print(f"\n=== Team page — {team.get_text(strip=True)} ===\n    {team_url}")
-                team_html = get(team_url)
-                if team_html:
-                    tsoup = describe(team_html, "team")
-                    tbody = tsoup.find("main") or tsoup.find("body")
-                    ttext = re.sub(r"\s+", " ", tbody.get_text(" ", strip=True))[:900]
-                    print(f"    text sample: {ttext}")
-            else:
-                print("\n    no team link found on the fixtures page")
+    # 3. New fixtures page — is the content server-rendered at all?
+    print("\n=== NEW SITE — Fixtures/Division_Four ===")
+    html = get(f"{BASE_URL}/{LEAGUE}/Fixtures/{slug}/Division_Four")
+    if html:
+        soup = BeautifulSoup(html, "html.parser")
+        print(f"    legacy: {legacy_counts(soup)}")
+        print("    tt- classes:")
+        tt_classes(soup)
+        print(f"    tables: {len(soup.find_all('table'))}, rows: {len(soup.find_all('tr'))}")
+        # Server-rendered, or hydrated from embedded JSON?
+        for s in soup.find_all("script"):
+            txt = s.string or ""
+            if len(txt) > 400 and ("fixture" in txt.lower() or "match" in txt.lower()):
+                print(f"    script with match data, {len(txt)} chars, starts: {txt.strip()[:200]}")
+                break
+        else:
+            print("    no embedded match JSON found in <script>")
+
+    # 4. A team page — the squad list.
+    if team_url:
+        print(f"\n=== NEW SITE — team page ===\n    {team_url}")
+        html = get(team_url)
+        if html:
+            soup = BeautifulSoup(html, "html.parser")
+            print("    tt- classes:")
+            tt_classes(soup)
+            players = soup.find_all("a", href=re.compile(r"/Player"))
+            print(f"    player links: {len(players)}")
+            for a in players[:12]:
+                print(f"      {a.get_text(strip=True)!r} -> {a.get('href')}")
 
 
 if __name__ == "__main__":

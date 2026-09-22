@@ -87,6 +87,14 @@ jobs:
         if: inputs.fetch_structure != ''
         run: uv run python fetch_structure.py "${{ inputs.fetch_structure }}"
 
+      # Squads fill up over the opening weeks of a season, so the scheduled
+      # run refreshes them alongside results. Failure here must not stop the
+      # results scrape, which is the more important half.
+      - name: Refresh squads
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == ''
+        continue-on-error: true
+        run: uv run python fetch_squads.py 2026-27
+
       - name: Scrape for new results
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == ''
         run: uv run python main.py --update

@@ -1,0 +1,8 @@
+{
+  "_comment": "Players whose 2026/27 name differs from their 2025/26 one. The league reissues player ids each season, so identity carries by name; anything short of an exact match is confirmed by a human before it lands here. Keys are the current-season name, values the earlier one.",
+  "aliases": {
+    "James Mullineaux": "Jamie Mullineaux",
+    "Peter Hua": "Peter Hau",
+    "Samson Bekele": "Sammy Bekele"
+  }
+}

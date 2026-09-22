@@ -26,6 +26,14 @@ on:
           team map and skip the deploy, since they change no published data.
         type: string
         default: ""
+      fetch_pages:
+        description: >-
+          Season to download raw league pages for (e.g. 2026-27), uploaded as
+          an artifact. For writing a parser against markup that cannot be
+          reached from a development sandbox. Commits nothing, deploys
+          nothing.
+        type: string
+        default: ""
   push:
     branches: [master]
     paths:
@@ -58,19 +66,31 @@ jobs:
       # does not already have it.
       - run: uv sync
 
+      - name: Download raw league pages
+        if: inputs.fetch_pages != ''
+        run: uv run python fetch_pages.py "${{ inputs.fetch_pages }}" pages
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.fetch_pages != ''
+        with:
+          name: league-pages
+          path: pages/
+          retention-days: 3
+
       - name: Fetch the published division structure
         if: inputs.fetch_structure != ''
         run: uv run python fetch_structure.py "${{ inputs.fetch_structure }}"
 
       - name: Scrape for new results
-        if: inputs.fetch_structure == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == ''
         run: uv run python main.py --update
 
       - name: Verify the match format still holds
-        if: inputs.fetch_structure == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == ''
         run: uv run python check_doubles.py
 
       - name: Commit if anything changed
+        if: inputs.fetch_pages == ''
         run: |
           # git status, not git diff: on the first run these files are
           # untracked, and git diff ignores untracked files entirely.
@@ -98,6 +118,7 @@ jobs:
     if: >-
       always()
       && inputs.fetch_structure == ''
+      && inputs.fetch_pages == ''
       && needs.scrape.result != 'failure'
       && needs.scrape.result != 'cancelled'
     runs-on: ubuntu-latest

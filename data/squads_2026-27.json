@@ -1,0 +1,1101 @@
+{
+ "season": "2026-27",
+ "teams": {
+  "Apex 1": {
+   "division": 0,
+   "players": []
+  },
+  "Flick TTC 1": {
+   "division": 0,
+   "players": []
+  },
+  "Fulham Brunswick 1": {
+   "division": 0,
+   "players": []
+  },
+  "Fusion 1": {
+   "division": 0,
+   "players": []
+  },
+  "Moberly 1": {
+   "division": 0,
+   "players": []
+  },
+  "Morpeth 1": {
+   "division": 0,
+   "players": []
+  },
+  "Morpeth 2": {
+   "division": 0,
+   "players": []
+  },
+  "Morpeth 3": {
+   "division": 0,
+   "players": []
+  },
+  "St Katharines Trust 1": {
+   "division": 0,
+   "players": []
+  },
+  "St Katharines Trust 2": {
+   "division": 0,
+   "players": []
+  },
+  "Table Tennis Fight Club 1": {
+   "division": 0,
+   "players": []
+  },
+  "Apex 2": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414576",
+     "name": "Shaon Chapman"
+    },
+    {
+     "id": "414580",
+     "name": "Brian Kelleher"
+    },
+    {
+     "id": "414575",
+     "name": "Sai Ki Lee"
+    },
+    {
+     "id": "414579",
+     "name": "Michael Miller"
+    },
+    {
+     "id": "414577",
+     "name": "Adam Toumi"
+    },
+    {
+     "id": "414578",
+     "name": "Nick Tsang"
+    }
+   ]
+  },
+  "Flick TTC 2": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414536",
+     "name": "Jason Bouwman"
+    },
+    {
+     "id": "414533",
+     "name": "Ivy CHAN"
+    },
+    {
+     "id": "414537",
+     "name": "Juan Pablo Di Domenico"
+    },
+    {
+     "id": "414539",
+     "name": "Jasper Fung"
+    },
+    {
+     "id": "414538",
+     "name": "Alberto Garrido"
+    },
+    {
+     "id": "414540",
+     "name": "Vitali Levytski"
+    },
+    {
+     "id": "414534",
+     "name": "Fabio Nascimento"
+    },
+    {
+     "id": "414535",
+     "name": "Ben Richardson-Bunbury"
+    }
+   ]
+  },
+  "Fusion 2 Jr": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414595",
+     "name": "Olaolu Awosika"
+    },
+    {
+     "id": "414594",
+     "name": "Alin Azis"
+    },
+    {
+     "id": "414596",
+     "name": "Carl Allen Pangilinan"
+    }
+   ]
+  },
+  "Fusion 3": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414614",
+     "name": "Derrick Brown"
+    },
+    {
+     "id": "414616",
+     "name": "John Dennison"
+    },
+    {
+     "id": "414618",
+     "name": "Dominik Hilger"
+    },
+    {
+     "id": "414617",
+     "name": "Sebastian  HITCHCOCK-SPENCER"
+    },
+    {
+     "id": "414619",
+     "name": "Richard Jermyn"
+    },
+    {
+     "id": "414615",
+     "name": "James Ng Hing Cheung"
+    },
+    {
+     "id": "414613",
+     "name": "Martin Smith"
+    },
+    {
+     "id": "414612",
+     "name": "Neil Stewart"
+    }
+   ]
+  },
+  "Fusion 4": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414606",
+     "name": "Nathaniel Akinrin"
+    },
+    {
+     "id": "414611",
+     "name": "Kaung Htet Paing"
+    },
+    {
+     "id": "414608",
+     "name": "Oleksii Remnov"
+    },
+    {
+     "id": "414610",
+     "name": "Valeri Semenciuc"
+    },
+    {
+     "id": "414609",
+     "name": "Vitalie Stratan"
+    },
+    {
+     "id": "414607",
+     "name": "Srinivas Suravarapu"
+    }
+   ]
+  },
+  "Moberly 2": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414561",
+     "name": "Mohamed Alkaabi"
+    },
+    {
+     "id": "414563",
+     "name": "Paul Anvari"
+    },
+    {
+     "id": "414558",
+     "name": "Gabriel Concepcion"
+    },
+    {
+     "id": "414557",
+     "name": "David Kayo Ogunnusi"
+    },
+    {
+     "id": "414560",
+     "name": "Pavlo Rizanenko"
+    },
+    {
+     "id": "414562",
+     "name": "Michael Zeng Mayer"
+    },
+    {
+     "id": "414559",
+     "name": "Peng Zhang"
+    }
+   ]
+  },
+  "Morpeth 4": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414454",
+     "name": "Samson Bekele"
+    },
+    {
+     "id": "414453",
+     "name": "Carsten Hovestadt"
+    },
+    {
+     "id": "414456",
+     "name": "Ahad Miah"
+    },
+    {
+     "id": "414457",
+     "name": "Matthew Stephens"
+    },
+    {
+     "id": "414455",
+     "name": "Richard Thorne"
+    }
+   ]
+  },
+  "Morpeth 5": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414471",
+     "name": "Tulay Dundar"
+    },
+    {
+     "id": "414485",
+     "name": "Peter Hua"
+    },
+    {
+     "id": "414463",
+     "name": "Vadym Krevs"
+    },
+    {
+     "id": "414465",
+     "name": "Kimmy Pui Lin Lai-Brown"
+    },
+    {
+     "id": "414464",
+     "name": "James Mullineaux"
+    },
+    {
+     "id": "414472",
+     "name": "yuen yee ng"
+    },
+    {
+     "id": "414466",
+     "name": "Vuong Ngo"
+    },
+    {
+     "id": "414467",
+     "name": "Umair Obaid"
+    },
+    {
+     "id": "414473",
+     "name": "Claire Yan"
+    }
+   ]
+  },
+  "Morpeth 6": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414492",
+     "name": "Toby Bartram"
+    },
+    {
+     "id": "414489",
+     "name": "Duncan Brown"
+    },
+    {
+     "id": "414491",
+     "name": "Simon Holohan"
+    },
+    {
+     "id": "414493",
+     "name": "Sanjiv Malhotra"
+    },
+    {
+     "id": "414486",
+     "name": "Jens Marott"
+    },
+    {
+     "id": "414494",
+     "name": "Arunn Sathasivam"
+    },
+    {
+     "id": "414490",
+     "name": "Tyrone Silcott"
+    },
+    {
+     "id": "414487",
+     "name": "Toan To"
+    },
+    {
+     "id": "414495",
+     "name": "Hei Jing Tsang"
+    },
+    {
+     "id": "414488",
+     "name": "Yuze Wang"
+    }
+   ]
+  },
+  "Morpeth 7": {
+   "division": 1,
+   "players": []
+  },
+  "St Katharines Trust 3": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414419",
+     "name": "Salahuddin Ahmed"
+    },
+    {
+     "id": "414415",
+     "name": "Jasdeep Anand"
+    },
+    {
+     "id": "414418",
+     "name": "Naveed Chaudhry"
+    },
+    {
+     "id": "414413",
+     "name": "Tim Lieu"
+    },
+    {
+     "id": "414417",
+     "name": "Raphael Munkoh"
+    },
+    {
+     "id": "414412",
+     "name": "Laikram Persaud"
+    },
+    {
+     "id": "414416",
+     "name": "Anshuman Prasad"
+    },
+    {
+     "id": "414414",
+     "name": "Murilo Veloso"
+    },
+    {
+     "id": "414411",
+     "name": "Dariusz Zurowski"
+    }
+   ]
+  },
+  "TJ TTC 1": {
+   "division": 1,
+   "players": [
+    {
+     "id": "414406",
+     "name": "Ganiyu Afariogun"
+    },
+    {
+     "id": "414409",
+     "name": "Samson Agbaje"
+    },
+    {
+     "id": "414405",
+     "name": "Tajudeen Alao"
+    },
+    {
+     "id": "414408",
+     "name": "Kehinde Amoo"
+    },
+    {
+     "id": "414410",
+     "name": "Amir Atanda"
+    },
+    {
+     "id": "414407",
+     "name": "Edward Baker"
+    },
+    {
+     "id": "414402",
+     "name": "Tanmoy Dey"
+    },
+    {
+     "id": "414400",
+     "name": "Charles Essel"
+    },
+    {
+     "id": "414401",
+     "name": "Albert Francis"
+    },
+    {
+     "id": "414403",
+     "name": "Abiye Gooding-Jacks"
+    },
+    {
+     "id": "414404",
+     "name": "Opeyemi Ogunleye"
+    }
+   ]
+  },
+  "Clissold 1": {
+   "division": 2,
+   "players": []
+  },
+  "Exiles 1": {
+   "division": 2,
+   "players": []
+  },
+  "Exiles 2": {
+   "division": 2,
+   "players": []
+  },
+  "Flick TTC 3": {
+   "division": 2,
+   "players": []
+  },
+  "Fulham Brunswick 2": {
+   "division": 2,
+   "players": []
+  },
+  "Greenhouse 1": {
+   "division": 2,
+   "players": []
+  },
+  "Greenhouse 2 Jr": {
+   "division": 2,
+   "players": []
+  },
+  "Irving 1": {
+   "division": 2,
+   "players": []
+  },
+  "Morpeth 8": {
+   "division": 2,
+   "players": []
+  },
+  "St Katharines Trust 4": {
+   "division": 2,
+   "players": []
+  },
+  "Walworth Gainsford": {
+   "division": 2,
+   "players": []
+  },
+  "Apex 3": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414584",
+     "name": "Roy Hu"
+    },
+    {
+     "id": "414583",
+     "name": "Yueh Pin Lew"
+    },
+    {
+     "id": "414581",
+     "name": "Chandra Prakash Sahu"
+    },
+    {
+     "id": "414582",
+     "name": "Anson Soo"
+    }
+   ]
+  },
+  "Flick TTC 4": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414356",
+     "name": "David Chiu"
+    },
+    {
+     "id": "414360",
+     "name": "Maxime Courmont"
+    },
+    {
+     "id": "414359",
+     "name": "Chloe Ireland"
+    },
+    {
+     "id": "414357",
+     "name": "Zicen Liao"
+    },
+    {
+     "id": "414355",
+     "name": "Shang Liu"
+    },
+    {
+     "id": "414358",
+     "name": "Gianluca Lucchin"
+    },
+    {
+     "id": "414361",
+     "name": "Milind Mahajan"
+    }
+   ]
+  },
+  "Fusion 5": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414347",
+     "name": "Charlie Boom"
+    },
+    {
+     "id": "414346",
+     "name": "David Cole"
+    },
+    {
+     "id": "414353",
+     "name": "Georges Corbineau"
+    },
+    {
+     "id": "414351",
+     "name": "Andy Grimes"
+    },
+    {
+     "id": "414350",
+     "name": "Shan Jiang"
+    },
+    {
+     "id": "414352",
+     "name": "Dhammika Karalliedde"
+    },
+    {
+     "id": "414349",
+     "name": "Yufeng Qiu"
+    },
+    {
+     "id": "414348",
+     "name": "Simone Santarsiero"
+    }
+   ]
+  },
+  "Fusion 6 Jr": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414379",
+     "name": "Harper Cole"
+    }
+   ]
+  },
+  "Highbury 1": {
+   "division": 3,
+   "players": []
+  },
+  "Highbury 2": {
+   "division": 3,
+   "players": []
+  },
+  "Irving 2": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414381",
+     "name": "Amartya Biswas"
+    },
+    {
+     "id": "414383",
+     "name": "Nick Carter"
+    },
+    {
+     "id": "414384",
+     "name": "Philip Rolling"
+    },
+    {
+     "id": "414380",
+     "name": "Alex Shaw"
+    },
+    {
+     "id": "414382",
+     "name": "Marco Vacca"
+    },
+    {
+     "id": "414385",
+     "name": "Will Wood"
+    }
+   ]
+  },
+  "Moberly 3": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414391",
+     "name": "Shiromi Aponso"
+    },
+    {
+     "id": "414390",
+     "name": "Ahmed Ashraf"
+    },
+    {
+     "id": "414388",
+     "name": "Bernardo Falcon"
+    },
+    {
+     "id": "414386",
+     "name": "John Ferguson"
+    },
+    {
+     "id": "414392",
+     "name": "John  Paul Cabellon"
+    },
+    {
+     "id": "414389",
+     "name": "Supriya Saketharam"
+    },
+    {
+     "id": "414387",
+     "name": "Meysam Samanpour"
+    }
+   ]
+  },
+  "Table Tennis Fight Club 2": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414394",
+     "name": "David Bottomley"
+    },
+    {
+     "id": "414398",
+     "name": "Man Hin Chong"
+    },
+    {
+     "id": "414397",
+     "name": "Vedansh Goyal"
+    },
+    {
+     "id": "414393",
+     "name": "Dragan  Jovanovic"
+    },
+    {
+     "id": "414395",
+     "name": "Ziad Mekanna"
+    },
+    {
+     "id": "414399",
+     "name": "Stefano Varisco"
+    },
+    {
+     "id": "414396",
+     "name": "Laurent ZERIRGUI"
+    }
+   ]
+  },
+  "Walworth Enigma": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414364",
+     "name": "Huaifang Cao"
+    },
+    {
+     "id": "414314",
+     "name": "Bob Coull"
+    },
+    {
+     "id": "414363",
+     "name": "Petko Guimichev"
+    },
+    {
+     "id": "414365",
+     "name": "James Lennard"
+    },
+    {
+     "id": "414368",
+     "name": "Roi Meshulam"
+    },
+    {
+     "id": "414367",
+     "name": "Miran Tahir"
+    },
+    {
+     "id": "414366",
+     "name": "Duong Yang"
+    }
+   ]
+  },
+  "Walworth Tigers": {
+   "division": 3,
+   "players": [
+    {
+     "id": "414369",
+     "name": "Salvatore Bollito"
+    },
+    {
+     "id": "414370",
+     "name": "Andrew MacAlister"
+    },
+    {
+     "id": "414374",
+     "name": "Bing Siah"
+    },
+    {
+     "id": "414371",
+     "name": "Wai-Liang Tan"
+    },
+    {
+     "id": "414376",
+     "name": "Ming Wei"
+    }
+   ]
+  },
+  "Apex 4": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414655",
+     "name": "Ashuk Ali"
+    },
+    {
+     "id": "414627",
+     "name": "Srinbas Bhamidipati"
+    },
+    {
+     "id": "414628",
+     "name": "Debbie O'Neill"
+    },
+    {
+     "id": "414626",
+     "name": "Philip Parsons"
+    }
+   ]
+  },
+  "Flick TTC 5": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414629",
+     "name": "Leena Aldukali"
+    },
+    {
+     "id": "414632",
+     "name": "Genichiro Kanamori"
+    },
+    {
+     "id": "414631",
+     "name": "Dmitrii Kvasov"
+    },
+    {
+     "id": "414633",
+     "name": "Harry Kwok"
+    },
+    {
+     "id": "414634",
+     "name": "Luis Maceira"
+    },
+    {
+     "id": "414630",
+     "name": "Astrid McAuliffe"
+    },
+    {
+     "id": "414635",
+     "name": "Lis Maria Pardo Arias Cachero"
+    }
+   ]
+  },
+  "Fusion 7": {
+   "division": 4,
+   "players": []
+  },
+  "Fusion 8 Jr": {
+   "division": 4,
+   "players": []
+  },
+  "Highbury 3": {
+   "division": 4,
+   "players": []
+  },
+  "Irving 3": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414639",
+     "name": "Benneth Emeh"
+    },
+    {
+     "id": "414637",
+     "name": "Chloe Ginn"
+    },
+    {
+     "id": "414636",
+     "name": "Tony Lee"
+    },
+    {
+     "id": "414640",
+     "name": "Shirou Motegi"
+    },
+    {
+     "id": "414638",
+     "name": "Viktor Varga"
+    }
+   ]
+  },
+  "Morpeth 10": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414652",
+     "name": "Waihang Chan"
+    },
+    {
+     "id": "414649",
+     "name": "Michele de Giovanni"
+    },
+    {
+     "id": "414648",
+     "name": "Dave Mesfin"
+    },
+    {
+     "id": "414650",
+     "name": "Luca Minudel"
+    },
+    {
+     "id": "414653",
+     "name": "Avery Peng"
+    },
+    {
+     "id": "414651",
+     "name": "Suzy Song"
+    }
+   ]
+  },
+  "Morpeth 11 Jr": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414656",
+     "name": "Kenzo Boulton"
+    },
+    {
+     "id": "414658",
+     "name": "Ziqi Cai"
+    },
+    {
+     "id": "414661",
+     "name": "Abiram Chandramohan"
+    },
+    {
+     "id": "414657",
+     "name": "Oluwatofunmi Fakeye"
+    }
+   ]
+  },
+  "Morpeth 9": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414645",
+     "name": "Shubho Bandyopadhyay"
+    },
+    {
+     "id": "414646",
+     "name": "Yang He"
+    },
+    {
+     "id": "414642",
+     "name": "Howie Jaffe"
+    },
+    {
+     "id": "414647",
+     "name": "Chi Ying Luk"
+    },
+    {
+     "id": "414643",
+     "name": "Stuart Sweeney"
+    },
+    {
+     "id": "414694",
+     "name": "Haochen Tao"
+    },
+    {
+     "id": "414644",
+     "name": "Yifan Xie"
+    }
+   ]
+  },
+  "St Katharines Trust 5": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414663",
+     "name": "Louis Beerjeraz"
+    },
+    {
+     "id": "414664",
+     "name": "Igors Ivenkovs"
+    },
+    {
+     "id": "414666",
+     "name": "Nameer  Jasim"
+    },
+    {
+     "id": "414665",
+     "name": "ejaz Mohiuddin"
+    }
+   ]
+  },
+  "St Katharines Trust 6": {
+   "division": 4,
+   "players": [
+    {
+     "id": "414667",
+     "name": "Rhoda Boadu"
+    },
+    {
+     "id": "414669",
+     "name": "Natalia Czarkowska"
+    },
+    {
+     "id": "414672",
+     "name": "Jacey Jin"
+    },
+    {
+     "id": "414673",
+     "name": "Jia Liu"
+    },
+    {
+     "id": "414671",
+     "name": "Sarah March"
+    },
+    {
+     "id": "414670",
+     "name": "Anna Rao"
+    },
+    {
+     "id": "414668",
+     "name": "Grace Stair"
+    }
+   ]
+  },
+  "Clissold 2": {
+   "division": 5,
+   "players": []
+  },
+  "Clissold 3": {
+   "division": 5,
+   "players": []
+  },
+  "Clissold 4 Jr": {
+   "division": 5,
+   "players": []
+  },
+  "Fulham Brunswick 3": {
+   "division": 5,
+   "players": []
+  },
+  "Fulham Brunswick 4 Jr": {
+   "division": 5,
+   "players": []
+  },
+  "Fusion 9 Jr": {
+   "division": 5,
+   "players": []
+  },
+  "Highbury 4": {
+   "division": 5,
+   "players": []
+  },
+  "Highbury 5": {
+   "division": 5,
+   "players": []
+  },
+  "Morpeth 12": {
+   "division": 5,
+   "players": []
+  },
+  "TJ TTC 2": {
+   "division": 5,
+   "players": []
+  },
+  "Table Tennis Fight Club 3": {
+   "division": 5,
+   "players": []
+  },
+  "Clissold 5": {
+   "division": 6,
+   "players": []
+  },
+  "Clissold 6 Jr": {
+   "division": 6,
+   "players": []
+  },
+  "Flick TTC 6": {
+   "division": 6,
+   "players": []
+  },
+  "Flick TTC 7": {
+   "division": 6,
+   "players": []
+  },
+  "Fulham Brunswick 5": {
+   "division": 6,
+   "players": []
+  },
+  "Highbury 6": {
+   "division": 6,
+   "players": []
+  },
+  "Irving 4": {
+   "division": 6,
+   "players": []
+  },
+  "Morpeth 13 Jr": {
+   "division": 6,
+   "players": []
+  },
+  "St Katharines Trust 7": {
+   "division": 6,
+   "players": []
+  },
+  "TJ TTC 3": {
+   "division": 6,
+   "players": []
+  },
+  "Table Tennis Fight Club 4": {
+   "division": 6,
+   "players": []
+  },
+  "Apex 5": {
+   "division": 7,
+   "players": []
+  },
+  "Canonbury 1": {
+   "division": 7,
+   "players": []
+  },
+  "Clissold 7 Jr": {
+   "division": 7,
+   "players": []
+  },
+  "Flick TTC 8": {
+   "division": 7,
+   "players": []
+  },
+  "Fulham Brunswick 6 Jr": {
+   "division": 7,
+   "players": []
+  },
+  "Fulham Brunswick 7 Jr": {
+   "division": 7,
+   "players": []
+  },
+  "Fusion 10": {
+   "division": 7,
+   "players": []
+  },
+  "Highbury 7": {
+   "division": 7,
+   "players": []
+  },
+  "Highbury 8": {
+   "division": 7,
+   "players": []
+  },
+  "Walworth Wonderers": {
+   "division": 7,
+   "players": []
+  },
+  "Wapping 1": {
+   "division": 7,
+   "players": []
+  }
+ }
+}

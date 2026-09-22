@@ -15,6 +15,7 @@ import requests
 
 from cache import load_matches
 from parser_v2 import build_match, parse_fixtures, parse_match_card
+from player_identity import normalise
 from scraper import BASE_URL, DIVISION_NAMES, LEAGUE, REQUEST_DELAY, _season_slug
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ratings-bot/1.0)"}
@@ -89,8 +90,11 @@ def main() -> None:
         ):
             if new_side.name != old_side.name:
                 problems.append(f"{label} team {new_side.name!r} vs {old_side.name!r}")
-            new_wins = {p.name: p.games_won for p in new_side.players}
-            old_wins = {p.name: p.games_won for p in old_side.players}
+            # Compare on normalised names: the site renders case
+            # inconsistently and that is an identity question, not a parsing
+            # one — player_identity handles it.
+            new_wins = {normalise(p.name): p.games_won for p in new_side.players}
+            old_wins = {normalise(p.name): p.games_won for p in old_side.players}
             if new_wins != old_wins:
                 problems.append(f"{label} wins {new_wins} vs cached {old_wins}")
 

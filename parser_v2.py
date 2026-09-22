@@ -17,6 +17,7 @@ from datetime import date, datetime
 from bs4 import BeautifulSoup
 
 from models import Match, PlayerResult, TeamResult
+from player_identity import normalise
 
 MATCH_ID = re.compile(r"matchId=(\d+)")
 SCORE = re.compile(r"(\d+)\s*[-–]\s*(\d+)")
@@ -164,9 +165,12 @@ def build_match(fixture: dict, card: dict, division: int, season: str) -> Match 
         return TeamResult(
             name=name,
             players=[
-                # No stable id in the card, so the name carries identity —
-                # which is what crosses seasons anyway, since ids are reissued.
-                PlayerResult(name=player, player_id=player, games_won=won)
+                # Cards carry no stable id, so the name is the identity — and
+                # the site is not consistent about case ("Michele de Giovanni"
+                # on one page, "De Giovanni" on another), which would split one
+                # player in two. The normalised name is the id; the rendered
+                # one stays as the display name.
+                PlayerResult(name=player, player_id=normalise(player), games_won=won)
                 for player, won in wins.items()
             ],
             total_score=total,

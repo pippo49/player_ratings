@@ -66,16 +66,11 @@ jobs:
       # does not already have it.
       - run: uv sync
 
-      - name: Download raw league pages
+      # Prints to the log rather than uploading: artifact blob storage is
+      # not reachable from the sandbox this is written in, but job logs are.
+      - name: Report league page structure
         if: inputs.fetch_pages != ''
-        run: uv run python fetch_pages.py "${{ inputs.fetch_pages }}" pages
-
-      - uses: actions/upload-artifact@v4
-        if: inputs.fetch_pages != ''
-        with:
-          name: league-pages
-          path: pages/
-          retention-days: 3
+        run: uv run python fetch_pages.py "${{ inputs.fetch_pages }}"
 
       - name: Fetch the published division structure
         if: inputs.fetch_structure != ''

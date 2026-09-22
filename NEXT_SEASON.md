@@ -160,6 +160,49 @@ A hand-entered roster carries no appearance history, so it falls back to the
 best three shifted down by `36.1 + 5.3 × (squad − 3)` points, fitted over the
 same 85 teams.
 
+## The 2026/27 site redesign
+
+The league rebuilt its site for 2026/27. The 2025/26 parser is dead: `div.home`,
+`div.away`, `div.playerName` and `div.score` are all absent. The new markup is
+`tt-` prefixed and still server-rendered, so it is parseable — no JavaScript
+hydration, no embedded JSON.
+
+| What | Where |
+|---|---|
+| Fixtures | `table.tt-fixture-table`, one per week; `td.tt-fixture-teamcell` (x2), `-date`, `-time`, `-score`, `-venue` |
+| Tables | `td.tt-table-col-pos` / `-team` / `-pts`, team links as `a.tt-team-link` |
+| Squads | `/Results/Team?leagueName=…&divisionName=…&teamName=…`, players as `a.tt-player-link` |
+| Players | `/Results/Player?leagueName=…&playerName=…&id=…` |
+
+Division Four shows 110 fixtures over 22 weeks, which is 11 teams playing each
+other home and away — one fewer than the structure fetch recorded, so the
+structure is worth re-fetching with the new parser.
+
+### Player ids do not survive the season boundary
+
+The league reissues player ids each season. Of the 178 players registered for
+2026/27 so far, 121 played in 2025/26 — and **not one has the same id**. Philip
+Parsons was 399437, and is now 414626.
+
+Carrying ratings forward by `player_id` therefore fails silently: every
+returning player looks new and gets seeded from the division ladder, throwing
+away a season of rating history. Matching has to be by name.
+
+Names are near enough unique to carry that: across 617 players in 2025/26
+exactly one name maps to two ids (Jolanta Gotovska), and no name appears twice
+in the 2026/27 squads. A name match with a hand-checked exceptions list is
+sound; a fuzzy match is not needed.
+
+### Squads fill up over the opening weeks
+
+`fetch_squads.py` writes `data/squads_<season>.json` from the team pages. As of
+22 September, 89 teams answered with 178 players registered and **61 teams have
+nobody registered at all**. Apex 4 has four: Ashuk Ali, Srinbas Bhamidipati,
+Debbie O'Neill and Philip Parsons.
+
+It rewrites rather than merges, so it wants re-running through the opening
+weeks — and eventually folding into the weekly scheduled run.
+
 ## Verified against real data
 
 937 matches from Winter 2025/26, September 2026:

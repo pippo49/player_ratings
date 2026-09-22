@@ -1,13 +1,13 @@
 """Report league page structure, for writing parsers against.
 
-The site is only reachable with open internet, and artifact storage is not
-reachable from the development sandbox, so this prints a bounded summary to
-stdout to be read back from the job log.
+Run against a finished season (2025-26) to see played fixtures and match
+cards: the 2026/27 season has barely started, but the redesigned site serves
+last season's results in the new markup, and those results are already
+parsed correctly by the old scraper — so they double as a test oracle.
 
-    .venv/bin/python3 fetch_pages.py 2026-27
+    .venv/bin/python3 fetch_pages.py 2025-26
 """
 
-import json
 import re
 import sys
 import time
@@ -19,9 +19,6 @@ from bs4 import BeautifulSoup
 from scraper import BASE_URL, LEAGUE, REQUEST_DELAY, _season_slug
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ratings-bot/1.0)"}
-OLD_BASE = "https://old.tabletennis365.com"
-
-LEGACY = {"home": "home", "away": "away", "playerName": "playerName", "score": "score"}
 
 
 def get(url: str) -> str | None:
@@ -36,79 +33,78 @@ def get(url: str) -> str | None:
     return r.text if r.status_code == 200 else None
 
 
-def legacy_counts(soup) -> str:
-    return ", ".join(f"{k}={len(soup.find_all(class_=v))}" for k, v in LEGACY.items())
-
-
-def tt_classes(soup, limit=18) -> None:
+def tt_classes(soup, limit=20) -> None:
     c = Counter()
     for tag in soup.find_all(class_=True):
         for cls in tag.get("class", []):
-            if cls.startswith("tt-") and "langswitch" not in cls and "footer" not in cls:
+            if cls.startswith("tt-") and not any(
+                skip in cls for skip in ("langswitch", "footer", "nav", "banner", "ad-")
+            ):
                 c[f"{tag.name}.{cls}"] += 1
     for name, n in c.most_common(limit):
         print(f"      {n:>4}  {name}")
 
 
 def main() -> None:
-    season = sys.argv[1] if len(sys.argv) > 1 else "2026-27"
+    season = sys.argv[1] if len(sys.argv) > 1 else "2025-26"
     slug = _season_slug(season)
+    print(f"Structure report for {season} ({slug})")
 
-    # 1. Does the old site still serve the layout the parser was written for?
-    print("=== OLD SITE — does the legacy layout survive? ===")
-    for section in ("Fixtures", "Results"):
-        url = f"{OLD_BASE}/{LEAGUE}/{section}/{slug}/Division_Four"
-        print(f"  {url}")
-        html = get(url)
-        if html:
-            soup = BeautifulSoup(html, "html.parser")
-            print(f"    legacy: {legacy_counts(soup)}")
-            print(f"    MatchCard links: {len(soup.find_all('a', href=re.compile('/MatchCard/')))}")
+    url = f"{BASE_URL}/{LEAGUE}/Fixtures/{slug}/Division_Four"
+    print(f"\n=== Fixtures — Division_Four ===\n    {url}")
+    html = get(url)
+    if not html:
+        return
+    soup = BeautifulSoup(html, "html.parser")
+    tt_classes(soup)
 
-    # 2. New tables page — the team list and their links.
-    print("\n=== NEW SITE — Tables/Division_Four ===")
-    html = get(f"{BASE_URL}/{LEAGUE}/Tables/{slug}/Division_Four")
-    team_url = None
-    if html:
-        soup = BeautifulSoup(html, "html.parser")
-        links = soup.find_all("a", class_="tt-team-link")
-        print(f"    tt-team-link count: {len(links)}")
-        for a in links[:14]:
-            print(f"      {a.get_text(strip=True)!r} -> {a.get('href')}")
-        if links:
-            href = links[0]["href"]
-            team_url = href if href.startswith("http") else BASE_URL + href
+    # A played fixture has a score; find one and show the whole row.
+    rows = soup.find_all("tr")
+    played = None
+    for row in rows:
+        score_cell = row.find("td", class_="tt-fixture-score")
+        if score_cell and re.search(r"\d\s*[-–]\s*\d", score_cell.get_text()):
+            played = row
+            break
 
-    # 3. New fixtures page — is the content server-rendered at all?
-    print("\n=== NEW SITE — Fixtures/Division_Four ===")
-    html = get(f"{BASE_URL}/{LEAGUE}/Fixtures/{slug}/Division_Four")
-    if html:
-        soup = BeautifulSoup(html, "html.parser")
-        print(f"    legacy: {legacy_counts(soup)}")
-        print("    tt- classes:")
-        tt_classes(soup)
-        print(f"    tables: {len(soup.find_all('table'))}, rows: {len(soup.find_all('tr'))}")
-        # Server-rendered, or hydrated from embedded JSON?
-        for s in soup.find_all("script"):
-            txt = s.string or ""
-            if len(txt) > 400 and ("fixture" in txt.lower() or "match" in txt.lower()):
-                print(f"    script with match data, {len(txt)} chars, starts: {txt.strip()[:200]}")
-                break
-        else:
-            print("    no embedded match JSON found in <script>")
+    if played is None:
+        print("\n    no played fixture found on this page")
+        return
 
-    # 4. A team page — the squad list.
-    if team_url:
-        print(f"\n=== NEW SITE — team page ===\n    {team_url}")
-        html = get(team_url)
-        if html:
-            soup = BeautifulSoup(html, "html.parser")
-            print("    tt- classes:")
-            tt_classes(soup)
-            players = soup.find_all("a", href=re.compile(r"/Player"))
-            print(f"    player links: {len(players)}")
-            for a in players[:12]:
-                print(f"      {a.get_text(strip=True)!r} -> {a.get('href')}")
+    print("\n    a played fixture row, cell by cell:")
+    for cell in played.find_all("td"):
+        classes = " ".join(cell.get("class", []))
+        text = re.sub(r"\s+", " ", cell.get_text(" ", strip=True))[:70]
+        link = cell.find("a")
+        href = (link.get("href") or "")[:90] if link else ""
+        print(f"      [{classes:24}] {text!r}")
+        if href:
+            print(f"        -> {href}")
+
+    # Follow whatever the score links to — the match detail.
+    score_link = played.find("td", class_="tt-fixture-score").find("a")
+    if not score_link:
+        score_link = played.find("a", href=re.compile(r"Match|Card|Result", re.I))
+    if not score_link:
+        print("\n    the score does not link anywhere — no match card?")
+        return
+
+    href = score_link["href"]
+    card_url = href if href.startswith("http") else BASE_URL + href
+    print(f"\n=== Match detail ===\n    {card_url}")
+    card = get(card_url)
+    if not card:
+        return
+    csoup = BeautifulSoup(card, "html.parser")
+    tt_classes(csoup, 24)
+    print(f"    tables: {len(csoup.find_all('table'))}, rows: {len(csoup.find_all('tr'))}")
+    print(f"    player links: {len(csoup.find_all('a', href=re.compile(r'/Results/Player')))}")
+    print("\n    first 8 rows of the detail:")
+    for row in csoup.find_all("tr")[:8]:
+        cells = [re.sub(r"\s+", " ", c.get_text(" ", strip=True))[:26]
+                 for c in row.find_all(["td", "th"])]
+        if any(cells):
+            print(f"      {cells}")
 
 
 if __name__ == "__main__":

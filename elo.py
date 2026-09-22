@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from models import Match, PlayerResult
+from player_identity import build_index, find_match, load_aliases
 
 # Starting ELO by division, for a player with no rating history. Only ever
 # applies to someone genuinely new — anyone with a previous season carries
@@ -113,8 +114,14 @@ def _seed_ratings(
     finished it on. Anyone new starts from the seed for the division they
     play most in. Team and division are always taken from *these* matches,
     so labels reflect the season being rated rather than a player's history.
+
+    Carried players are found by id first and by name second, because the
+    league reissues player ids every season — matching on id alone would
+    treat every returning player as new and throw away their rating.
     """
     carried = carried or {}
+    name_index, _ambiguous = build_index(carried)
+    aliases = load_aliases()
 
     # First pass: count matches per division and per team for each player
     div_counts: dict[str, Counter] = {}   # player_id -> Counter of divisions
@@ -132,7 +139,7 @@ def _seed_ratings(
     for pid, name in names.items():
         most_played_div = div_counts[pid].most_common(1)[0][0]
         most_played_team = team_counts[pid].most_common(1)[0][0]
-        previous = carried.get(pid)
+        previous = carried.get(pid) or find_match(name, name_index, aliases)
         seed = previous.rating if previous else seed_for(season, most_played_div)
         ratings[pid] = PlayerRating(
             name=name,
@@ -228,9 +235,15 @@ def _rate_season(
     """Converge ratings over one season's matches, starting from *carried*."""
     ratings = _seed_ratings(matches, season, carried)
     seeds = {pid: pr.rating for pid, pr in ratings.items()}
-    experience = {
-        pid: carried[pid].matches_played for pid in ratings if pid in carried
-    }
+    # Same identity rule as the seed: id first, then name.
+    name_index, _ = build_index(carried)
+    aliases = load_aliases()
+    previous_of: dict[str, PlayerRating] = {}
+    for pid, pr in ratings.items():
+        found = carried.get(pid) or find_match(pr.name, name_index, aliases)
+        if found is not None:
+            previous_of[pid] = found
+    experience = {pid: prev.matches_played for pid, prev in previous_of.items()}
 
     prev_ratings = dict(seeds)
     for _ in range(MAX_ITERATIONS):
@@ -245,7 +258,7 @@ def _rate_season(
     # Match counts are a career total, so a player's rating stays "reliable"
     # across a season boundary rather than resetting to provisional.
     for pid, pr in ratings.items():
-        previous = carried.get(pid)
+        previous = previous_of.get(pid)
         if previous:
             pr.matches_played += previous.matches_played
             pr.singles_won += previous.singles_won

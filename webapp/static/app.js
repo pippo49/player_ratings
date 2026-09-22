@@ -209,6 +209,9 @@ function renderMeta() {
     const previous = (d.seasons || []).filter((s) => s !== d.season_id).pop();
     parts.push(previous ? `ratings from ${previous.replace("-", "/")}` : "no results yet");
   }
+  if (d.projected && d.registered_squads) {
+    parts.push(`${d.registered_squads} squads registered`);
+  }
   parts.push(`${d.player_count} players`);
   if (!d.live && d.generated_at) parts.push(`updated ${formatDate(d.generated_at)}`);
   $("#meta").textContent = parts.join(" · ");
@@ -853,11 +856,19 @@ function squadCard(team, pool) {
   const hint = el("p", "hint");
   const previous = (state.data.seasons || [])
     .filter((s) => s !== state.data.season_id).pop();
-  hint.textContent = state.data.projected
-    ? "Untick anyone who cannot play. Squads are projected from " +
-      `${previous ? previous.replace("-", "/") : "last season"} until real ` +
-      "results come in."
-    : "Untick anyone who cannot play.";
+  const own = state.teams.get(team.name);
+  const last = previous ? previous.replace("-", "/") : "last season";
+  if (!state.data.projected) {
+    hint.textContent = "Untick anyone who cannot play.";
+  } else if (own && own.registered) {
+    hint.textContent =
+      `Untick anyone who cannot play. This is the squad registered with the ` +
+      `league — more may still be added. Ratings carry from ${last}.`;
+  } else {
+    hint.textContent =
+      "Untick anyone who cannot play. Nobody is registered for this team yet, " +
+      `so this is its ${last} squad.`;
+  }
   card.append(h, hint);
 
   const box = el("div", "squad");

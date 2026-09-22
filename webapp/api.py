@@ -5,12 +5,15 @@ the server only ever has to hand over one document: every rated player, every
 team roster, and a little metadata about the data set.
 """
 
+import json
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 from elo import MIN_MATCHES, PlayerRating, calculate_ratings, seed_for
 from models import Match
 from scraper import CURRENT_SEASON
+from player_identity import DATA_DIR, build_index, find_match, load_aliases
 from season_transition import (
     CALL_UP_PROMOTION_THRESHOLD,
     DIVISION_OVERRIDES,
@@ -138,6 +141,78 @@ def _infer_call_up_promotions(
     return {pid: min(teams)[1] for pid, teams in qualifying.items()}
 
 
+def load_registered_squads(season: str) -> dict[str, dict]:
+    """Squads as registered with the league, from fetch_squads.py.
+
+    Teams register players through the opening weeks of a season, so most
+    squads start empty and fill up. An empty one means "not registered yet",
+    not "no players", and is left to fall back to last season's roster.
+    """
+    path = DATA_DIR / f"squads_{season}.json"
+    if not path.exists():
+        return {}
+    teams = json.loads(path.read_text()).get("teams", {})
+    return {name: info for name, info in teams.items() if info.get("players")}
+
+
+def _apply_registered_squads(
+    ratings: dict[str, PlayerRating],
+    rosters: dict[str, dict[str, int]],
+    divisions: dict[str, int],
+    squads: dict[str, dict],
+) -> set[str]:
+    """Replace rosters with the squads actually registered for this season.
+
+    Registered players carry their rating from last season where they played
+    it — matched by name, since the league reissues ids each season — and are
+    seeded from this season's division ladder where they are new to the
+    league. Returns the teams whose squad is real rather than carried.
+    """
+    name_index, _ = build_index(ratings)
+    aliases = load_aliases()
+    real: set[str] = set()
+
+    for team, info in squads.items():
+        division = divisions.get(team, info.get("division", UNKNOWN_DIVISION))
+        roster: dict[str, int] = {}
+
+        for player in info["players"]:
+            pid, name = player["id"], player["name"]
+            previous = find_match(name, name_index, aliases)
+            if previous is not None:
+                # Same person, new id: keep the rating and the record.
+                ratings[pid] = PlayerRating(
+                    name=name,
+                    player_id=pid,
+                    rating=previous.rating,
+                    division=division,
+                    team=team,
+                    matches_played=previous.matches_played,
+                    singles_won=previous.singles_won,
+                    singles_played=previous.singles_played,
+                )
+            else:
+                ratings[pid] = PlayerRating(
+                    name=name,
+                    player_id=pid,
+                    rating=seed_for(CURRENT_SEASON, division),
+                    division=division,
+                    team=team,
+                )
+            roster[pid] = 0  # no appearances this season yet
+
+        rosters[team] = roster
+        real.add(team)
+
+    # Anyone carried from last season whose team now has a registered squad
+    # they are not in has left it, and should not show under that team.
+    for pr in ratings.values():
+        if pr.team in real and pr.player_id not in rosters[pr.team]:
+            pr.team = ""
+            pr.division = None
+    return real
+
+
 def _apply_season_overrides(
     ratings: dict[str, PlayerRating],
     rosters: dict[str, dict[str, int]],
@@ -232,8 +307,15 @@ def build_payload(matches: list[Match]) -> dict:
     # season_transition.py is a hand-maintained bridge for the gap between
     # seasons. The moment real results exist it is not just unnecessary but
     # wrong, so it stands down on its own rather than waiting to be deleted.
+    registered: set[str] = set()
     if projected:
         _apply_season_overrides(ratings, rosters, divisions)
+        # Squads registered with the league supersede the hand-entered ones.
+        # Teams that have not registered anyone yet keep last season's roster,
+        # which is the only guide available until they do.
+        registered = _apply_registered_squads(
+            ratings, rosters, divisions, load_registered_squads(CURRENT_SEASON)
+        )
 
     players = sorted(
         (_player_dict(pr) for pr in ratings.values()),
@@ -253,6 +335,9 @@ def build_payload(matches: list[Match]) -> dict:
         teams.append({
             "name": team,
             "division": division,
+            # True when this is the squad registered with the league, false
+            # when it is last season's roster standing in until they register.
+            "registered": team in registered,
             "players": [
                 {"id": pid, "appearances": roster[pid]}
                 for pid in member_ids
@@ -267,6 +352,7 @@ def build_payload(matches: list[Match]) -> dict:
         # True while the new season has no results and the app is showing a
         # projection built from last season's ratings and known moves.
         "projected": projected,
+        "registered_squads": len(registered),
         "seasons": sorted({m.season for m in matches}),
         "match_count": len(matches),
         "current_season_matches": sum(1 for m in matches if m.season == CURRENT_SEASON),

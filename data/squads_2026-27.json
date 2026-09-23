@@ -256,14 +256,6 @@
    "division": 1,
    "players": [
     {
-     "id": "414471",
-     "name": "Tulay Dundar"
-    },
-    {
-     "id": "414485",
-     "name": "Peter Hua"
-    },
-    {
      "id": "414463",
      "name": "Vadym Krevs"
     },
@@ -340,7 +332,28 @@
   },
   "Morpeth 7": {
    "division": 1,
-   "players": []
+   "players": [
+    {
+     "id": "414471",
+     "name": "Tulay Dundar"
+    },
+    {
+     "id": "414485",
+     "name": "Peter Hua"
+    },
+    {
+     "id": "414889",
+     "name": "Medht Mohamed"
+    },
+    {
+     "id": "414890",
+     "name": "Jewels Uddin"
+    },
+    {
+     "id": "414892",
+     "name": "Katrina Yiwen Sun"
+    }
+   ]
   },
   "St Katharines Trust 3": {
    "division": 1,
@@ -434,19 +447,123 @@
   },
   "Clissold 1": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414757",
+     "name": "Chris Beckley"
+    },
+    {
+     "id": "414761",
+     "name": "Junior Facey"
+    },
+    {
+     "id": "414760",
+     "name": "Iyabo Ogun"
+    },
+    {
+     "id": "414758",
+     "name": "Luke Smyth"
+    }
+   ]
   },
   "Exiles 1": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414764",
+     "name": "John Bispham"
+    },
+    {
+     "id": "414763",
+     "name": "Anthony Catt"
+    },
+    {
+     "id": "414762",
+     "name": "Adam Johnson"
+    },
+    {
+     "id": "414765",
+     "name": "Peter Schmidt"
+    }
+   ]
   },
   "Exiles 2": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414771",
+     "name": "John Crawford"
+    },
+    {
+     "id": "414768",
+     "name": "Christopher Herbert"
+    },
+    {
+     "id": "414774",
+     "name": "Gareth Jones"
+    },
+    {
+     "id": "414766",
+     "name": "Neil Le Milliere"
+    },
+    {
+     "id": "414769",
+     "name": "Michael Loveder"
+    },
+    {
+     "id": "414767",
+     "name": "Terry McKee"
+    },
+    {
+     "id": "414772",
+     "name": "Andrew Muller"
+    },
+    {
+     "id": "414770",
+     "name": "Leslie Samuels"
+    },
+    {
+     "id": "414773",
+     "name": "Ronald Turner"
+    }
+   ]
   },
   "Flick TTC 3": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414775",
+     "name": "Brandon Alcalde"
+    },
+    {
+     "id": "414778",
+     "name": "Massimiliano D'Angelo"
+    },
+    {
+     "id": "414781",
+     "name": "Charles Dequeker"
+    },
+    {
+     "id": "414779",
+     "name": "Aleksandr Klimenko"
+    },
+    {
+     "id": "414785",
+     "name": "Isaac Li"
+    },
+    {
+     "id": "414777",
+     "name": "Shreyansh Makhanasa"
+    },
+    {
+     "id": "414780",
+     "name": "Umberto Nico Giamundo"
+    },
+    {
+     "id": "414782",
+     "name": "Maulik Solanki"
+    }
+   ]
   },
   "Fulham Brunswick 2": {
    "division": 2,
@@ -454,27 +571,189 @@
   },
   "Greenhouse 1": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414838",
+     "name": "Luna Archard"
+    },
+    {
+     "id": "414841",
+     "name": "Kingsley Arthur"
+    },
+    {
+     "id": "414839",
+     "name": "Dragos Etves"
+    },
+    {
+     "id": "414837",
+     "name": "Jonabel Taguibao"
+    },
+    {
+     "id": "414840",
+     "name": "Daniel Tan"
+    }
+   ]
   },
   "Greenhouse 2 Jr": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414855",
+     "name": "Danny Abdalla"
+    },
+    {
+     "id": "414844",
+     "name": "Parsia  Ahsani"
+    },
+    {
+     "id": "414854",
+     "name": "Nour  Alamine"
+    },
+    {
+     "id": "414846",
+     "name": "Zaid  Aldilimi"
+    },
+    {
+     "id": "414856",
+     "name": "Luca  Archard"
+    },
+    {
+     "id": "414847",
+     "name": "Ali Hashim"
+    },
+    {
+     "id": "414848",
+     "name": "Zeina  Negam"
+    },
+    {
+     "id": "414845",
+     "name": "Charlton Ngitngit"
+    },
+    {
+     "id": "414843",
+     "name": "Phillip  Snell"
+    }
+   ]
   },
   "Irving 1": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414788",
+     "name": "Alfredo Bianco"
+    },
+    {
+     "id": "414790",
+     "name": "Patrick Gilbert"
+    },
+    {
+     "id": "414796",
+     "name": "Gary Lin"
+    },
+    {
+     "id": "414791",
+     "name": "Will Lines"
+    },
+    {
+     "id": "414789",
+     "name": "Jean-Guy Sylvestre"
+    }
+   ]
   },
   "Morpeth 8": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414809",
+     "name": "Christopher Alexander"
+    },
+    {
+     "id": "414807",
+     "name": "Christoph Eschenfelder"
+    },
+    {
+     "id": "414803",
+     "name": "Peter Klinger"
+    },
+    {
+     "id": "414802",
+     "name": "PHONG LUONG"
+    },
+    {
+     "id": "414799",
+     "name": "Elias Momann"
+    },
+    {
+     "id": "414801",
+     "name": "Moises Nevett"
+    },
+    {
+     "id": "414804",
+     "name": "Grzegorz Paluch"
+    },
+    {
+     "id": "414800",
+     "name": "Sihui Xiong"
+    },
+    {
+     "id": "414808",
+     "name": "Yundong Zhang"
+    }
+   ]
   },
   "St Katharines Trust 4": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414813",
+     "name": "Asif Anwar"
+    },
+    {
+     "id": "414814",
+     "name": "Rodro  Kamrul"
+    },
+    {
+     "id": "414812",
+     "name": "Kelyan Laverdure"
+    },
+    {
+     "id": "414810",
+     "name": "Ben Mensah"
+    },
+    {
+     "id": "414811",
+     "name": "Femi Olokun"
+    }
+   ]
   },
   "Walworth Gainsford": {
    "division": 2,
-   "players": []
+   "players": [
+    {
+     "id": "414816",
+     "name": "Julien CAMPAN"
+    },
+    {
+     "id": "414828",
+     "name": "Matthew Lyth"
+    },
+    {
+     "id": "414819",
+     "name": "Beng-Fai Mok"
+    },
+    {
+     "id": "414818",
+     "name": "Omri  Mukamel"
+    },
+    {
+     "id": "414817",
+     "name": "Heiley Wong"
+    },
+    {
+     "id": "414815",
+     "name": "Winston Wong"
+    }
+   ]
   },
   "Apex 3": {
    "division": 3,
@@ -741,12 +1020,20 @@
    "division": 4,
    "players": [
     {
+     "id": "414720",
+     "name": "Henry Adam"
+    },
+    {
      "id": "414655",
      "name": "Ashuk Ali"
     },
     {
      "id": "414627",
      "name": "Srinbas Bhamidipati"
+    },
+    {
+     "id": "414883",
+     "name": "Alina Binte Rashad"
     },
     {
      "id": "414628",
@@ -793,11 +1080,33 @@
   },
   "Fusion 7": {
    "division": 4,
-   "players": []
+   "players": [
+    {
+     "id": "414922",
+     "name": "Makanjuola Akinyemi"
+    },
+    {
+     "id": "414921",
+     "name": "Denis Mann"
+    }
+   ]
   },
   "Fusion 8 Jr": {
    "division": 4,
-   "players": []
+   "players": [
+    {
+     "id": "414924",
+     "name": "Haruki Bohl"
+    },
+    {
+     "id": "414925",
+     "name": "Calen  Dawson"
+    },
+    {
+     "id": "414923",
+     "name": "Ritatavas Jinka"
+    }
+   ]
   },
   "Highbury 3": {
    "division": 4,
@@ -927,6 +1236,10 @@
      "name": "Nameer  Jasim"
     },
     {
+     "id": "414719",
+     "name": "Nikolay Karlov"
+    },
+    {
      "id": "414665",
      "name": "ejaz Mohiuddin"
     }
@@ -967,15 +1280,46 @@
   },
   "Clissold 2": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "414887",
+     "name": "Emilio Calcada"
+    },
+    {
+     "id": "414886",
+     "name": "Ben Lerman"
+    },
+    {
+     "id": "414885",
+     "name": "Stephen Nelson-Smith"
+    }
+   ]
   },
   "Clissold 3": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "414893",
+     "name": "Taiwo Adedayo"
+    },
+    {
+     "id": "414894",
+     "name": "Tim Flach"
+    },
+    {
+     "id": "414888",
+     "name": "Vasily Sinikov"
+    }
+   ]
   },
   "Clissold 4 Jr": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "414907",
+     "name": "Obinna Okorro"
+    }
+   ]
   },
   "Fulham Brunswick 3": {
    "division": 5,
@@ -987,7 +1331,20 @@
   },
   "Fusion 9 Jr": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "414929",
+     "name": "Felix Brand"
+    },
+    {
+     "id": "414928",
+     "name": "Alfred Morley"
+    },
+    {
+     "id": "414931",
+     "name": "Luca Murphy-Gonzalez"
+    }
+   ]
   },
   "Highbury 4": {
    "division": 5,
@@ -999,7 +1356,36 @@
   },
   "Morpeth 12": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "414935",
+     "name": "Tunde Alabi"
+    },
+    {
+     "id": "414937",
+     "name": "Mike Brady"
+    },
+    {
+     "id": "414932",
+     "name": "Angela Chuang"
+    },
+    {
+     "id": "414934",
+     "name": "Kate Ha"
+    },
+    {
+     "id": "414936",
+     "name": "Larry Ren"
+    },
+    {
+     "id": "414933",
+     "name": "Luigi Vanzan"
+    },
+    {
+     "id": "414942",
+     "name": "Zehao Zhang"
+    }
+   ]
   },
   "TJ TTC 2": {
    "division": 5,
@@ -1007,7 +1393,32 @@
   },
   "Table Tennis Fight Club 3": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "414943",
+     "name": "Romil Goyal"
+    },
+    {
+     "id": "414948",
+     "name": "Liudas Jakusovas"
+    },
+    {
+     "id": "414947",
+     "name": "Wahib Kamran"
+    },
+    {
+     "id": "414949",
+     "name": "Utkarsh Sharma"
+    },
+    {
+     "id": "414946",
+     "name": "Josef Wang"
+    },
+    {
+     "id": "414944",
+     "name": "Scott Zhang"
+    }
+   ]
   },
   "Clissold 5": {
    "division": 6,

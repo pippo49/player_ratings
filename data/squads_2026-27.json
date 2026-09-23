@@ -857,11 +857,49 @@
   },
   "Highbury 1": {
    "division": 3,
-   "players": []
+   "players": [
+    {
+     "id": "414959",
+     "name": "Thomas Arnott"
+    },
+    {
+     "id": "414957",
+     "name": "Isaac Pena Salvatierra"
+    },
+    {
+     "id": "414956",
+     "name": "Marcin Szymanski"
+    },
+    {
+     "id": "414958",
+     "name": "Kung Wai Chong"
+    }
+   ]
   },
   "Highbury 2": {
    "division": 3,
-   "players": []
+   "players": [
+    {
+     "id": "414952",
+     "name": "John Cung"
+    },
+    {
+     "id": "414955",
+     "name": "Wai Lun Ho"
+    },
+    {
+     "id": "414951",
+     "name": "Julian Morgan"
+    },
+    {
+     "id": "414954",
+     "name": "Gustav Roedstroem"
+    },
+    {
+     "id": "414953",
+     "name": "Richie Zhang"
+    }
+   ]
   },
   "Irving 2": {
    "division": 3,
@@ -1110,7 +1148,24 @@
   },
   "Highbury 3": {
    "division": 4,
-   "players": []
+   "players": [
+    {
+     "id": "414961",
+     "name": "Mike Goodland"
+    },
+    {
+     "id": "414963",
+     "name": "William Mitchell"
+    },
+    {
+     "id": "414964",
+     "name": "Paul Puget"
+    },
+    {
+     "id": "414962",
+     "name": "Julian Warowioff"
+    }
+   ]
   },
   "Irving 3": {
    "division": 4,

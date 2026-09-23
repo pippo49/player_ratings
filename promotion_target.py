@@ -128,7 +128,7 @@ def _expected_trio(squad: list[tuple[float, int]]) -> list[float]:
     return trio
 
 
-def project(division: int) -> None:
+def project(division: int, perspective: str | None = None) -> None:
     """Project a division's table from current ratings.
 
     Every team is modelled on the three it can be expected to field rather
@@ -173,13 +173,30 @@ def project(division: int) -> None:
           f"({2 * (len(rows) - 1)} matches)\n")
     print(f"  {'':>3} {'team':<28} {'pts/match':>10}   {'season pts':>10}")
     for i, (name, rate) in enumerate(rows, 1):
-        marker = "  <- promotion cut" if i == 2 else ""
+        marker = "  <- last promotion place" if i == 2 else ""
         print(f"  {i:>3} {name:<28} {rate:>10.2f}   "
               f"{rate * 2 * (len(rows) - 1):>10.0f}{marker}")
 
-    print(f"\n  To win it      : better than {rows[0][1]:.2f} per match")
-    print(f"  To finish top 2: better than {rows[2][1]:.2f} per match "
-          f"(what 3rd is projected to average)")
+    # To finish in the top two you must beat the second best of the *other*
+    # teams — beating the side projected third only puts you third. Taking
+    # the third row of a list that includes you understates the bar.
+    others = [r for r in rows if r[0] != perspective] if perspective else rows
+    if len(others) < 2:
+        return
+
+    who = f" for {perspective}" if perspective else " for a team outside the top two"
+    print(f"\n  What it takes{who}:")
+    print(f"    to win the division : better than {others[0][1]:.2f} per match "
+          f"({others[0][0]})")
+    print(f"    to finish top two   : better than {others[1][1]:.2f} per match "
+          f"({others[1][0]})")
+    if perspective:
+        ours = next((r[1] for r in rows if r[0] == perspective), None)
+        if ours is None:
+            print(f"    (no team called {perspective!r} in this division)")
+        else:
+            print(f"    {perspective} is projected at {ours:.2f}, "
+                  f"{others[1][1] - ours:+.2f} from the top-two bar")
 
 
 def main() -> None:
@@ -189,7 +206,10 @@ def main() -> None:
         return
     args = [a for a in sys.argv[1:]]
     if args and args[0] == "--projected":
-        project(int(args[1]) if len(args) > 1 else 5)
+        project(
+            int(args[1]) if len(args) > 1 else 5,
+            args[2] if len(args) > 2 else None,
+        )
         return
     only = int(args[0]) if args else None
     report(matches, only)

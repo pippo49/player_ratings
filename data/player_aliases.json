@@ -3,6 +3,15 @@
   "aliases": {
     "James Mullineaux": "Jamie Mullineaux",
     "Peter Hua": "Peter Hau",
-    "Samson Bekele": "Sammy Bekele"
+    "Samson Bekele": "Sammy Bekele",
+    "Henry Adam": "Henry Adams",
+    "John Bispham": "Johnny Bispham",
+    "Christopher Alexander": "Chris Alexander",
+    "Anthony Catt": "Tony Catt",
+    "Grzegorz Paluch": "Greg Paluch"
+  },
+  "_not_matches_comment": "Pairs the matcher keeps suggesting that a human has confirmed are different people. Listed so they stop reappearing in the review list on every refresh.",
+  "not_matches": {
+    "Mike Brady": "Ken Brady"
   }
 }

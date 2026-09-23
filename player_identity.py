@@ -46,6 +46,18 @@ def load_aliases() -> dict[str, str]:
     return {normalise(k): v for k, v in data.get("aliases", {}).items()}
 
 
+def load_non_matches() -> dict[str, str]:
+    """Pairs a human has confirmed are different people.
+
+    Squads are re-scraped through the season, so without this the same
+    rejected suggestion would come back for review every single time.
+    """
+    if not ALIASES_FILE.exists():
+        return {}
+    data = json.loads(ALIASES_FILE.read_text())
+    return {normalise(k): normalise(v) for k, v in data.get("not_matches", {}).items()}
+
+
 def build_index(previous: dict) -> tuple[dict, set[str]]:
     """Index previous-season players by normalised name.
 
@@ -115,9 +127,13 @@ def report(season: str = "2026-27") -> int:
         print(f"  ambiguous last season       : {len(ambiguous)} "
               f"({', '.join(sorted(ambiguous))}) — excluded from matching")
 
+    rejected = load_non_matches()
     near, brand_new = [], []
     for team, name, _ in unmatched:
-        candidates = near_matches(name, index)
+        candidates = [
+            (ratio, candidate) for ratio, candidate in near_matches(name, index)
+            if rejected.get(normalise(name)) != normalise(candidate)
+        ]
         (near if candidates else brand_new).append((team, name, candidates))
 
     if near:

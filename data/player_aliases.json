@@ -12,6 +12,7 @@
   },
   "_not_matches_comment": "Pairs the matcher keeps suggesting that a human has confirmed are different people. Listed so they stop reappearing in the review list on every refresh.",
   "not_matches": {
-    "Mike Brady": "Ken Brady"
+    "Mike Brady": "Ken Brady",
+    "George Pool": "Georges Sokol"
   }
 }

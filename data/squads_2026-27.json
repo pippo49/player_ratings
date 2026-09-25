@@ -23,7 +23,16 @@
   },
   "Morpeth 1": {
    "division": 0,
-   "players": []
+   "players": [
+    {
+     "id": "415036",
+     "name": "Abdul Raqueeb"
+    },
+    {
+     "id": "415037",
+     "name": "Tianyi Yu"
+    }
+   ]
   },
   "Morpeth 2": {
    "division": 0,
@@ -1415,11 +1424,49 @@
   },
   "Highbury 4": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "415049",
+     "name": "Tom Cannon"
+    },
+    {
+     "id": "415048",
+     "name": "Shaw Cooper"
+    },
+    {
+     "id": "415051",
+     "name": "Sanket Shah"
+    },
+    {
+     "id": "415052",
+     "name": "Raphael Sobotka"
+    }
+   ]
   },
   "Highbury 5": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "415055",
+     "name": "Rhys Headland"
+    },
+    {
+     "id": "415054",
+     "name": "Florian Nelsen"
+    },
+    {
+     "id": "415053",
+     "name": "Stone NG"
+    },
+    {
+     "id": "415056",
+     "name": "Igor Shilov"
+    },
+    {
+     "id": "415057",
+     "name": "John Wu"
+    }
+   ]
   },
   "Morpeth 12": {
    "division": 5,
@@ -1456,7 +1503,28 @@
   },
   "TJ TTC 2": {
    "division": 5,
-   "players": []
+   "players": [
+    {
+     "id": "415047",
+     "name": "Oluwaseun Adiomowo"
+    },
+    {
+     "id": "415045",
+     "name": "Eneffiok Anderson"
+    },
+    {
+     "id": "415046",
+     "name": "Michael Daramola"
+    },
+    {
+     "id": "415044",
+     "name": "Stephen Harrison"
+    },
+    {
+     "id": "415043",
+     "name": "Henry Ulzen-Plange"
+    }
+   ]
   },
   "Table Tennis Fight Club 3": {
    "division": 5,
@@ -1489,19 +1557,115 @@
   },
   "Clissold 5": {
    "division": 6,
-   "players": []
+   "players": [
+    {
+     "id": "415063",
+     "name": "David Beckett"
+    },
+    {
+     "id": "415059",
+     "name": "Janusz Carmello"
+    },
+    {
+     "id": "415062",
+     "name": "Harry Edwards"
+    },
+    {
+     "id": "415058",
+     "name": "Alkis Evgeniou"
+    },
+    {
+     "id": "415060",
+     "name": "Michael Renshaw"
+    },
+    {
+     "id": "415064",
+     "name": "Mark Thomson"
+    },
+    {
+     "id": "415061",
+     "name": "Dragan Vujovic"
+    }
+   ]
   },
   "Clissold 6 Jr": {
    "division": 6,
-   "players": []
+   "players": [
+    {
+     "id": "415067",
+     "name": "Daniel Lopez"
+    },
+    {
+     "id": "415068",
+     "name": "Ted Rider"
+    },
+    {
+     "id": "415065",
+     "name": "Leion Tanna-Wells"
+    },
+    {
+     "id": "415066",
+     "name": "Kyra Yala"
+    }
+   ]
   },
   "Flick TTC 6": {
    "division": 6,
-   "players": []
+   "players": [
+    {
+     "id": "415071",
+     "name": "Siddhartha Guruny"
+    },
+    {
+     "id": "415070",
+     "name": "Thomas Muellners"
+    },
+    {
+     "id": "415069",
+     "name": "Agshin Nabiyev"
+    },
+    {
+     "id": "415072",
+     "name": "Alexander Petersen"
+    },
+    {
+     "id": "415073",
+     "name": "Alexander  Reddy"
+    },
+    {
+     "id": "415074",
+     "name": "Sandiaa Vasanthi"
+    }
+   ]
   },
   "Flick TTC 7": {
    "division": 6,
-   "players": []
+   "players": [
+    {
+     "id": "415076",
+     "name": "Jonathan Gee"
+    },
+    {
+     "id": "415079",
+     "name": "Teh Jin Lim"
+    },
+    {
+     "id": "415075",
+     "name": "Andrey Shcherbakov"
+    },
+    {
+     "id": "415077",
+     "name": "Uwakmfon Utuk"
+    },
+    {
+     "id": "415078",
+     "name": "Frank Wang"
+    },
+    {
+     "id": "415080",
+     "name": "Isidore Yvernault"
+    }
+   ]
   },
   "Fulham Brunswick 5": {
    "division": 6,
@@ -1509,11 +1673,61 @@
   },
   "Highbury 6": {
    "division": 6,
-   "players": []
+   "players": [
+    {
+     "id": "415082",
+     "name": "Tarun Abraham"
+    },
+    {
+     "id": "415085",
+     "name": "Rishabh Chaterjee"
+    },
+    {
+     "id": "415090",
+     "name": "RAYYAN EL HOMSI"
+    },
+    {
+     "id": "415084",
+     "name": "George Pool"
+    },
+    {
+     "id": "415083",
+     "name": "Matt Tench"
+    },
+    {
+     "id": "415081",
+     "name": "Simon To"
+    }
+   ]
   },
   "Irving 4": {
    "division": 6,
-   "players": []
+   "players": [
+    {
+     "id": "415093",
+     "name": "Ken Brady"
+    },
+    {
+     "id": "415091",
+     "name": "Stephanie Fleck"
+    },
+    {
+     "id": "415094",
+     "name": "Miguel Angel Garcia Ochagavia"
+    },
+    {
+     "id": "415096",
+     "name": "Terence James"
+    },
+    {
+     "id": "415095",
+     "name": "Steve McLean"
+    },
+    {
+     "id": "415092",
+     "name": "Jeremy Wootten"
+    }
+   ]
   },
   "Morpeth 13 Jr": {
    "division": 6,

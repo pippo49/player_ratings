@@ -25,21 +25,53 @@ SCORE = re.compile(r"(\d+)\s*[-–]\s*(\d+)")
 # "Sat 27 Sep 2025", "27/09/2025" — the site has used both.
 DATE_FORMATS = ("%a %d %b %Y", "%d %b %Y", "%d/%m/%Y", "%Y-%m-%d")
 
+# An unplayed fixture carries no year: "Fri 06 Nov". Parsing that with
+# strptime is deprecated in 3.14 and slated to raise in 3.15, so the day and
+# month are read directly and the year comes from the season.
+YEARLESS = re.compile(r"^(?:[A-Za-z]{3,},?\s+)?(\d{1,2})\s+([A-Za-z]{3,})\.?$")
+MONTHS = {m: i for i, m in enumerate(
+    ("jan", "feb", "mar", "apr", "may", "jun",
+     "jul", "aug", "sep", "oct", "nov", "dec"), start=1)}
 
-def _parse_date(text: str) -> date | None:
+# A season runs across the new year, so a month tells you which half it is in.
+# August onwards is the first calendar year; January onwards is the second.
+SEASON_SPLIT_MONTH = 8
+
+
+def _season_years(season: str) -> tuple[int, int]:
+    """"2026-27" -> (2026, 2027)."""
+    start = int(season.split("-")[0])
+    return start, start + 1
+
+
+def _parse_date(text: str, season: str | None = None) -> date | None:
     cleaned = " ".join(text.split())
     for fmt in DATE_FORMATS:
         try:
             return datetime.strptime(cleaned, fmt).date()
         except ValueError:
             continue
+
+    yearless = YEARLESS.match(cleaned)
+    if yearless and season:
+        month = MONTHS.get(yearless.group(2)[:3].lower())
+        if month:
+            start, end = _season_years(season)
+            year = start if month >= SEASON_SPLIT_MONTH else end
+            try:
+                return date(year, month, int(yearless.group(1)))
+            except ValueError:
+                pass  # e.g. 31 Feb — fall through to the ISO search
+
     # Fall back to any embedded ISO date.
     iso = re.search(r"(\d{4}-\d{2}-\d{2})", cleaned)
     return date.fromisoformat(iso.group(1)) if iso else None
 
 
-def parse_fixtures(html: str) -> list[dict]:
+def parse_fixtures(html: str, season: str | None = None) -> list[dict]:
     """Played fixtures on a division's fixtures page.
+
+    `season` resolves the year on dates the page prints without one.
 
     Returns {match_id, date, home, away, home_score, away_score} for each
     fixture that has a score. Unplayed fixtures are listed too, with an empty
@@ -66,7 +98,7 @@ def parse_fixtures(html: str) -> list[dict]:
         date_cell = row.find("td", class_="tt-fixture-date")
         fixtures.append({
             "match_id": match_id,
-            "date": _parse_date(date_cell.get_text()) if date_cell else None,
+            "date": _parse_date(date_cell.get_text(), season) if date_cell else None,
             "home": teams[0].get_text(strip=True),
             "away": teams[1].get_text(strip=True),
             "home_score": int(score.group(1)),

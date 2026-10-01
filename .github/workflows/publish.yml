@@ -39,6 +39,14 @@ on:
           matches (e.g. 4). Fetches nothing else and commits nothing.
         type: string
         default: ""
+      report_fixtures:
+        description: >-
+          Season to report the published fixture list for (e.g. 2026-27),
+          as "<season> <division slug> [team]". The fixture list is the
+          honest team list — a team that registered then withdrew appears in
+          the team map but in nobody's fixtures. Commits nothing.
+        type: string
+        default: ""
       fetch_pages:
         description: >-
           Season to download raw league pages for (e.g. 2026-27), uploaded as
@@ -89,6 +97,10 @@ jobs:
         if: inputs.validate_parser != ''
         run: uv run python validate_parser.py "${{ inputs.validate_parser }}" 10
 
+      - name: Report the published fixture list
+        if: inputs.report_fixtures != ''
+        run: uv run python report_fixtures.py ${{ inputs.report_fixtures }}
+
       - name: Fetch team squads
         if: inputs.fetch_squads != ''
         run: uv run python fetch_squads.py "${{ inputs.fetch_squads }}"
@@ -101,20 +113,20 @@ jobs:
       # run refreshes them alongside results. Failure here must not stop the
       # results scrape, which is the more important half.
       - name: Refresh squads
-        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
         continue-on-error: true
         run: uv run python fetch_squads.py 2026-27
 
       - name: Scrape for new results
-        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
         run: uv run python main.py --update
 
       - name: Verify the match format still holds
-        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
         run: uv run python check_doubles.py
 
       - name: Commit if anything changed
-        if: inputs.fetch_pages == '' && inputs.validate_parser == ''
+        if: inputs.fetch_pages == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
         run: |
           # git status, not git diff: on the first run these files are
           # untracked, and git diff ignores untracked files entirely.
@@ -147,6 +159,7 @@ jobs:
       && inputs.fetch_pages == ''
       && inputs.fetch_squads == ''
       && inputs.validate_parser == ''
+      && inputs.report_fixtures == ''
       && needs.scrape.result != 'failure'
       && needs.scrape.result != 'cancelled'
     runs-on: ubuntu-latest

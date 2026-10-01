@@ -35,15 +35,26 @@ def parse_all_fixtures(html: str) -> list[dict]:
         score = SCORE.search(score_cell.get_text())
         link = score_cell.find("a", href=MATCH_ID) or row.find("a", href=MATCH_ID)
         date_cell = row.find("td", class_="tt-fixture-date")
+        raw_date = date_cell.get_text(" ", strip=True) if date_cell else ""
         fixtures.append({
             "match_id": MATCH_ID.search(link["href"]).group(1) if link else "",
-            "date": _parse_date(date_cell.get_text()) if date_cell else None,
+            "date": _parse_date(raw_date) if raw_date else None,
+            "raw_date": raw_date,
             "home": teams[0].get_text(strip=True),
             "away": teams[1].get_text(strip=True),
             "home_score": int(score.group(1)) if score else None,
             "away_score": int(score.group(2)) if score else None,
+            "row": row,
         })
     return fixtures
+
+
+def dump(fixture: dict) -> None:
+    """Every cell of one fixture row, for when the parse looks wrong."""
+    for cell in fixture["row"].find_all("td"):
+        classes = " ".join(cell.get("class", []))
+        text = " ".join(cell.get_text(" ", strip=True).split())[:60]
+        print(f"      [{classes:26}] {text!r}")
 
 
 def main() -> None:
@@ -65,10 +76,35 @@ def main() -> None:
     if len(fixtures) != expected:
         print(f"  NOTE: {expected} expected for a double round robin of {len(teams)}")
 
-    print("\n  teams entered:")
+    # Dates drive the whole point of a fixture list, so a format the parser
+    # does not know must be loud rather than silently None.
+    undated = [f for f in fixtures if f["date"] is None]
+    if undated:
+        samples = sorted({f["raw_date"] for f in undated})[:4]
+        print(f"  WARNING: {len(undated)} fixtures with an unparsed date")
+        print(f"    date cell reads: {samples}")
+
+    print("\n  teams entered (home / away):")
     for name in teams:
-        n = sum(1 for f in fixtures if team_in(f, name))
-        print(f"    {name:34s} {n} fixtures")
+        h = sum(1 for f in fixtures if f["home"] == name)
+        a = sum(1 for f in fixtures if f["away"] == name)
+        flag = "  <- not balanced" if h != a else ""
+        print(f"    {name:34s} {h:>2} / {a:<2}{flag}")
+
+    # In a double round robin every pair meets once each way. A pair that
+    # meets twice the same way means a row was read with its teams the wrong
+    # way round, or the schedule is not what it looks like.
+    from collections import Counter
+    pairs = Counter((f["home"], f["away"]) for f in fixtures)
+    odd = [p for p, n in pairs.items() if n > 1 or pairs[(p[1], p[0])] != 1]
+    if odd:
+        print(f"\n  {len(odd)} pairings are not one-each-way:")
+        for home, away in sorted(odd)[:6]:
+            print(f"    {home} v {away}  "
+                  f"(this way {pairs[(home, away)]}, reverse {pairs[(away, home)]})")
+        suspect = next(f for f in fixtures if (f["home"], f["away"]) == sorted(odd)[0])
+        print("\n  that fixture's row, cell by cell:")
+        dump(suspect)
 
     if played:
         print("\n  results so far:")

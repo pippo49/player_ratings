@@ -102,23 +102,27 @@ def main() -> None:
         a = sum(1 for f in fixtures if f["away"] == name)
         print(f"    {name:34s} {h:>2} / {a:<2}")
 
-    # Not every pair meets once each way: a side that always plays at home
-    # hosts both legs, so its opponents travel twice and never host it. Name
-    # those sides rather than reporting an imbalance as an error.
+    # Not every pair meets once each way. Some sides play nearly everything at
+    # home — the junior teams do — so their opponents travel for both legs.
+    # They are not all-home to the last fixture, so the test is a lopsided
+    # share rather than no away games at all.
     pairs = Counter((f["home"], f["away"]) for f in fixtures)
-    always_home = [t for t in teams
-                   if sum(1 for f in fixtures if f["away"] == t) == 0]
-    for name in always_home:
-        venues = {f["venue"] for f in fixtures if f["home"] == name}
-        print(f"\n  {name} hosts all {sum(1 for f in fixtures if f['home'] == name)}"
-              f" of its fixtures — opponents travel for both legs")
-        print(f"    venue: {', '.join(sorted(venues))}")
+    mostly_home = []
+    for name in teams:
+        h = sum(1 for f in fixtures if f["home"] == name)
+        a = sum(1 for f in fixtures if f["away"] == name)
+        if h > 2 and h >= 2 * max(a, 1):
+            mostly_home.append(name)
+            venues = {f["venue"] for f in fixtures if f["home"] == name}
+            print(f"\n  {name} plays {h} of its {h + a} fixtures at home — "
+                  f"opponents travel for both legs")
+            print(f"    venue: {', '.join(sorted(v for v in venues if v))}")
 
-    doubled = [p for p, n in pairs.items()
-               if n > 1 and p[0] not in always_home]
+    # What is left over is unexplained, and most likely a parse error.
+    doubled = [p for p, n in pairs.items() if n > 1 and p[0] not in mostly_home]
     if doubled:
-        print(f"\n  {len(doubled)} pairings meet twice the same way with no"
-              f" always-home side — check the parse:")
+        print(f"\n  {len(doubled)} pairings meet twice the same way and neither"
+              f" side is mostly-home — check the parse:")
         for home, away in sorted(doubled)[:6]:
             print(f"    {home} v {away} x{pairs[(home, away)]}")
         dump(next(f for f in fixtures if (f["home"], f["away"]) == sorted(doubled)[0]))

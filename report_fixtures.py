@@ -12,7 +12,9 @@ Prints to stdout rather than writing a file: this is a diagnostic, run from a
 GitHub Actions job whose log is the only channel out.
 """
 
+import re
 import sys
+from collections import Counter
 from datetime import date
 
 from bs4 import BeautifulSoup
@@ -21,7 +23,7 @@ from parser_v2 import MATCH_ID, SCORE, _parse_date
 from scraper import _fetch_html, _fixtures_url
 
 
-def parse_all_fixtures(html: str) -> list[dict]:
+def parse_all_fixtures(html: str, season: str | None = None) -> list[dict]:
     """Every fixture on the page. Unplayed ones carry scores of None."""
     soup = BeautifulSoup(html, "html.parser")
     fixtures = []
@@ -34,19 +36,29 @@ def parse_all_fixtures(html: str) -> list[dict]:
 
         score = SCORE.search(score_cell.get_text())
         link = score_cell.find("a", href=MATCH_ID) or row.find("a", href=MATCH_ID)
+        venue_cell = row.find("td", class_="tt-fixture-venue")
         date_cell = row.find("td", class_="tt-fixture-date")
         raw_date = date_cell.get_text(" ", strip=True) if date_cell else ""
         fixtures.append({
             "match_id": MATCH_ID.search(link["href"]).group(1) if link else "",
-            "date": _parse_date(raw_date) if raw_date else None,
+            "date": _parse_date(raw_date, season) if raw_date else None,
             "raw_date": raw_date,
             "home": teams[0].get_text(strip=True),
             "away": teams[1].get_text(strip=True),
             "home_score": int(score.group(1)) if score else None,
             "away_score": int(score.group(2)) if score else None,
+            "venue": _venue(venue_cell),
             "row": row,
         })
     return fixtures
+
+
+def _venue(cell) -> str:
+    """The venue name, without the adjacent "Directions" link's own text."""
+    if cell is None:
+        return ""
+    text = " ".join(cell.get_text(" ", strip=True).split())
+    return re.sub(r"\s*Directions$", "", text)
 
 
 def dump(fixture: dict) -> None:
@@ -64,7 +76,7 @@ def main() -> None:
 
     url = _fixtures_url(division, season)
     print(f"{season} — {division}\n  {url}")
-    fixtures = parse_all_fixtures(_fetch_html(url))
+    fixtures = parse_all_fixtures(_fetch_html(url), season)
     played = [f for f in fixtures if f["home_score"] is not None]
 
     teams = sorted({f["home"] for f in fixtures} | {f["away"] for f in fixtures})
@@ -88,23 +100,28 @@ def main() -> None:
     for name in teams:
         h = sum(1 for f in fixtures if f["home"] == name)
         a = sum(1 for f in fixtures if f["away"] == name)
-        flag = "  <- not balanced" if h != a else ""
-        print(f"    {name:34s} {h:>2} / {a:<2}{flag}")
+        print(f"    {name:34s} {h:>2} / {a:<2}")
 
-    # In a double round robin every pair meets once each way. A pair that
-    # meets twice the same way means a row was read with its teams the wrong
-    # way round, or the schedule is not what it looks like.
-    from collections import Counter
+    # Not every pair meets once each way: a side that always plays at home
+    # hosts both legs, so its opponents travel twice and never host it. Name
+    # those sides rather than reporting an imbalance as an error.
     pairs = Counter((f["home"], f["away"]) for f in fixtures)
-    odd = [p for p, n in pairs.items() if n > 1 or pairs[(p[1], p[0])] != 1]
-    if odd:
-        print(f"\n  {len(odd)} pairings are not one-each-way:")
-        for home, away in sorted(odd)[:6]:
-            print(f"    {home} v {away}  "
-                  f"(this way {pairs[(home, away)]}, reverse {pairs[(away, home)]})")
-        suspect = next(f for f in fixtures if (f["home"], f["away"]) == sorted(odd)[0])
-        print("\n  that fixture's row, cell by cell:")
-        dump(suspect)
+    always_home = [t for t in teams
+                   if sum(1 for f in fixtures if f["away"] == t) == 0]
+    for name in always_home:
+        venues = {f["venue"] for f in fixtures if f["home"] == name}
+        print(f"\n  {name} hosts all {sum(1 for f in fixtures if f['home'] == name)}"
+              f" of its fixtures — opponents travel for both legs")
+        print(f"    venue: {', '.join(sorted(venues))}")
+
+    doubled = [p for p, n in pairs.items()
+               if n > 1 and p[0] not in always_home]
+    if doubled:
+        print(f"\n  {len(doubled)} pairings meet twice the same way with no"
+              f" always-home side — check the parse:")
+        for home, away in sorted(doubled)[:6]:
+            print(f"    {home} v {away} x{pairs[(home, away)]}")
+        dump(next(f for f in fixtures if (f["home"], f["away"]) == sorted(doubled)[0]))
 
     if played:
         print("\n  results so far:")
@@ -126,7 +143,8 @@ def main() -> None:
                 result = f"  {f['home_score']}-{f['away_score']}"
             else:
                 result = f"  {f['away_score']}-{f['home_score']}"
-            print(f"    {f['date']}  {at}  {opponent:30s}{result}")
+            print(f"    {str(f['date']):10}  {at}  {opponent:24s}"
+                  f"{result:8}{f['venue']}")
 
 
 def team_in(fixture: dict, name: str) -> bool:

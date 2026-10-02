@@ -8,11 +8,14 @@
     "John Bispham": "Johnny Bispham",
     "Christopher Alexander": "Chris Alexander",
     "Anthony Catt": "Tony Catt",
-    "Grzegorz Paluch": "Greg Paluch"
+    "Grzegorz Paluch": "Greg Paluch",
+    "Josh Bruce": "Joshua Bruce",
+    "Emmanuel Asante": "Emmanuel Kwesi Asante"
   },
   "_not_matches_comment": "Pairs the matcher keeps suggesting that a human has confirmed are different people. Listed so they stop reappearing in the review list on every refresh.",
   "not_matches": {
     "Mike Brady": "Ken Brady",
-    "George Pool": "Georges Sokol"
+    "George Pool": "Georges Sokol",
+    "Alex LI": "Alex Luk"
   }
 }

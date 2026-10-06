@@ -3,7 +3,36 @@
  "teams": {
   "Apex 1": {
    "division": 0,
-   "players": []
+   "players": [
+    {
+     "id": "415712",
+     "name": "Adam Alibhai"
+    },
+    {
+     "id": "415711",
+     "name": "Israel Awolaja"
+    },
+    {
+     "id": "415710",
+     "name": "George Downing"
+    },
+    {
+     "id": "415709",
+     "name": "Bryan Kwan"
+    },
+    {
+     "id": "415708",
+     "name": "Joshua Nashed"
+    },
+    {
+     "id": "415713",
+     "name": "Aarav Parihar"
+    },
+    {
+     "id": "415715",
+     "name": "Shae Thakker"
+    }
+   ]
   },
   "Flick TTC 1": {
    "division": 0,
@@ -72,10 +101,6 @@
     {
      "id": "415568",
      "name": "Brandon Sangchin"
-    },
-    {
-     "id": "415574",
-     "name": "Romayne Stewart"
     },
     {
      "id": "415573",
@@ -465,6 +490,14 @@
      "name": "Alin Azis"
     },
     {
+     "id": "415737",
+     "name": "Maurice Hesse"
+    },
+    {
+     "id": "415731",
+     "name": "Ritadyumna Jinka"
+    },
+    {
      "id": "414596",
      "name": "Carl Allen Pangilinan"
     }
@@ -480,6 +513,10 @@
     {
      "id": "414616",
      "name": "John Dennison"
+    },
+    {
+     "id": "415733",
+     "name": "Rodney Farquharson"
     },
     {
      "id": "414618",
@@ -498,12 +535,20 @@
      "name": "James Ng Hing Cheung"
     },
     {
+     "id": "415764",
+     "name": "Rohan Schloss"
+    },
+    {
      "id": "414613",
      "name": "Martin Smith"
     },
     {
      "id": "414612",
      "name": "Neil Stewart"
+    },
+    {
+     "id": "415732",
+     "name": "Everton Waite"
     }
    ]
   },
@@ -513,6 +558,10 @@
     {
      "id": "414606",
      "name": "Nathaniel Akinrin"
+    },
+    {
+     "id": "415734",
+     "name": "Paul Gayle"
     },
     {
      "id": "415509",
@@ -933,6 +982,10 @@
     {
      "id": "415205",
      "name": "Stephen Fagan"
+    },
+    {
+     "id": "415722",
+     "name": "simon leon"
     },
     {
      "id": "415212",
@@ -1583,8 +1636,16 @@
      "name": "Makanjuola Akinyemi"
     },
     {
+     "id": "415594",
+     "name": "Shola Coker"
+    },
+    {
      "id": "414921",
      "name": "Denis Mann"
+    },
+    {
+     "id": "415595",
+     "name": "Jorge Urrutia"
     }
    ]
   },
@@ -1602,6 +1663,14 @@
     {
      "id": "414923",
      "name": "Ritatavas Jinka"
+    },
+    {
+     "id": "415598",
+     "name": "Tejasri Narula"
+    },
+    {
+     "id": "415763",
+     "name": "Andrew Zhang"
     }
    ]
   },
@@ -1857,6 +1926,10 @@
      "name": "Obinna Okorro"
     },
     {
+     "id": "415780",
+     "name": "Ted Rider"
+    },
+    {
      "id": "415141",
      "name": "Gene Valentine Taylor"
     }
@@ -1876,6 +1949,14 @@
     {
      "id": "415215",
      "name": "Shashidhar Manandhar"
+    },
+    {
+     "id": "415726",
+     "name": "Faris Maniem"
+    },
+    {
+     "id": "415725",
+     "name": "Henry Shewell"
     },
     {
      "id": "415217",
@@ -1928,8 +2009,20 @@
    "division": 5,
    "players": [
     {
+     "id": "415776",
+     "name": "Gabriel  Balcerek"
+    },
+    {
      "id": "414929",
      "name": "Felix Brand"
+    },
+    {
+     "id": "415774",
+     "name": "Oliver Huang"
+    },
+    {
+     "id": "415729",
+     "name": "Stefan Lioumis Surbatis"
     },
     {
      "id": "414928",
@@ -2119,27 +2212,6 @@
     }
    ]
   },
-  "Clissold 6 Jr": {
-   "division": 6,
-   "players": [
-    {
-     "id": "415067",
-     "name": "Daniel Lopez"
-    },
-    {
-     "id": "415068",
-     "name": "Ted Rider"
-    },
-    {
-     "id": "415065",
-     "name": "Leion Tanna-Wells"
-    },
-    {
-     "id": "415066",
-     "name": "Kyra Yala"
-    }
-   ]
-  },
   "Flick TTC 6": {
    "division": 6,
    "players": [
@@ -2170,16 +2242,16 @@
     {
      "id": "415073",
      "name": "Alexander  Reddy"
-    },
-    {
-     "id": "415074",
-     "name": "Sandiaa Vasanthi"
     }
    ]
   },
   "Flick TTC 7": {
    "division": 6,
    "players": [
+    {
+     "id": "415721",
+     "name": "Tiffany Chan"
+    },
     {
      "id": "415076",
      "name": "Jonathan Gee"
@@ -2224,6 +2296,10 @@
     {
      "id": "415240",
      "name": "Philip Sangchin"
+    },
+    {
+     "id": "415723",
+     "name": "Oscar Sterling"
     }
    ]
   },
@@ -2292,6 +2368,10 @@
   "Morpeth 13 Jr": {
    "division": 6,
    "players": [
+    {
+     "id": "415778",
+     "name": "Gustave Feld"
+    },
     {
      "id": "415109",
      "name": "Piro Zhifan Hau"
@@ -2409,6 +2489,10 @@
    "division": 7,
    "players": [
     {
+     "id": "415586",
+     "name": "Hin Yan Ching Ching"
+    },
+    {
      "id": "415170",
      "name": "Peter Dunmow"
     },
@@ -2421,18 +2505,30 @@
      "name": "Ziye Ke"
     },
     {
+     "id": "415585",
+     "name": "Kevin Liu"
+    },
+    {
      "id": "415169",
      "name": "Abdul Muhith"
     },
     {
      "id": "415173",
      "name": "Sophia Nallalingham"
+    },
+    {
+     "id": "415587",
+     "name": "Jakob Schwarz"
     }
    ]
   },
   "Canonbury 1": {
    "division": 7,
    "players": [
+    {
+     "id": "415700",
+     "name": "David Barron"
+    },
     {
      "id": "415160",
      "name": "Daniel Ehrlich"
@@ -2508,12 +2604,32 @@
    "division": 7,
    "players": [
     {
+     "id": "415777",
+     "name": "Patrick Cairnes"
+    },
+    {
      "id": "415157",
      "name": "Aayush Choudhury"
     },
     {
+     "id": "415593",
+     "name": "Bassam El Hayek"
+    },
+    {
      "id": "415156",
      "name": "Alexander Ionov"
+    },
+    {
+     "id": "415590",
+     "name": "Mykhailo Loginov"
+    },
+    {
+     "id": "415592",
+     "name": "Shu Ming"
+    },
+    {
+     "id": "415591",
+     "name": "Jingxin Wang"
     }
    ]
   },
@@ -2539,6 +2655,10 @@
     {
      "id": "415226",
      "name": "Arthur Mara"
+    },
+    {
+     "id": "415775",
+     "name": "Fernando Mora Gomez"
     }
    ]
   },
@@ -2583,6 +2703,10 @@
      "name": "Pak Chan"
     },
     {
+     "id": "415589",
+     "name": "Clive Gregory"
+    },
+    {
      "id": "415151",
      "name": "Sun-Sik IM"
     },
@@ -2595,8 +2719,16 @@
      "name": "Oliver Morley"
     },
     {
+     "id": "415588",
+     "name": "Lloyd Mulkerrins"
+    },
+    {
      "id": "415154",
      "name": "Jeremiah Olatunbosun"
+    },
+    {
+     "id": "415269",
+     "name": "Aneil Rajoo"
     }
    ]
   },
@@ -2690,6 +2822,10 @@
   "Wapping 1": {
    "division": 7,
    "players": [
+    {
+     "id": "415779",
+     "name": "Andrew Bryan"
+    },
     {
      "id": "415197",
      "name": "Bruno Cernecca"

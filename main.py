@@ -29,7 +29,7 @@ def _print_table(players, title: str) -> None:
 def _load_or_scrape(args) -> list:
     """Load matches from cache, scrape, or update depending on flags."""
     if args.refresh:
-        print("Full refresh — scraping all 7 divisions…\n")
+        print("Full refresh — scraping every division…\n")
         matches = scrape_all_divisions(verbose=True)
         save_matches(matches)
         export()
@@ -39,7 +39,11 @@ def _load_or_scrape(args) -> list:
 
     if args.update:
         print("Updating — scraping for new matches…\n")
-        scraped = scrape_all_divisions(verbose=True)
+        # Results now need a request per fixture, so tell the scraper what is
+        # already cached: without this an update would re-fetch every match
+        # card the league has ever published.
+        known = {(m.season, m.match_id) for m in (cached or []) if m.match_id}
+        scraped = scrape_all_divisions(verbose=True, known=known)
         if cached:
             matches, added = merge_matches(cached, scraped)
             print(f"\n{added} new match(es) added.")
@@ -55,7 +59,7 @@ def _load_or_scrape(args) -> list:
         return cached
 
     # No cache yet — first run
-    print("No cached data found — scraping all 7 divisions…\n")
+    print("No cached data found — scraping every division…\n")
     matches = scrape_all_divisions(verbose=True)
     save_matches(matches)
     export()

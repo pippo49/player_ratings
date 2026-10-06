@@ -115,7 +115,7 @@ class UpdateJob:
                 f"Re-downloading every division ({seasons})…" if full
                 else f"Checking all divisions for new results ({seasons})…"
             )
-            scraped = self._scrape()
+            scraped = self._scrape(existing if not full else [])
 
             if full:
                 matches, added = scraped, len(scraped)
@@ -144,19 +144,31 @@ class UpdateJob:
                 self.running = False
                 self.finished_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
-    def _scrape(self) -> list:
-        """Scrape every division, reporting progress one division at a time."""
+    def _scrape(self, existing: list) -> list:
+        """Scrape every division, reporting progress one division at a time.
+
+        Results take a request per fixture now, so a check for new ones passes
+        what is already held and skips those cards. A full refresh passes
+        nothing, and re-downloads the lot.
+        """
         def on_division(
             season: str, div: int, total: int, parsed: int | None, error: str | None
         ) -> None:
             if error:
                 brief = error if len(error) <= 90 else f"{error[:87]}…"
-                self._say(f"{season} Division {div} of {total} — {brief}")
+                label = "Premier" if div == 0 else f"Division {div}"
+                self._say(f"{season} {label} of {total} — {brief}")
             else:
-                self._say(f"{season} Division {div} of {total} — {parsed} matches")
+                label = "Premier" if div == 0 else f"Division {div}"
+                self._say(f"{season} {label} of {total} — {parsed} new")
 
-        matches = scrape_all_divisions(verbose=False, progress=on_division)
-        if not matches:
+        known = {(m.season, m.match_id) for m in existing if m.match_id}
+        matches = scrape_all_divisions(
+            verbose=False, progress=on_division, known=known
+        )
+        # An update that finds nothing new is the normal case mid-week, so only
+        # a full refresh coming back empty means something is wrong.
+        if not matches and not known:
             raise RuntimeError("No matches could be fetched — check your connection.")
         return matches
 

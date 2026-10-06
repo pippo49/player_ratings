@@ -153,8 +153,12 @@ jobs:
     # Runs after a successful scrape, and on push where scrape is skipped.
     # A structure fetch publishes nothing, and may be run from a branch, so
     # it must never deploy over the live site.
+    # Pages only accepts a deploy from the default branch, so a plain dispatch
+    # against a working branch would fail here and mark the whole run red for
+    # no reason — the scrape it ran is still valid.
     if: >-
       always()
+      && github.ref == 'refs/heads/master'
       && inputs.fetch_structure == ''
       && inputs.fetch_pages == ''
       && inputs.fetch_squads == ''

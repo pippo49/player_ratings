@@ -1,14 +1,17 @@
-"""Scrape fixture results for all divisions from tabletennis365.com."""
+"""Scrape fixture results for all divisions from tabletennis365.com.
 
-import re
+The 2026/27 site redesign moved results off the fixtures page and onto a card
+per fixture, so parsing lives in parser_v2 and this module is the fetching and
+per-division bookkeeping around it.
+"""
+
 import time
 from collections.abc import Callable
-from datetime import date
 
 import requests
-from bs4 import BeautifulSoup, Tag
 
-from models import Match, PlayerResult, TeamResult
+from models import Match
+from parser_v2 import build_match, parse_fixtures, parse_match_card
 
 BASE_URL = "https://www.tabletennis365.com"
 LEAGUE = "CentralLondon"
@@ -63,97 +66,95 @@ def _fetch_html(url: str) -> str:
     return response.text
 
 
-def _extract_player_id(href: str) -> str:
-    """Extract numeric player ID from a player stats URL.
+def _match_card_url(match_id: str) -> str:
+    return f"{BASE_URL}/{LEAGUE}/Results/MatchCard?matchId={match_id}"
 
-    URL format: /CentralLondon/Results/Player/Statistics/Season/Name/12345
+
+# The top tier arrived with the 2026/27 restructure. Earlier seasons ran seven
+# divisions and have no Premier page, so probing for one would only 404.
+PREMIER_FROM_SEASON = "2026-27"
+
+# Which Premier slug the site actually serves is not documented, so it is
+# found by trying candidates. Remembered per season so the probe runs once.
+_premier_slug: dict[str, str | None] = {}
+
+
+def _find_premier_slug(season: str) -> str | None:
+    """The slug the site serves the top tier under, or None if there is none."""
+    if season in _premier_slug:
+        return _premier_slug[season]
+
+    found = None
+    for slug in PREMIER_SLUGS:
+        try:
+            _fetch_html(_fixtures_url(slug, season))
+        except requests.HTTPError:
+            continue
+        except Exception:
+            # A transport failure says nothing about whether the slug is
+            # right, so do not remember a None that a retry would fix.
+            return None
+        finally:
+            time.sleep(REQUEST_DELAY)
+        found = slug
+        break
+
+    _premier_slug[season] = found
+    return found
+
+
+def division_slugs(season: str) -> list[tuple[str, int]]:
+    """(url slug, division number) for a season's divisions, top tier first."""
+    slugs = [(name, DIVISION_NUMBER[name]) for name in DIVISION_NAMES]
+    if season >= PREMIER_FROM_SEASON:
+        premier = _find_premier_slug(season)
+        if premier:
+            slugs.insert(0, (premier, PREMIER_DIVISION))
+    return slugs
+
+
+def scrape_division_page(
+    division_name: str,
+    division: int,
+    season: str,
+    known: set[tuple[str, str]] | None = None,
+) -> list[Match]:
+    """Fetch and parse one division's results for one season.
+
+    The fixtures page gives only the aggregate score, so each played fixture's
+    match card is fetched for the individual results. That is a request per
+    fixture, so *known* — (season, match_id) pairs already cached — skips the
+    ones already held, which is what makes an update run cheap.
     """
-    parts = href.rstrip("/").split("/")
-    for part in reversed(parts):
-        if part.isdigit():
-            return part
-    return parts[-1]
+    html = _fetch_html(_fixtures_url(division_name, season))
+    fixtures = parse_fixtures(html, season)
 
-
-def _parse_team_side(side_div: Tag) -> TeamResult | None:
-    """Parse a <div class="home"> or <div class="away"> block."""
-    # Aggregate score
-    score_div = side_div.find("div", class_="score")
-    total_score = 0
-    if score_div:
-        m = re.search(r"\d+", score_div.get_text())
-        total_score = int(m.group()) if m else 0
-
-    # Team name
-    team_link = side_div.find("a", href=re.compile(r"/Results/Team/Statistics/"))
-    if not team_link:
-        return None
-    team_name = team_link.get_text(strip=True)
-
-    # Players — each in a <div class="playerName">
-    players: list[PlayerResult] = []
-    for p_div in side_div.find_all("div", class_="playerName"):
-        link = p_div.find("a", href=re.compile(r"/Results/Player/Statistics/"))
-        if not link:
-            continue
-        name = link.get_text(strip=True)
-        player_id = _extract_player_id(link["href"])
-        score_m = re.search(r"\((\d)\)", p_div.get_text())
-        games_won = int(score_m.group(1)) if score_m else 0
-        players.append(PlayerResult(name=name, player_id=player_id, games_won=games_won))
-
-    if len(players) < 2:
-        return None  # unplayed fixture
-
-    return TeamResult(name=team_name, players=players[:3], total_score=total_score)
-
-
-def _parse_matches(html: str, division: int, season: str) -> list[Match]:
-    """Parse all played matches from a division fixtures page."""
-    soup = BeautifulSoup(html, "html.parser")
     matches: list[Match] = []
-
-    for home_div in soup.find_all("div", class_="home"):
-        container = home_div.parent
-        away_div = container.find("div", class_="away")
-        if away_div is None:
+    for fixture in fixtures:
+        match_id = fixture.get("match_id")
+        if not match_id:
+            # No card to fetch and nothing to deduplicate on, so the result
+            # could never be merged. Skip it rather than cache a half-match.
+            continue
+        if known and (season, match_id) in known:
             continue
 
-        # Date from <time datetime="YYYY-MM-DD">
-        match_date: date | None = None
-        time_el = container.find("time")
-        if time_el and time_el.get("datetime"):
-            try:
-                match_date = date.fromisoformat(time_el["datetime"])
-            except ValueError:
-                pass
+        try:
+            card = parse_match_card(_fetch_html(_match_card_url(match_id)))
+        except requests.HTTPError as e:
+            print(f"    match {match_id}: card unavailable ({e})")
+            continue
+        finally:
+            time.sleep(REQUEST_DELAY)
 
-        # Match ID from MatchCard link
-        match_id = ""
-        mc_link = container.find("a", href=re.compile(r"/MatchCard/"))
-        if mc_link:
-            match_id = mc_link["href"].rstrip("/").split("/")[-1]
-
-        home = _parse_team_side(home_div)
-        away = _parse_team_side(away_div)
-
-        if home is None or away is None:
+        if card is None:
+            print(f"    match {match_id}: card did not parse")
             continue
 
-        match = Match(
-            division=division, date=match_date, home=home, away=away,
-            match_id=match_id, season=season,
-        )
-        if match.played:
+        match = build_match(fixture, card, division=division, season=season)
+        if match and match.played:
             matches.append(match)
 
-    return matches
-
-
-def scrape_division_page(division_name: str, division: int, season: str) -> list[Match]:
-    """Fetch and parse one division's fixtures page for one season."""
-    html = _fetch_html(_fixtures_url(division_name, season))
-    matches = _parse_matches(html, division=division, season=season)
     return matches
 
 
@@ -161,33 +162,35 @@ def scrape_season(
     season: str,
     verbose: bool = True,
     progress: Callable[[str, int, int, int | None, str | None], None] | None = None,
+    known: set[tuple[str, str]] | None = None,
 ) -> list[Match]:
-    """Fetch and parse fixtures for all 7 divisions of one season."""
+    """Fetch and parse results for every division of one season."""
     all_matches: list[Match] = []
-    total = len(DIVISION_NAMES)
+    slugs = division_slugs(season)
+    total = len(slugs)
 
-    for div_name in DIVISION_NAMES:
-        div_num = DIVISION_NUMBER[div_name]
+    for div_name, div_num in slugs:
         url = _fixtures_url(div_name, season)
+        label = "Premier" if div_num == PREMIER_DIVISION else f"Division {div_num}"
         if verbose:
-            print(f"Fetching {season} Division {div_num} ({div_name})… ", end="", flush=True)
+            print(f"Fetching {season} {label} ({div_name})… ", end="", flush=True)
 
         try:
-            matches = scrape_division_page(div_name, div_num, season)
+            matches = scrape_division_page(div_name, div_num, season, known=known)
             all_matches.extend(matches)
             if verbose:
-                print(f"{len(matches)} matches parsed.")
+                print(f"{len(matches)} new match(es) parsed.")
             if progress:
                 progress(season, div_num, total, len(matches), None)
         except requests.HTTPError as e:
             # A season whose pages are not up yet 404s; that is not an error
             # worth shouting about, just nothing to fetch.
             note = "not published yet" if e.response is not None and e.response.status_code == 404 else str(e)
-            print(f"Division {div_num} ({season}): {note}")
+            print(f"{label} ({season}): {note}")
             if progress:
                 progress(season, div_num, total, None, note)
         except Exception as e:
-            print(f"Error fetching {season} Division {div_num} ({url}): {type(e).__name__}: {e}")
+            print(f"Error fetching {season} {label} ({url}): {type(e).__name__}: {e}")
             if progress:
                 progress(season, div_num, total, None, f"{type(e).__name__}: {e}")
 
@@ -200,8 +203,9 @@ def scrape_all_divisions(
     verbose: bool = True,
     progress: Callable[[str, int, int, int | None, str | None], None] | None = None,
     seasons: list[str] | None = None,
+    known: set[tuple[str, str]] | None = None,
 ) -> list[Match]:
-    """Fetch and parse fixtures for every division of every known season.
+    """Fetch and parse results for every division of every known season.
 
     Defaults to every season in SEASONS, so a run picks up both last
     season's completed results and whatever the new one has so far.
@@ -211,8 +215,13 @@ def scrape_all_divisions(
     with ``matches_parsed`` None and ``error`` set when that division failed.
     It lets callers (such as the web app) report progress somewhere other
     than stdout while the scrape is still running.
+
+    *known* is the set of (season, match_id) pairs already cached; their match
+    cards are not re-fetched.
     """
     all_matches: list[Match] = []
     for season in (seasons or SEASONS):
-        all_matches.extend(scrape_season(season, verbose=verbose, progress=progress))
+        all_matches.extend(
+            scrape_season(season, verbose=verbose, progress=progress, known=known)
+        )
     return all_matches

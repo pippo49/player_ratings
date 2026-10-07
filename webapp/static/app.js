@@ -319,7 +319,11 @@ function playerRow(p, rank) {
   const rating = el("div", "rating");
   rating.textContent = fmtRating(p.rating);
   const sub2 = el("small");
-  sub2.textContent = `${fmtPct(p.win_rate)} of ${p.played}`;
+  // Career figures, with this season's record alongside once they have played
+  // — a 60-match career total says nothing about current form.
+  sub2.textContent = p.season_played
+    ? `${p.season_won}/${p.season_played} this season · ${fmtPct(p.win_rate)} career`
+    : `${fmtPct(p.win_rate)} of ${p.played}`;
   end.append(rating, sub2);
 
   row.append(rankEl, main, end);
@@ -947,8 +951,12 @@ function openPlayerSheet(p) {
       stats.append(stat);
     };
     add(fmtRating(p.rating), p.reliable ? "ELO rating" : "ELO rating (provisional)");
-    add(fmtPct(p.win_rate), "Singles win rate");
-    add(`${p.won}/${p.played}`, "Singles won");
+    if (p.season_played) {
+      add(`${p.season_won}/${p.season_played}`, "Singles won this season");
+      add(fmtPct(p.season_won / p.season_played), "Win rate this season");
+    }
+    add(fmtPct(p.win_rate), "Singles win rate, career");
+    add(`${p.won}/${p.played}`, "Singles won, career");
     add(ordinal(overall), "Overall rank");
     add(ordinal(inDiv), `Rank in ${divisionName(p.division)}`);
     if (!p.reliable) {

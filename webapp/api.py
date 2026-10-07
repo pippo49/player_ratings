@@ -106,7 +106,31 @@ def _team_divisions(matches: list[Match]) -> dict[str, int]:
     return {team: c.most_common(1)[0][0] for team, c in counts.items()}
 
 
-def _player_dict(pr: PlayerRating) -> dict:
+def _season_records(matches: list[Match], season: str) -> dict[str, dict[str, int]]:
+    """{player_id: {played, won}} for one season alone.
+
+    The figures on a player carry their whole career, because that is what the
+    rating is built on and what makes it reliable. But a captain picking a side
+    wants to know how someone is going *this* season, which a career total of
+    sixty singles will not show. Counted here from the matches rather than the
+    ratings, which have no per-season breakdown.
+    """
+    records: dict[str, dict[str, int]] = {}
+    for match in matches:
+        if match.season != season:
+            continue
+        for side, other in ((match.home, match.away), (match.away, match.home)):
+            # A short opposing side hands out walkovers, which the rating
+            # engine discounts; discount them here too so the two agree.
+            walkovers = max(0, 3 - len(other.players))
+            for player in side.players:
+                record = records.setdefault(player.player_id, {"played": 0, "won": 0})
+                record["played"] += len(other.players)
+                record["won"] += max(0, player.games_won - walkovers)
+    return records
+
+
+def _player_dict(pr: PlayerRating, season: dict[str, int] | None = None) -> dict:
     return {
         "id": pr.player_id,
         "name": pr.name,
@@ -117,6 +141,10 @@ def _player_dict(pr: PlayerRating) -> dict:
         "won": pr.singles_won,
         "win_rate": round(pr.win_rate, 4),
         "reliable": pr.reliable,
+        # This season alone, zero until they turn out. `played`/`won` above
+        # stay career totals.
+        "season_played": season["played"] if season else 0,
+        "season_won": season["won"] if season else 0,
     }
 
 
@@ -359,8 +387,9 @@ def build_payload(matches: list[Match]) -> dict:
         ratings, rosters, divisions, load_registered_squads(CURRENT_SEASON)
     )
 
+    season_records = _season_records(matches, CURRENT_SEASON)
     players = sorted(
-        (_player_dict(pr) for pr in ratings.values()),
+        (_player_dict(pr, season_records.get(pr.player_id)) for pr in ratings.values()),
         key=lambda p: p["rating"],
         reverse=True,
     )

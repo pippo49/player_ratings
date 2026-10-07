@@ -230,6 +230,10 @@
      "name": "Hassan el Kaakour"
     },
     {
+     "id": "415460",
+     "name": "Emil Erkekov"
+    },
+    {
      "id": "415036",
      "name": "Abdul Raqueeb"
     },
@@ -247,32 +251,20 @@
    "division": 0,
    "players": [
     {
-     "id": "415470",
-     "name": "Jaycee Chan"
-    },
-    {
-     "id": "415471",
-     "name": "Kaho Cheung"
+     "id": "415466",
+     "name": "Evgeni Genchev"
     },
     {
      "id": "415468",
      "name": "Kevin Fang"
     },
     {
-     "id": "415466",
-     "name": "Evgeni Genchev"
-    },
-    {
      "id": "415473",
      "name": "Prateek Godse"
     },
     {
-     "id": "415472",
-     "name": "Xiaoman Ji"
-    },
-    {
-     "id": "415467",
-     "name": "Sandor Tuczkanyuk"
+     "id": "415727",
+     "name": "Romayne Stewart"
     }
    ]
   },
@@ -935,36 +927,16 @@
    "division": 2,
    "players": [
     {
-     "id": "414775",
-     "name": "Brandon Alcalde"
-    },
-    {
-     "id": "414778",
-     "name": "Massimiliano D'Angelo"
+     "id": "414777",
+     "name": "Shreyansh Makhanasa"
     },
     {
      "id": "414781",
      "name": "Charles Dequeker"
     },
     {
-     "id": "414779",
-     "name": "Aleksandr Klimenko"
-    },
-    {
      "id": "414785",
      "name": "Isaac Li"
-    },
-    {
-     "id": "414777",
-     "name": "Shreyansh Makhanasa"
-    },
-    {
-     "id": "414780",
-     "name": "Umberto Nico Giamundo"
-    },
-    {
-     "id": "414782",
-     "name": "Maulik Solanki"
     }
    ]
   },
@@ -1035,6 +1007,10 @@
     {
      "id": "414839",
      "name": "Dragos Etves"
+    },
+    {
+     "id": "416016",
+     "name": "Timur Hashimi"
     },
     {
      "id": "414837",
@@ -1157,8 +1133,8 @@
    "division": 2,
    "players": [
     {
-     "id": "415374",
-     "name": "Reuben Albert"
+     "id": "414810",
+     "name": "Ben Mensah"
     },
     {
      "id": "414813",
@@ -1169,20 +1145,8 @@
      "name": "Rodro  Kamrul"
     },
     {
-     "id": "414812",
-     "name": "Kelyan Laverdure"
-    },
-    {
-     "id": "415242",
-     "name": "Leon Liu"
-    },
-    {
-     "id": "414810",
-     "name": "Ben Mensah"
-    },
-    {
-     "id": "414811",
-     "name": "Femi Olokun"
+     "id": "414785",
+     "name": "Isaac Li"
     }
    ]
   },
@@ -1285,36 +1249,20 @@
    "division": 3,
    "players": [
     {
-     "id": "414347",
-     "name": "Charlie Boom"
+     "id": "414353",
+     "name": "Georges Corbineau"
     },
     {
      "id": "414346",
      "name": "David Cole"
     },
     {
-     "id": "414353",
-     "name": "Georges Corbineau"
+     "id": "414347",
+     "name": "Charlie Boom"
     },
     {
-     "id": "414351",
-     "name": "Andy Grimes"
-    },
-    {
-     "id": "414350",
-     "name": "Shan Jiang"
-    },
-    {
-     "id": "414352",
-     "name": "Dhammika Karalliedde"
-    },
-    {
-     "id": "414349",
-     "name": "Yufeng Qiu"
-    },
-    {
-     "id": "414348",
-     "name": "Simone Santarsiero"
+     "id": "415739",
+     "name": "Costel Chiriac"
     }
    ]
   },
@@ -1405,20 +1353,8 @@
      "name": "Nick Carter"
     },
     {
-     "id": "414384",
-     "name": "Philip Rolling"
-    },
-    {
      "id": "414380",
      "name": "Alex Shaw"
-    },
-    {
-     "id": "414382",
-     "name": "Marco Vacca"
-    },
-    {
-     "id": "414385",
-     "name": "Will Wood"
     }
    ]
   },
@@ -1426,32 +1362,20 @@
    "division": 3,
    "players": [
     {
-     "id": "414391",
-     "name": "Shiromi Aponso"
-    },
-    {
-     "id": "414390",
-     "name": "Ahmed Ashraf"
-    },
-    {
-     "id": "414388",
-     "name": "Bernardo Falcon"
-    },
-    {
-     "id": "414386",
-     "name": "John Ferguson"
-    },
-    {
-     "id": "414392",
-     "name": "John  Paul Cabellon"
-    },
-    {
      "id": "414389",
      "name": "Supriya Saketharam"
     },
     {
      "id": "414387",
      "name": "Meysam Samanpour"
+    },
+    {
+     "id": "414390",
+     "name": "Ahmed Ashraf"
+    },
+    {
+     "id": "414381",
+     "name": "Amartya Biswas"
     }
    ]
   },
@@ -1845,6 +1769,10 @@
     {
      "id": "414665",
      "name": "ejaz Mohiuddin"
+    },
+    {
+     "id": "415893",
+     "name": "Arturas Rybakas"
     }
    ]
   },
@@ -1932,6 +1860,10 @@
     {
      "id": "415141",
      "name": "Gene Valentine Taylor"
+    },
+    {
+     "id": "415910",
+     "name": "Kyra Yala"
     }
    ]
   },
@@ -2141,6 +2073,10 @@
      "name": "Stephen Harrison"
     },
     {
+     "id": "415913",
+     "name": "Oluwagbenga Owolabi"
+    },
+    {
      "id": "415043",
      "name": "Henry Ulzen-Plange"
     }
@@ -2203,6 +2139,10 @@
      "name": "Michael Renshaw"
     },
     {
+     "id": "415914",
+     "name": "Charlie Shan"
+    },
+    {
      "id": "415064",
      "name": "Mark Thomson"
     },
@@ -2216,32 +2156,16 @@
    "division": 6,
    "players": [
     {
-     "id": "415148",
-     "name": "Kin Chau"
-    },
-    {
      "id": "415071",
      "name": "Siddhartha Guruny"
     },
     {
-     "id": "415070",
-     "name": "Thomas Muellners"
-    },
-    {
-     "id": "415069",
-     "name": "Agshin Nabiyev"
-    },
-    {
-     "id": "415072",
-     "name": "Alexander Petersen"
+     "id": "415148",
+     "name": "Kin Chau"
     },
     {
      "id": "415244",
      "name": "Radu Petre"
-    },
-    {
-     "id": "415073",
-     "name": "Alexander  Reddy"
     }
    ]
   },
@@ -2427,28 +2351,20 @@
    "division": 6,
    "players": [
     {
-     "id": "415135",
-     "name": "Al-Ameen Alao"
-    },
-    {
-     "id": "415134",
-     "name": "Rahmatalahi Alao"
+     "id": "415133",
+     "name": "Fatiu Isiaku"
     },
     {
      "id": "415132",
      "name": "Kin Wai Hui"
     },
     {
-     "id": "415133",
-     "name": "Fatiu Isiaku"
-    },
-    {
      "id": "415137",
      "name": "Matt Jones"
     },
     {
-     "id": "415136",
-     "name": "Dominik Toth"
+     "id": "415071",
+     "name": "Siddhartha Guruny"
     }
    ]
   },
@@ -2489,36 +2405,16 @@
    "division": 7,
    "players": [
     {
-     "id": "415586",
-     "name": "Hin Yan Ching Ching"
-    },
-    {
-     "id": "415170",
-     "name": "Peter Dunmow"
-    },
-    {
-     "id": "415171",
-     "name": "Rufus George"
-    },
-    {
      "id": "415172",
      "name": "Ziye Ke"
-    },
-    {
-     "id": "415585",
-     "name": "Kevin Liu"
-    },
-    {
-     "id": "415169",
-     "name": "Abdul Muhith"
     },
     {
      "id": "415173",
      "name": "Sophia Nallalingham"
     },
     {
-     "id": "415587",
-     "name": "Jakob Schwarz"
+     "id": "415585",
+     "name": "Kevin Liu"
     }
    ]
   },
@@ -2526,40 +2422,20 @@
    "division": 7,
    "players": [
     {
-     "id": "415700",
-     "name": "David Barron"
-    },
-    {
-     "id": "415160",
-     "name": "Daniel Ehrlich"
+     "id": "415158",
+     "name": "Jonathan Raper"
     },
     {
      "id": "415161",
      "name": "Stephen Fowler"
     },
     {
-     "id": "415163",
-     "name": "Alistair Jones"
+     "id": "415700",
+     "name": "David Barron"
     },
     {
-     "id": "415270",
-     "name": "stephen Lustig"
-    },
-    {
-     "id": "415159",
-     "name": "Rod Maples"
-    },
-    {
-     "id": "415164",
-     "name": "JOHN ORSULIK"
-    },
-    {
-     "id": "415158",
-     "name": "Jonathan Raper"
-    },
-    {
-     "id": "415162",
-     "name": "Adam Sharples"
+     "id": "415964",
+     "name": "Sam Butler"
     }
    ]
   },
@@ -2769,30 +2645,26 @@
    "division": 7,
    "players": [
     {
-     "id": "415189",
-     "name": "Peter Cutler"
-    },
-    {
-     "id": "415188",
-     "name": "Shamil Mallaev"
-    },
-    {
-     "id": "415192",
-     "name": "Alexey Mazurov"
-    },
-    {
-     "id": "415191",
-     "name": "Daniel Radzinsky"
-    },
-    {
      "id": "415190",
      "name": "Tom Standen-Jewell"
+    },
+    {
+     "id": "415964",
+     "name": "Sam Butler"
+    },
+    {
+     "id": "415189",
+     "name": "Peter Cutler"
     }
    ]
   },
   "Walworth Wonderers": {
    "division": 7,
    "players": [
+    {
+     "id": "415149",
+     "name": "JIM WATER"
+    },
     {
      "id": "415143",
      "name": "Richard Chamberlain"
@@ -2802,20 +2674,8 @@
      "name": "James Dolan-Waters"
     },
     {
-     "id": "415146",
-     "name": "Bea Hancock"
-    },
-    {
-     "id": "415145",
-     "name": "Howard Hutchins"
-    },
-    {
-     "id": "415144",
-     "name": "Trent Sumner"
-    },
-    {
-     "id": "415149",
-     "name": "JIM WATER"
+     "id": "415172",
+     "name": "Ziye Ke"
     }
    ]
   },

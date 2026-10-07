@@ -13,7 +13,13 @@ from pathlib import Path
 from elo import MIN_MATCHES, PlayerRating, calculate_ratings, seed_for
 from models import Match
 from scraper import CURRENT_SEASON
-from player_identity import DATA_DIR, build_index, find_match, load_aliases
+from player_identity import (
+    DATA_DIR,
+    build_index,
+    find_match,
+    load_aliases,
+    normalise,
+)
 from season_transition import (
     CALL_UP_PROMOTION_THRESHOLD,
     DIVISION_OVERRIDES,
@@ -60,16 +66,20 @@ def _doubles_report(matches: list[Match]) -> dict:
     }
 
 
-def _relevant_matches(matches: list[Match]) -> list[Match]:
-    """The matches that describe who plays where *now*.
+def _by_team_now(matches: list[Match], of_matches):
+    """Apply *of_matches* per team, preferring this season's results.
 
-    Once the current season has results of its own they are the only honest
-    answer, and pooling them with last season's would list players who have
-    left alongside players who have joined. Before then — the usual state in
-    September — last season's matches are all there is.
+    A team that has played this season is described by who turned out for it;
+    a team that has not is described by last season, which is all there is.
+    The choice is per team, not for the league at once: in October a handful
+    have played and ninety have not, so scoping everything to the current
+    season would empty the app, while pooling the two would list players who
+    have left beside players who have joined.
     """
     current = [m for m in matches if m.season == CURRENT_SEASON]
-    return current or matches
+    combined = of_matches(matches)
+    combined.update(of_matches(current))
+    return combined
 
 
 def _rosters(matches: list[Match]) -> dict[str, dict[str, int]]:
@@ -141,6 +151,21 @@ def _infer_call_up_promotions(
     return {pid: min(teams)[1] for pid, teams in qualifying.items()}
 
 
+def load_published_divisions(season: str) -> dict[str, int]:
+    """{team: division} as the league published it, from fetch_structure.py.
+
+    This is the authoritative answer for the current season and the only one
+    available before a ball is hit. Results can only say which division a
+    team played in *last* season, which is wrong the moment anybody is
+    promoted or relegated.
+    """
+    path = DATA_DIR / f"teams_{season}.json"
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text())
+    return data.get("teams", data) if isinstance(data, dict) else {}
+
+
 def load_registered_squads(season: str) -> dict[str, dict]:
     """Squads as registered with the league, from fetch_squads.py.
 
@@ -174,38 +199,49 @@ def _apply_registered_squads(
 
     for team, info in squads.items():
         division = divisions.get(team, info.get("division", UNKNOWN_DIVISION))
+        divisions[team] = division
+        played_for = rosters.get(team, {})
         roster: dict[str, int] = {}
 
         for player in info["players"]:
-            pid, name = player["id"], player["name"]
-            previous = find_match(name, name_index, aliases)
-            if previous is not None:
-                # Same person, new id: keep the rating and the record.
-                ratings[pid] = PlayerRating(
-                    name=name,
-                    player_id=pid,
-                    rating=previous.rating,
-                    division=division,
-                    team=team,
-                    matches_played=previous.matches_played,
-                    singles_won=previous.singles_won,
-                    singles_played=previous.singles_played,
-                )
+            name = player["name"]
+            # The normalised name, not the league's id for this season: the
+            # ratings are keyed that way (see elo.canonical_ids), and keying a
+            # squad entry differently would make one player two rows — a live
+            # one from results and a registered one frozen on last season.
+            pid = normalise(name)
+            rated = ratings.get(pid)
+
+            if rated is not None:
+                # Already rated, either from this season's results or carried
+                # from last. Either way the rating stands; registering only
+                # says which team and division they are in now.
+                rated.team = team
+                rated.division = division
             else:
+                previous = find_match(name, name_index, aliases)
                 ratings[pid] = PlayerRating(
                     name=name,
                     player_id=pid,
-                    rating=seed_for(CURRENT_SEASON, division),
+                    rating=previous.rating if previous
+                    else seed_for(CURRENT_SEASON, division),
                     division=division,
                     team=team,
+                    matches_played=previous.matches_played if previous else 0,
+                    singles_won=previous.singles_won if previous else 0,
+                    singles_played=previous.singles_played if previous else 0,
                 )
-            roster[pid] = 0  # no appearances this season yet
+
+            # Appearances this season, where there are any — the front end
+            # weights its expected trio by them, so zeroing a player who has
+            # already turned out would understate the side.
+            roster[pid] = played_for.get(pid, 0)
 
         rosters[team] = roster
         real.add(team)
 
-    # Anyone carried from last season whose team now has a registered squad
-    # they are not in has left it, and should not show under that team.
+    # Anyone whose team now has a registered squad they are not in has left
+    # it, and should not show under that team.
     for pr in ratings.values():
         if pr.team in real and pr.player_id not in rosters[pr.team]:
             pr.team = ""
@@ -298,24 +334,30 @@ def build_payload(matches: list[Match]) -> dict:
     ratings = calculate_ratings(matches)
     doubles = _doubles_report(matches)
 
-    # Scope rosters and divisions to the current season once it has results.
-    current = _relevant_matches(matches)
     projected = not any(m.season == CURRENT_SEASON for m in matches)
-    rosters = _rosters(current)
-    divisions = _team_divisions(current)
+    rosters = _by_team_now(matches, _rosters)
+
+    # Divisions inferred from results describe the season those results came
+    # from, so last season's promotions and relegations would all be undone.
+    # The published structure for this season overrides them where it has an
+    # answer, which is for every team the league has entered.
+    divisions = _by_team_now(matches, _team_divisions)
+    divisions.update(load_published_divisions(CURRENT_SEASON))
 
     # season_transition.py is a hand-maintained bridge for the gap between
     # seasons. The moment real results exist it is not just unnecessary but
     # wrong, so it stands down on its own rather than waiting to be deleted.
-    registered: set[str] = set()
     if projected:
         _apply_season_overrides(ratings, rosters, divisions)
-        # Squads registered with the league supersede the hand-entered ones.
-        # Teams that have not registered anyone yet keep last season's roster,
-        # which is the only guide available until they do.
-        registered = _apply_registered_squads(
-            ratings, rosters, divisions, load_registered_squads(CURRENT_SEASON)
-        )
+
+    # The registered squad is who is in the team, and stays the best answer
+    # all season: results say how good a player is, not whether they are still
+    # in the side, and in October they cover a dozen teams out of ninety. A
+    # team that has registered nobody keeps last season's roster, which is the
+    # only guide available until it does.
+    registered = _apply_registered_squads(
+        ratings, rosters, divisions, load_registered_squads(CURRENT_SEASON)
+    )
 
     players = sorted(
         (_player_dict(pr) for pr in ratings.values()),

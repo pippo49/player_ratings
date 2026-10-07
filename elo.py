@@ -1,11 +1,11 @@
 """ELO rating engine for Central League London table tennis players."""
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 
-from models import Match, PlayerResult
-from player_identity import build_index, find_match, load_aliases
+from models import Match, PlayerResult, TeamResult
+from player_identity import build_index, find_match, load_aliases, normalise
 
 # Starting ELO by division, for a player with no rating history. Only ever
 # applies to someone genuinely new — anyone with a previous season carries
@@ -266,6 +266,59 @@ def _rate_season(
     return ratings
 
 
+def canonical_ids(matches: list[Match]) -> dict[str, str]:
+    """{player_id: the id to rate that player under}.
+
+    The league reissues numeric player ids every season, so an id identifies
+    an appearance, not a person — and the 2026/27 match cards carry no id at
+    all, so parser_v2 uses the normalised name. Left alone, a returning player
+    is two people: a numeric id frozen on last season's results and a
+    name-keyed one carrying this season's.
+
+    So the name is the identity, and ids map onto it. The exception is a name
+    two different players share within one season — there the ids are the only
+    thing telling them apart, and collapsing by name would merge two people,
+    so those keep their own ids.
+    """
+    per_season: dict[str, dict[str, set[str]]] = {}
+    for match in matches:
+        names = per_season.setdefault(match.season, {})
+        for side in (match.home, match.away):
+            for player in side.players:
+                names.setdefault(normalise(player.name), set()).add(player.player_id)
+
+    shared = {
+        name
+        for names in per_season.values()
+        for name, ids in names.items()
+        if len(ids) > 1
+    }
+
+    canonical: dict[str, str] = {}
+    for names in per_season.values():
+        for name, ids in names.items():
+            if name in shared:
+                continue
+            for pid in ids:
+                canonical[pid] = name
+    return canonical
+
+
+def _with_canonical_ids(matches: list[Match]) -> list[Match]:
+    """The same matches, with every player id resolved to one identity."""
+    canonical = canonical_ids(matches)
+    if all(canonical.get(pid, pid) == pid for pid in canonical):
+        return matches
+
+    def side(team: TeamResult) -> TeamResult:
+        return replace(team, players=[
+            replace(p, player_id=canonical.get(p.player_id, p.player_id))
+            for p in team.players
+        ])
+
+    return [replace(m, home=side(m.home), away=side(m.away)) for m in matches]
+
+
 def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
     """
     Compute ELO ratings for all players, season by season.
@@ -287,6 +340,10 @@ def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
     Players who do not appear in a later season keep the rating, team and
     division they finished their last one on.
     """
+    # One identity per player before anything is rated, so a returning player
+    # is not split between a numeric id and a name.
+    matches = _with_canonical_ids(matches)
+
     seasons = sorted({m.season for m in matches})
     ratings: dict[str, PlayerRating] = {}
 

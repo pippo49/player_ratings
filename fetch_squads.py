@@ -22,6 +22,8 @@ from urllib.parse import quote
 import requests
 from bs4 import BeautifulSoup
 
+from cache import load_matches
+from player_identity import normalise
 from scraper import (
     BASE_URL,
     DIVISION_NAMES,
@@ -116,18 +118,93 @@ def fetch(season: str) -> dict:
     return squads
 
 
+def appearances_by_team(season: str) -> dict[str, list[dict]]:
+    """{team: players who have turned out for it} from the cached results.
+
+    The league's team page serves two different lists. Before a team plays it
+    is the squad registered for the season — complete and authoritative. Once
+    it has played, the page becomes a results view, which both drops squad
+    members who have not yet turned out *and* picks up the opposition's
+    players. Neither direction is recoverable from the page, so for a team
+    that has played the squad comes from what was already recorded plus the
+    match cards, which attribute each player to the right side.
+    """
+    try:
+        matches = load_matches() or []
+    except Exception:
+        return {}
+
+    by_team: dict[str, dict[str, dict]] = {}
+    for match in matches:
+        if match.season != season:
+            continue
+        for side in (match.home, match.away):
+            players = by_team.setdefault(side.name, {})
+            for player in side.players:
+                players.setdefault(normalise(player.name), {
+                    "id": player.player_id,
+                    "name": player.name,
+                })
+    return {team: list(players.values()) for team, players in by_team.items()}
+
+
+def merge_squads(
+    scraped: dict[str, dict],
+    existing: dict[str, dict],
+    appeared: dict[str, list[dict]],
+) -> dict[str, dict]:
+    """Fold a fresh scrape into what is already recorded.
+
+    A team that has not played takes the page as gospel: it is still the
+    registration list, so a player who de-registers really does disappear.
+    A team that has played ignores the page — see appearances_by_team — and
+    keeps its recorded squad plus anyone the results show turning out for it,
+    which is how a mid-season signing still gets picked up.
+    """
+    merged: dict[str, dict] = {}
+
+    for team, info in scraped.items():
+        held = existing.get(team, {}).get("players", [])
+        turned_out = appeared.get(team, [])
+
+        if not turned_out:
+            merged[team] = info
+            continue
+
+        base = held or info["players"]
+        seen = {normalise(p["name"]) for p in base}
+        added = [p for p in turned_out if normalise(p["name"]) not in seen]
+        merged[team] = {**info, "players": base + added}
+
+    # A team the scrape could not reach at all keeps whatever was recorded.
+    for team, info in existing.items():
+        if team not in merged and info.get("players"):
+            merged[team] = info
+    return merged
+
+
 def main() -> None:
     season = sys.argv[1] if len(sys.argv) > 1 else "2026-27"
     print(f"Fetching {season} squads\n")
-    squads = fetch(season)
+    scraped = fetch(season)
 
-    total = sum(len(s["players"]) for s in squads.values())
+    total = sum(len(s["players"]) for s in scraped.values())
     if not total:
         print("\nNo players found at all — the page layout has probably changed.")
         raise SystemExit(1)
 
     DATA_DIR.mkdir(exist_ok=True)
     path = DATA_DIR / f"squads_{season}.json"
+    existing = (
+        json.loads(path.read_text()).get("teams", {}) if path.exists() else {}
+    )
+    appeared = appearances_by_team(season)
+    squads = merge_squads(scraped, existing, appeared)
+    if appeared:
+        print(f"\n  {len(appeared)} teams have played — their page is a results "
+              f"view that drops squad members and lists opponents, so their "
+              f"squads come from what was recorded plus the match cards")
+    total = sum(len(s["players"]) for s in squads.values())
     path.write_text(json.dumps({"season": season, "teams": squads}, indent=1) + "\n")
 
     sized = defaultdict(int)

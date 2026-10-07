@@ -25,6 +25,12 @@ ALIASES_FILE = DATA_DIR / "player_aliases.json"
 # Below this, two names are unrelated rather than a spelling difference.
 NEAR_MATCH_FLOOR = 0.80
 
+# A player registered to the same club in both seasons is far more likely to
+# be the same person, so a weaker resemblance is still worth a human's look.
+# "Dave" against "David", a married name, a transliteration — all score below
+# the general floor and all turn up at the same club.
+SAME_CLUB_FLOOR = 0.62
+
 
 def normalise(name: str) -> str:
     """Casefold, strip accents and punctuation, collapse whitespace.
@@ -82,19 +88,92 @@ def find_match(name: str, index: dict, aliases: dict[str, str]):
     return index.get(key)
 
 
-def near_matches(name: str, index: dict, limit: int = 3) -> list[tuple[float, str]]:
-    """Plausible previous-season names for an unmatched player, best first."""
+def club(team: str) -> str:
+    """The club a team belongs to: "Apex 4" and "Apex 5" are both "apex".
+
+    Teams are numbered per club, with "Jr" on the junior sides, so stripping
+    the trailing number leaves the club. Used to tell whether a player has
+    stayed put between seasons.
+    """
+    words = normalise(team).split()
+    while words and (words[-1].isdigit() or words[-1] == "jr"):
+        words.pop()
+    return " ".join(words)
+
+
+def _initials(words: list[str]) -> str:
+    return "".join(w[0] for w in words if w)
+
+
+def same_person_by_initials(name: str, candidate: str) -> bool:
+    """Whether two names are the same surname and consistent forenames.
+
+    "Cp Sahu" and "Chandra Prakash Sahu" are one player registered twice, once
+    under his initials. String similarity scores that pair at 0.52 — nowhere
+    near the floor — because initials share almost no characters with the
+    names they stand for. Comparing them as initials instead is exact.
+
+    The abbreviated side has to genuinely be initials: either every forename
+    is a single letter, or one token spells out the other side's initials.
+    Settling for "shorter than" would match "John Smith" to "James Smith" on
+    the strength of a shared J.
+    """
+    mine, theirs = normalise(name).split(), normalise(candidate).split()
+    if len(mine) < 2 or len(theirs) < 2 or mine[-1] != theirs[-1]:
+        return False  # different surname, or only one name to go on
+
+    short, long = sorted(
+        (mine[:-1], theirs[:-1]), key=lambda words: len("".join(words))
+    )
+    if not short or len("".join(short)) >= len("".join(long)):
+        return False  # nothing is abbreviated, so there is nothing to decode
+
+    if all(len(word) == 1 for word in short):
+        return _initials(short) == _initials(long)
+    return len(short) == 1 and short[0] == _initials(long)
+
+
+
+def near_matches(
+    name: str, index: dict, limit: int = 3, team: str | None = None
+) -> list[tuple[float, str, str]]:
+    """Plausible previous-season names for an unmatched player, best first.
+
+    *team* is the player's team this season. Where it is given, a candidate
+    from the same club clears a lower bar, and a candidate whose surname and
+    initials line up is offered whatever it scores.
+
+    Each result is (similarity, previous name, why) — "initials", "same club"
+    or "spelling". Which rule fired is the fastest way to triage: an initials
+    match is almost always real, a same-club one needs a look.
+    """
     key = normalise(name)
+    this_club = club(team) if team else None
     scored = []
-    for candidate in index:
-        # Cheap gate before the expensive comparison.
-        if not (set(key.split()) & set(candidate.split())) and abs(
-            len(candidate) - len(key)
-        ) > 4:
-            continue
+
+    for candidate, entry in index.items():
+        same_club = bool(
+            this_club and entry.team and club(entry.team) == this_club
+        )
+        by_initials = same_person_by_initials(name, candidate)
+
+        # Cheap gate before the expensive comparison — skipped for the two
+        # cases that do not rely on the strings resembling each other.
+        if not (same_club or by_initials):
+            if not (set(key.split()) & set(candidate.split())) and abs(
+                len(candidate) - len(key)
+            ) > 4:
+                continue
+
         ratio = SequenceMatcher(None, key, candidate).ratio()
-        if ratio >= NEAR_MATCH_FLOOR:
-            scored.append((ratio, index[candidate].name))
+        floor = SAME_CLUB_FLOOR if same_club else NEAR_MATCH_FLOOR
+        if by_initials:
+            scored.append((ratio, entry.name, "initials"))
+        elif ratio >= NEAR_MATCH_FLOOR:
+            scored.append((ratio, entry.name, "spelling"))
+        elif ratio >= floor:
+            scored.append((ratio, entry.name, "same club"))
+
     scored.sort(reverse=True)
     return scored[:limit]
 
@@ -131,15 +210,23 @@ def report(season: str = "2026-27") -> int:
     near, brand_new = [], []
     for team, name, _ in unmatched:
         candidates = [
-            (ratio, candidate) for ratio, candidate in near_matches(name, index)
+            (ratio, candidate, why)
+            for ratio, candidate, why in near_matches(name, index, team=team)
             if rejected.get(normalise(name)) != normalise(candidate)
         ]
         (near if candidates else brand_new).append((team, name, candidates))
 
     if near:
         print(f"\n  NEEDS CONFIRMING — {len(near)} close but not exact:")
+        rank = {"initials": 0, "spelling": 1, "same club": 2}
+        near.sort(key=lambda row: (
+            min(rank[why] for _, _, why in row[2]),
+            -max(ratio for ratio, _, _ in row[2]),
+        ))
         for team, name, candidates in near:
-            options = ", ".join(f"{n!r} ({r:.0%})" for r, n in candidates)
+            options = ", ".join(
+                f"{n!r} ({r:.0%}, {why})" for r, n, why in candidates
+            )
             print(f"    {name!r} ({team})  ->  {options}")
         print(f"\n  Confirmed pairs go in {ALIASES_FILE.name} as "
               '{"aliases": {"<new name>": "<2025/26 name>"}}')

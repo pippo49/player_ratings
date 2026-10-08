@@ -68,6 +68,19 @@ def _parse_date(text: str, season: str | None = None) -> date | None:
     return date.fromisoformat(iso.group(1)) if iso else None
 
 
+def _team_name(cell) -> str:
+    """The team's name from a fixture's team cell.
+
+    Once a fixture is played the cell carries the line-up as well, so its full
+    text reads "Flick TTC 5Matthias Kroeger3Leena Aldukali2…". The team link
+    holds the name on its own.
+    """
+    link = cell.find("a", class_="tt-team-link") or cell.find("a")
+    if link and link.get_text(strip=True):
+        return link.get_text(strip=True)
+    return cell.get_text(strip=True)
+
+
 def parse_fixtures(html: str, season: str | None = None) -> list[dict]:
     """Played fixtures on a division's fixtures page.
 
@@ -99,8 +112,8 @@ def parse_fixtures(html: str, season: str | None = None) -> list[dict]:
         fixtures.append({
             "match_id": match_id,
             "date": _parse_date(date_cell.get_text(), season) if date_cell else None,
-            "home": teams[0].get_text(strip=True),
-            "away": teams[1].get_text(strip=True),
+            "home": _team_name(teams[0]),
+            "away": _team_name(teams[1]),
             "home_score": int(score.group(1)),
             "away_score": int(score.group(2)),
         })

@@ -19,7 +19,7 @@ from datetime import date
 
 from bs4 import BeautifulSoup
 
-from parser_v2 import MATCH_ID, SCORE, _parse_date
+from parser_v2 import MATCH_ID, SCORE, _parse_date, _team_name
 from scraper import _fetch_html, _fixtures_url
 
 
@@ -43,8 +43,8 @@ def parse_all_fixtures(html: str, season: str | None = None) -> list[dict]:
             "match_id": MATCH_ID.search(link["href"]).group(1) if link else "",
             "date": _parse_date(raw_date, season) if raw_date else None,
             "raw_date": raw_date,
-            "home": teams[0].get_text(strip=True),
-            "away": teams[1].get_text(strip=True),
+            "home": _team_name(teams[0]),
+            "away": _team_name(teams[1]),
             "home_score": int(score.group(1)) if score else None,
             "away_score": int(score.group(2)) if score else None,
             "venue": _venue(venue_cell),

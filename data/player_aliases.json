@@ -13,12 +13,32 @@
     "Emmanuel Asante": "Emmanuel Kwesi Asante",
     "Chandra Prakash Sahu": "Cp Sahu",
     "Oscar Sterling": "Oscar Stirling",
-    "Stephen Ashby": "Stephen Alan Cathrew Ashby"
+    "Stephen Ashby": "Stephen Alan Cathrew Ashby",
+    "Jogenes Senorin": "Jojo Senorin",
+    "Tes Ghezae": "Tesfamaryam Ghezae",
+    "Samson Agbaje": "Olanrewaju Samson Agbaje",
+    "Tajudeen Alao": "Tj Alao",
+    "Maurice Hesse": "Mo Hesse",
+    "Jia Liu": "Jia Jun Lui"
   },
   "_not_matches_comment": "Pairs the matcher keeps suggesting that a human has confirmed are different people. Listed so they stop reappearing in the review list on every refresh.",
   "not_matches": {
     "Mike Brady": "Ken Brady",
     "George Pool": "Georges Sokol",
-    "Alex LI": "Alex Luk"
+    "Alex LI": "Alex Luk",
+    "Rodney Farquharson": "Musa Farquharson",
+    "John Dennison": [
+      "Tiana Dennison",
+      "Jamal Dennison"
+    ],
+    "Mark Thomson": "Syd Thomson",
+    "Tiffany Chan": "Waihang Chan",
+    "Taline Das": "Aarez Das",
+    "Jingxin Wang": "Meige Wang",
+    "Yuchen Zheng": "Yuen Yee Ng",
+    "Derrick Liu": "Derrick Wang",
+    "Nathaniel Akinrin": "Nathaniel Smith",
+    "Yundong Zhang": "Vuong Ngo",
+    "Calvin Yin": "Alin Azis"
   }
 }

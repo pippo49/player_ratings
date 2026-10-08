@@ -52,16 +52,25 @@ def load_aliases() -> dict[str, str]:
     return {normalise(k): v for k, v in data.get("aliases", {}).items()}
 
 
-def load_non_matches() -> dict[str, str]:
-    """Pairs a human has confirmed are different people.
+def load_non_matches() -> dict[str, set[str]]:
+    """{new season name: previous names confirmed to be someone else}.
 
     Squads are re-scraped through the season, so without this the same
     rejected suggestion would come back for review every single time.
+
+    A name can be offered more than one candidate — Fusion have three
+    Dennisons — so a value may be a single name or a list of them.
     """
     if not ALIASES_FILE.exists():
         return {}
     data = json.loads(ALIASES_FILE.read_text())
-    return {normalise(k): normalise(v) for k, v in data.get("not_matches", {}).items()}
+    rejected: dict[str, set[str]] = {}
+    for key, value in data.get("not_matches", {}).items():
+        names = [value] if isinstance(value, str) else value
+        rejected.setdefault(normalise(key), set()).update(
+            normalise(n) for n in names
+        )
+    return rejected
 
 
 def build_index(previous: dict) -> tuple[dict, set[str]]:
@@ -212,7 +221,8 @@ def report(season: str = "2026-27") -> int:
         candidates = [
             (ratio, candidate, why)
             for ratio, candidate, why in near_matches(name, index, team=team)
-            if rejected.get(normalise(name)) != normalise(candidate)
+            if normalise(candidate)
+            not in rejected.get(normalise(name), ())
         ]
         (near if candidates else brand_new).append((team, name, candidates))
 

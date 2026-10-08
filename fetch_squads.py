@@ -163,6 +163,20 @@ def merge_squads(
     """
     merged: dict[str, dict] = {}
 
+    # Who the registration lists claim, so that a player who turns out for
+    # another side of their club is not also made a member of it. Clubs field
+    # several teams and call players up between them — the whole reason Apex 4
+    # can pick from Apex 5 — and a call-up is not a squad member.
+    registered_elsewhere: dict[str, str] = {}
+    for team, info in scraped.items():
+        source = (
+            existing.get(team, {}).get("players", [])
+            if appeared.get(team)
+            else info["players"]
+        )
+        for player in source:
+            registered_elsewhere.setdefault(normalise(player["name"]), team)
+
     for team, info in scraped.items():
         held = existing.get(team, {}).get("players", [])
         turned_out = appeared.get(team, [])
@@ -173,7 +187,11 @@ def merge_squads(
 
         base = held or info["players"]
         seen = {normalise(p["name"]) for p in base}
-        added = [p for p in turned_out if normalise(p["name"]) not in seen]
+        added = [
+            p for p in turned_out
+            if normalise(p["name"]) not in seen
+            and registered_elsewhere.get(normalise(p["name"]), team) == team
+        ]
         merged[team] = {**info, "players": base + added}
 
     # A team the scrape could not reach at all keeps whatever was recorded.

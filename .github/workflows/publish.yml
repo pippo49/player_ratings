@@ -109,17 +109,27 @@ jobs:
         if: inputs.fetch_structure != ''
         run: uv run python fetch_structure.py "${{ inputs.fetch_structure }}"
 
+      - name: Scrape for new results
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
+        run: uv run python main.py --update
+
       # Squads fill up over the opening weeks of a season, so the scheduled
       # run refreshes them alongside results. Failure here must not stop the
-      # results scrape, which is the more important half.
+      # results scrape, which is the more important half — hence results
+      # first, which fetch_squads.py also depends on: it decides whether a
+      # team's page is still its registration list by whether that team has
+      # played, and reading that from a stale cache lets the page overwrite a
+      # squad with just the players who happen to have turned out.
       - name: Refresh squads
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
         continue-on-error: true
         run: uv run python fetch_squads.py 2026-27
 
-      - name: Scrape for new results
+      # Ratings are exported by main.py --update, before the squad refresh
+      # above, so rebuild the snapshot once the squads are settled.
+      - name: Rebuild the published snapshot
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
-        run: uv run python main.py --update
+        run: uv run python -m webapp.export
 
       - name: Verify the match format still holds
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''

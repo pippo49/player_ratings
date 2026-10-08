@@ -1231,28 +1231,16 @@
    "division": 3,
    "players": [
     {
-     "id": "415139",
-     "name": "MARCUS ANNEGARN"
-    },
-    {
-     "id": "414584",
-     "name": "Roy Hu"
+     "id": "414581",
+     "name": "Chandra Prakash Sahu"
     },
     {
      "id": "414583",
      "name": "Yueh Pin Lew"
     },
     {
-     "id": "414579",
-     "name": "Michael Miller"
-    },
-    {
-     "id": "414581",
-     "name": "Chandra Prakash Sahu"
-    },
-    {
-     "id": "414582",
-     "name": "Anson Soo"
+     "id": "414584",
+     "name": "Roy Hu"
     }
    ]
   },
@@ -1260,32 +1248,16 @@
    "division": 3,
    "players": [
     {
-     "id": "414356",
-     "name": "David Chiu"
-    },
-    {
-     "id": "414360",
-     "name": "Maxime Courmont"
+     "id": "414357",
+     "name": "Zicen Liao"
     },
     {
      "id": "414359",
      "name": "Chloe Ireland"
     },
     {
-     "id": "414357",
-     "name": "Zicen Liao"
-    },
-    {
-     "id": "414355",
-     "name": "Shang Liu"
-    },
-    {
      "id": "414358",
      "name": "Gianluca Lucchin"
-    },
-    {
-     "id": "414361",
-     "name": "Milind Mahajan"
     }
    ]
   },
@@ -1380,6 +1352,10 @@
    "division": 3,
    "players": [
     {
+     "id": "414951",
+     "name": "Julian Morgan"
+    },
+    {
      "id": "414952",
      "name": "John Cung"
     },
@@ -1388,16 +1364,8 @@
      "name": "Wai Lun Ho"
     },
     {
-     "id": "414951",
-     "name": "Julian Morgan"
-    },
-    {
-     "id": "414954",
-     "name": "Gustav Roedstroem"
-    },
-    {
-     "id": "414953",
-     "name": "Richie Zhang"
+     "id": "414581",
+     "name": "Chandra Prakash Sahu"
     }
    ]
   },
@@ -1533,32 +1501,20 @@
    "division": 3,
    "players": [
     {
-     "id": "414369",
-     "name": "Salvatore Bollito"
-    },
-    {
-     "id": "415378",
-     "name": "Derrick Donegan"
+     "id": "414371",
+     "name": "Wai-Liang Tan"
     },
     {
      "id": "415198",
      "name": "Kim Lim"
     },
     {
-     "id": "414370",
-     "name": "Andrew MacAlister"
+     "id": "414369",
+     "name": "Salvatore Bollito"
     },
     {
-     "id": "414374",
-     "name": "Bing Siah"
-    },
-    {
-     "id": "414371",
-     "name": "Wai-Liang Tan"
-    },
-    {
-     "id": "414376",
-     "name": "Ming Wei"
+     "id": "414357",
+     "name": "Zicen Liao"
     }
    ]
   },
@@ -1599,40 +1555,16 @@
    "division": 4,
    "players": [
     {
-     "id": "414629",
-     "name": "Leena Aldukali"
-    },
-    {
-     "id": "414632",
-     "name": "Genichiro Kanamori"
-    },
-    {
      "id": "415486",
      "name": "Matthias Kroeger"
     },
     {
+     "id": "414629",
+     "name": "Leena Aldukali"
+    },
+    {
      "id": "414631",
      "name": "Dmitrii Kvasov"
-    },
-    {
-     "id": "414633",
-     "name": "Harry Kwok"
-    },
-    {
-     "id": "414634",
-     "name": "Luis Maceira"
-    },
-    {
-     "id": "415485",
-     "name": "John Mansfield"
-    },
-    {
-     "id": "414630",
-     "name": "Astrid McAuliffe"
-    },
-    {
-     "id": "414635",
-     "name": "Lis Maria Pardo Arias Cachero"
     }
    ]
   },
@@ -1864,32 +1796,20 @@
    "division": 4,
    "players": [
     {
-     "id": "414667",
-     "name": "Rhoda Boadu"
+     "id": "414672",
+     "name": "Jacey Jin"
+    },
+    {
+     "id": "414668",
+     "name": "Grace Stair"
     },
     {
      "id": "414669",
      "name": "Natalia Czarkowska"
     },
     {
-     "id": "414672",
-     "name": "Jacey Jin"
-    },
-    {
-     "id": "414673",
-     "name": "Jia Liu"
-    },
-    {
-     "id": "414671",
-     "name": "Sarah March"
-    },
-    {
-     "id": "414670",
-     "name": "Anna Rao"
-    },
-    {
-     "id": "414668",
-     "name": "Grace Stair"
+     "id": "415486",
+     "name": "Matthias Kroeger"
     }
    ]
   },
@@ -1955,14 +1875,6 @@
    "division": 5,
    "players": [
     {
-     "id": "415213",
-     "name": "Luigi Bianchi"
-    },
-    {
-     "id": "415218",
-     "name": "David Ismaili"
-    },
-    {
      "id": "415215",
      "name": "Shashidhar Manandhar"
     },
@@ -1971,24 +1883,8 @@
      "name": "Faris Maniem"
     },
     {
-     "id": "415725",
-     "name": "Henry Shewell"
-    },
-    {
-     "id": "415217",
-     "name": "Abdul-Malik Toure"
-    },
-    {
-     "id": "415219",
-     "name": "Neville Towers"
-    },
-    {
-     "id": "415214",
-     "name": "susie valenzuela"
-    },
-    {
-     "id": "415216",
-     "name": "Jean-Philippe Wilsch"
+     "id": "415213",
+     "name": "Luigi Bianchi"
     }
    ]
   },
@@ -2079,24 +1975,20 @@
    "division": 5,
    "players": [
     {
-     "id": "415055",
-     "name": "Rhys Headland"
-    },
-    {
      "id": "415054",
      "name": "Florian Nelsen"
     },
     {
-     "id": "415053",
-     "name": "Stone NG"
+     "id": "415055",
+     "name": "Rhys Headland"
     },
     {
-     "id": "415056",
-     "name": "Igor Shilov"
+     "id": "415082",
+     "name": "Tarun Abraham"
     },
     {
-     "id": "415057",
-     "name": "John Wu"
+     "id": "415215",
+     "name": "Shashidhar Manandhar"
     }
    ]
   },
@@ -2273,28 +2165,12 @@
    "division": 6,
    "players": [
     {
-     "id": "415721",
-     "name": "Tiffany Chan"
-    },
-    {
-     "id": "415076",
-     "name": "Jonathan Gee"
-    },
-    {
-     "id": "415079",
-     "name": "Teh Jin Lim"
-    },
-    {
-     "id": "415075",
-     "name": "Andrey Shcherbakov"
-    },
-    {
      "id": "415077",
      "name": "Uwakmfon Utuk"
     },
     {
-     "id": "415078",
-     "name": "Frank Wang"
+     "id": "415079",
+     "name": "Teh Jin Lim"
     },
     {
      "id": "415080",
@@ -2422,28 +2298,20 @@
    "division": 6,
    "players": [
     {
-     "id": "415115",
-     "name": "Ceri Jones"
-    },
-    {
-     "id": "415114",
-     "name": "Vlad Kuz"
-    },
-    {
      "id": "415113",
      "name": "Senthoran Perananthan"
+    },
+    {
+     "id": "415115",
+     "name": "Ceri Jones"
     },
     {
      "id": "415116",
      "name": "Krissan Peter"
     },
     {
-     "id": "415120",
-     "name": "Kinga Simony"
-    },
-    {
-     "id": "415118",
-     "name": "Ugur Yukseloglu"
+     "id": "415077",
+     "name": "Uwakmfon Utuk"
     }
    ]
   },

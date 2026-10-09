@@ -1,11 +1,18 @@
 """ELO rating engine for Central League London table tennis players."""
 
+import json
 from collections import Counter
 from dataclasses import dataclass, replace
 from datetime import date
 
 from models import Match, PlayerResult, TeamResult
-from player_identity import build_index, find_match, load_aliases, normalise
+from player_identity import (
+    DATA_DIR,
+    build_index,
+    find_match,
+    load_aliases,
+    normalise,
+)
 
 # Starting ELO by division, for a player with no rating history. Only ever
 # applies to someone genuinely new — anyone with a previous season carries
@@ -103,6 +110,30 @@ def _expected_score(rating: float, opponent_rating: float) -> float:
     return 1.0 / (1.0 + 10.0 ** ((opponent_rating - rating) / 400.0))
 
 
+def load_registered_divisions(season: str) -> dict[str, int]:
+    """{normalised player name: the division of the team they registered for}.
+
+    A player called up to a higher team plays in that team's division, so a
+    division inferred from appearances describes the match, not the player.
+    Seeded that way, a Division 5 player borrowed by a Division 2 side starts
+    from the Division 2 ladder: lose all three and you still come out rated
+    far above a teammate who never played. The registration says which level
+    they actually belong to.
+    """
+    path = DATA_DIR / f"squads_{season}.json"
+    if not path.exists():
+        return {}
+    teams = json.loads(path.read_text()).get("teams", {})
+    divisions: dict[str, int] = {}
+    for info in teams.values():
+        division = info.get("division")
+        if division is None:
+            continue
+        for player in info.get("players", []):
+            divisions.setdefault(normalise(player["name"]), division)
+    return divisions
+
+
 def _seed_ratings(
     matches: list[Match],
     season: str,
@@ -111,9 +142,11 @@ def _seed_ratings(
     """Build starting ratings for the players appearing in *matches*.
 
     A player carried over from a previous season starts from the rating they
-    finished it on. Anyone new starts from the seed for the division they
-    play most in. Team and division are always taken from *these* matches,
-    so labels reflect the season being rated rather than a player's history.
+    finished it on. Anyone new starts from the seed for the division of the
+    team they registered with, falling back to the division they played most
+    in when they are not registered anywhere. Team and division labels are
+    taken from *these* matches, so they reflect the season being rated rather
+    than a player's history.
 
     Carried players are found by id first and by name second, because the
     league reissues player ids every season — matching on id alone would
@@ -122,6 +155,7 @@ def _seed_ratings(
     carried = carried or {}
     name_index, _ambiguous = build_index(carried)
     aliases = load_aliases()
+    registered_division = load_registered_divisions(season)
 
     # First pass: count matches per division and per team for each player
     div_counts: dict[str, Counter] = {}   # player_id -> Counter of divisions
@@ -140,7 +174,8 @@ def _seed_ratings(
         most_played_div = div_counts[pid].most_common(1)[0][0]
         most_played_team = team_counts[pid].most_common(1)[0][0]
         previous = carried.get(pid) or find_match(name, name_index, aliases)
-        seed = previous.rating if previous else seed_for(season, most_played_div)
+        own_div = registered_division.get(normalise(name), most_played_div)
+        seed = previous.rating if previous else seed_for(season, own_div)
         ratings[pid] = PlayerRating(
             name=name,
             player_id=pid,

@@ -45466,5 +45466,53 @@
       ],
       "total_score": 9
     }
+  },
+  {
+    "match_id": "464585",
+    "season": "2026-27",
+    "division": 7,
+    "date": "2026-10-08",
+    "home": {
+      "name": "Fulham Brunswick 7 Jr",
+      "players": [
+        {
+          "name": "Forfeit",
+          "player_id": "forfeit",
+          "games_won": 0
+        },
+        {
+          "name": "Olivier Gea",
+          "player_id": "olivier gea",
+          "games_won": 3
+        },
+        {
+          "name": "Gabriel Faillat",
+          "player_id": "gabriel faillat",
+          "games_won": 3
+        }
+      ],
+      "total_score": 6
+    },
+    "away": {
+      "name": "Fusion 10",
+      "players": [
+        {
+          "name": "Dragoslav Ivovic",
+          "player_id": "dragoslav ivovic",
+          "games_won": 1
+        },
+        {
+          "name": "Sun-Sik IM",
+          "player_id": "sun sik im",
+          "games_won": 1
+        },
+        {
+          "name": "Jeremiah Olatunbosun",
+          "player_id": "jeremiah olatunbosun",
+          "games_won": 1
+        }
+      ],
+      "total_score": 4
+    }
   }
 ]

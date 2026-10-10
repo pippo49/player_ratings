@@ -73,6 +73,20 @@ def load_non_matches() -> dict[str, set[str]]:
     return rejected
 
 
+def identity(name: str, aliases: dict[str, str] | None = None) -> str:
+    """The single key a player is known by, with confirmed renames folded in.
+
+    normalise() alone is not an identity: a player who re-registered under a
+    different name normalises to two different keys, so their seasons sit
+    apart and whichever half a caller happens to key on is the half it sees.
+    Everything that identifies a player — the rating engine, the squad loader,
+    the per-season records — must agree, so they all come through here.
+    """
+    aliases = load_aliases() if aliases is None else aliases
+    key = normalise(name)
+    return normalise(aliases[key]) if key in aliases else key
+
+
 def build_index(previous: dict) -> tuple[dict, set[str]]:
     """Index previous-season players by normalised name.
 

@@ -321,14 +321,28 @@ function playerRow(p, rank) {
   const sub2 = el("small");
   // Career figures, with this season's record alongside once they have played
   // — a 60-match career total says nothing about current form.
-  sub2.textContent = p.season_played
-    ? `${p.season_won}/${p.season_played} this season · ${fmtPct(p.win_rate)} career`
-    : `${fmtPct(p.win_rate)} of ${p.played}`;
+  const prevSeason = (state.data.seasons || [])
+    .filter((s) => s !== state.data.season_id)
+    .pop();
+  const last = prevSeason ? seasonRecord(p, prevSeason) : null;
+  if (p.season_played) {
+    sub2.textContent = last
+      ? `${p.season_won}/${p.season_played} now · ${fmtPct(last.won / last.played)} last season`
+      : `${p.season_won}/${p.season_played} this season`;
+  } else {
+    sub2.textContent = `${fmtPct(p.win_rate)} of ${p.played}`;
+  }
   end.append(rating, sub2);
 
   row.append(rankEl, main, end);
   row.onclick = () => openPlayerSheet(p);
   return row;
+}
+
+/** This player's record in one season, or null where they did not play. */
+function seasonRecord(p, season) {
+  const r = p.by_season && p.by_season[season];
+  return r && r.played ? r : null;
 }
 
 /** A hosted snapshot has no refresh button, so it needs different advice. */
@@ -951,12 +965,20 @@ function openPlayerSheet(p) {
       stats.append(stat);
     };
     add(fmtRating(p.rating), p.reliable ? "ELO rating" : "ELO rating (provisional)");
-    if (p.season_played) {
-      add(`${p.season_won}/${p.season_played}`, "Singles won this season");
-      add(fmtPct(p.season_won / p.season_played), "Win rate this season");
+    // Season by season, newest first, so a change in form is visible rather
+    // than averaged away into a career total.
+    const seasons = (state.data.seasons || []).slice().reverse();
+    for (const season of seasons) {
+      const r = seasonRecord(p, season);
+      if (!r) continue;
+      const label = season === state.data.season_id ? "this season" : season;
+      add(`${r.won}/${r.played}`, `Singles won, ${label}`);
+      add(fmtPct(r.won / r.played), `Win rate, ${label}`);
     }
-    add(fmtPct(p.win_rate), "Singles win rate, career");
-    add(`${p.won}/${p.played}`, "Singles won, career");
+    if (seasons.filter((s) => seasonRecord(p, s)).length > 1) {
+      add(fmtPct(p.win_rate), "Singles win rate, career");
+      add(`${p.won}/${p.played}`, "Singles won, career");
+    }
     add(ordinal(overall), "Overall rank");
     add(ordinal(inDiv), `Rank in ${divisionName(p.division)}`);
     if (!p.reliable) {

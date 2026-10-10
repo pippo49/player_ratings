@@ -10,13 +10,20 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from elo import MIN_MATCHES, PlayerRating, calculate_ratings, seed_for
+from elo import (
+    MIN_MATCHES,
+    PlayerRating,
+    calculate_ratings,
+    canonical_ids,
+    seed_for,
+)
 from models import Match
 from scraper import CURRENT_SEASON
 from player_identity import (
     DATA_DIR,
     build_index,
     find_match,
+    identity,
     load_aliases,
     normalise,
 )
@@ -106,31 +113,39 @@ def _team_divisions(matches: list[Match]) -> dict[str, int]:
     return {team: c.most_common(1)[0][0] for team, c in counts.items()}
 
 
-def _season_records(matches: list[Match], season: str) -> dict[str, dict[str, int]]:
-    """{player_id: {played, won}} for one season alone.
+def _records_by_season(
+    matches: list[Match], canonical: dict[str, str]
+) -> dict[str, dict[str, dict[str, int]]]:
+    """{player_id: {season: {played, won}}}.
 
     The figures on a player carry their whole career, because that is what the
     rating is built on and what makes it reliable. But a captain picking a side
-    wants to know how someone is going *this* season, which a career total of
-    sixty singles will not show. Counted here from the matches rather than the
-    ratings, which have no per-season breakdown.
+    wants this season, and wants to compare it against last — a career total of
+    sixty singles shows neither. Counted from the matches, since the ratings
+    keep no per-season breakdown.
+
+    *canonical* maps each appearance's player id onto the one identity the
+    ratings use. Without it last season's records are filed under the numeric
+    ids the league has since reissued, and no player matches their own history.
     """
-    records: dict[str, dict[str, int]] = {}
+    records: dict[str, dict[str, dict[str, int]]] = {}
     for match in matches:
-        if match.season != season:
-            continue
         for side, other in ((match.home, match.away), (match.away, match.home)):
             # A short opposing side hands out walkovers, which the rating
             # engine discounts; discount them here too so the two agree.
             walkovers = max(0, 3 - len(other.players))
             for player in side.players:
-                record = records.setdefault(player.player_id, {"played": 0, "won": 0})
+                pid = canonical.get(player.player_id, player.player_id)
+                seasons = records.setdefault(pid, {})
+                record = seasons.setdefault(match.season, {"played": 0, "won": 0})
                 record["played"] += len(other.players)
                 record["won"] += max(0, player.games_won - walkovers)
     return records
 
 
-def _player_dict(pr: PlayerRating, season: dict[str, int] | None = None) -> dict:
+def _player_dict(
+    pr: PlayerRating, by_season: dict[str, dict[str, int]] | None = None
+) -> dict:
     return {
         "id": pr.player_id,
         "name": pr.name,
@@ -141,10 +156,12 @@ def _player_dict(pr: PlayerRating, season: dict[str, int] | None = None) -> dict
         "won": pr.singles_won,
         "win_rate": round(pr.win_rate, 4),
         "reliable": pr.reliable,
-        # This season alone, zero until they turn out. `played`/`won` above
-        # stay career totals.
-        "season_played": season["played"] if season else 0,
-        "season_won": season["won"] if season else 0,
+        # Season by season, so the app can show current form against last
+        # year's. `played`/`won` above stay career totals, and season_* is
+        # kept for the current season because every view uses it.
+        "by_season": by_season or {},
+        "season_played": (by_season or {}).get(CURRENT_SEASON, {}).get("played", 0),
+        "season_won": (by_season or {}).get(CURRENT_SEASON, {}).get("won", 0),
     }
 
 
@@ -233,17 +250,20 @@ def _apply_registered_squads(
 
         for player in info["players"]:
             name = player["name"]
-            # The normalised name, not the league's id for this season: the
+            # The shared identity, not the league's id for this season: the
             # ratings are keyed that way (see elo.canonical_ids), and keying a
             # squad entry differently would make one player two rows — a live
             # one from results and a registered one frozen on last season.
-            pid = normalise(name)
+            pid = identity(name, aliases)
             rated = ratings.get(pid)
 
             if rated is not None:
                 # Already rated, either from this season's results or carried
-                # from last. Either way the rating stands; registering only
-                # says which team and division they are in now.
+                # from last. Either way the rating stands; registering says
+                # which team and division they are in now — and how they spell
+                # their name, since the identity key is derived from whichever
+                # season they first appeared in.
+                rated.name = name
                 rated.team = team
                 rated.division = division
             else:
@@ -387,9 +407,9 @@ def build_payload(matches: list[Match]) -> dict:
         ratings, rosters, divisions, load_registered_squads(CURRENT_SEASON)
     )
 
-    season_records = _season_records(matches, CURRENT_SEASON)
+    by_season = _records_by_season(matches, canonical_ids(matches))
     players = sorted(
-        (_player_dict(pr, season_records.get(pr.player_id)) for pr in ratings.values()),
+        (_player_dict(pr, by_season.get(pr.player_id)) for pr in ratings.values()),
         key=lambda p: p["rating"],
         reverse=True,
     )

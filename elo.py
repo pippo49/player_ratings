@@ -10,6 +10,7 @@ from player_identity import (
     DATA_DIR,
     build_index,
     find_match,
+    identity,
     load_aliases,
     normalise,
 )
@@ -310,17 +311,22 @@ def canonical_ids(matches: list[Match]) -> dict[str, str]:
     is two people: a numeric id frozen on last season's results and a
     name-keyed one carrying this season's.
 
-    So the name is the identity, and ids map onto it. The exception is a name
-    two different players share within one season — there the ids are the only
-    thing telling them apart, and collapsing by name would merge two people,
-    so those keep their own ids.
+    So the name is the identity, and ids map onto it. A player who registered
+    under a different name is folded in through the confirmed alias list, or
+    their two seasons would sit under two keys and neither would hold their
+    whole record.
+
+    The exception is a name two different players share within one season —
+    there the ids are the only thing telling them apart, and collapsing by
+    name would merge two people, so those keep their own ids.
     """
+    aliases = load_aliases()
     per_season: dict[str, dict[str, set[str]]] = {}
     for match in matches:
         names = per_season.setdefault(match.season, {})
         for side in (match.home, match.away):
             for player in side.players:
-                names.setdefault(normalise(player.name), set()).add(player.player_id)
+                names.setdefault(identity(player.name, aliases), set()).add(player.player_id)
 
     shared = {
         name

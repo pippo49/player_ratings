@@ -88,15 +88,21 @@ def identity(name: str, aliases: dict[str, str] | None = None) -> str:
 
 
 def build_index(previous: dict) -> tuple[dict, set[str]]:
-    """Index previous-season players by normalised name.
+    """Index previous players by identity, so find_match can look them up.
+
+    Keyed through identity() rather than normalise(): a rated player may be
+    carrying either the name they registered under this season or the one
+    from last, depending on whether a squad has refreshed it, and the two must
+    land on the same key or a renamed player stops matching themselves.
 
     Returns (index, ambiguous). A name held by more than one player is left
     out of the index and reported: guessing which one a returning player is
     would attach someone else's rating to them.
     """
+    aliases = load_aliases()
     by_name: dict[str, list] = {}
     for entry in previous.values():
-        by_name.setdefault(normalise(entry.name), []).append(entry)
+        by_name.setdefault(identity(entry.name, aliases), []).append(entry)
 
     ambiguous = {name for name, entries in by_name.items() if len(entries) > 1}
     index = {name: entries[0] for name, entries in by_name.items() if len(entries) == 1}
@@ -105,10 +111,7 @@ def build_index(previous: dict) -> tuple[dict, set[str]]:
 
 def find_match(name: str, index: dict, aliases: dict[str, str]):
     """The previous-season player for *name*, or None."""
-    key = normalise(name)
-    if key in aliases:
-        key = normalise(aliases[key])
-    return index.get(key)
+    return index.get(identity(name, aliases))
 
 
 def club(team: str) -> str:

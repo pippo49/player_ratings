@@ -38,7 +38,10 @@
     "Yuchen Zheng": "Yuen Yee Ng",
     "Derrick Liu": "Derrick Wang",
     "Nathaniel Akinrin": "Nathaniel Smith",
-    "Yundong Zhang": "Vuong Ngo",
+    "Yundong Zhang": [
+      "Vuong Ngo",
+      "Yuchen Zheng"
+    ],
     "Calvin Yin": "Alin Azis"
   }
 }

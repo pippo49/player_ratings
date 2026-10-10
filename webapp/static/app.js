@@ -352,8 +352,10 @@ function formBadge(p) {
   const arrow = dir === "up" ? "\u25b2" : dir === "down" ? "\u25bc" : "\u2013";
   const el_ = el("span", `form ${dir}`);
   const over = p.form_matches === 1 ? "1 match" : `${p.form_matches} matches`;
+  const when = p.season_played ? "" : ", all of them last season";
   el_.textContent = `${arrow} ${rounded > 0 ? "+" : ""}${rounded}`;
-  el_.title = `${rounded > 0 ? "+" : ""}${rounded} rating points over the last ${over}`;
+  el_.title =
+    `${rounded > 0 ? "+" : ""}${rounded} rating points over the last ${over}${when}`;
   return el_;
 }
 
@@ -985,8 +987,10 @@ function openPlayerSheet(p) {
     add(fmtRating(p.rating), p.reliable ? "ELO rating" : "ELO rating (provisional)");
     if (p.form_matches) {
       const rounded = Math.round(p.form);
+      const over = p.form_matches === 1 ? "match" : `${p.form_matches} matches`;
       add(`${rounded > 0 ? "+" : ""}${rounded}`,
-          `Rating over last ${p.form_matches === 1 ? "match" : p.form_matches + " matches"}`);
+          p.season_played ? `Rating over last ${over}`
+                          : `Rating over last ${over} (last season)`);
     }
     // Season by season, newest first, so a change in form is visible rather
     // than averaged away into a career total.

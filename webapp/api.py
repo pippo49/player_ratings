@@ -147,7 +147,7 @@ def _player_dict(
     pr: PlayerRating, by_season: dict[str, dict[str, int]] | None = None
 ) -> dict:
     season_played = (by_season or {}).get(CURRENT_SEASON, {}).get("played", 0)
-    form_delta, form_matches = pr.form() if season_played else (0.0, 0)
+    form_delta, form_matches = pr.form()
     return {
         "id": pr.player_id,
         "name": pr.name,
@@ -165,10 +165,12 @@ def _player_dict(
         "season_played": season_played,
         "season_won": (by_season or {}).get(CURRENT_SEASON, {}).get("won", 0),
         # Rating movement over the player's last three team matches, and how
-        # many it is actually measured over. Only meaningful for a player who
-        # has played this season: a rating is carried from the season it was
-        # earned in, so without this gate someone who has not turned out would
-        # be shown last season's closing form as if it were current.
+        # many it is measured over. The window rolls across the season break:
+        # a player one match into the season is measured over that match and
+        # the last two of the season before, and the oldest drops off as new
+        # ones land. Where the window holds no current-season match at all it
+        # is last season's closing form — still their most recent, but the
+        # app says so rather than implying it is current.
         "form": round(form_delta, 1),
         "form_matches": form_matches,
     }

@@ -105,10 +105,10 @@ class PlayerRating:
     matches_played: int = 0
     singles_won: int = 0       # total singles matches won
     singles_played: int = 0   # total singles matches played (3 per team match)
-    # The rating after each team match of the season being rated, starting
-    # with the seed it began on. Recorded on every convergence pass and reset
-    # at the start of each, so what survives is the final pass — the
-    # trajectory that produced the rating now shown.
+    # The rating after each team match, starting with the seed the player's
+    # first season began on. Recorded on every convergence pass and reset at
+    # the start of each, so what survives is the final pass; seasons are then
+    # joined end to end, since each is seeded from the last one's close.
     trail: list[float] = field(default_factory=list)
 
     def form(self, over: int = 3) -> tuple[float, int]:
@@ -116,9 +116,12 @@ class PlayerRating:
 
         Opponent ratings are held at their converged values through the final
         pass, so this is what the player's own recent results moved them by,
-        not an artefact of everyone else moving at the same time. A player with
-        fewer matches than asked for gets the change across all of them, and
-        the count says so.
+        not an artefact of everyone else moving at the same time.
+
+        The trail runs across season boundaries, so three matches into a new
+        season still reaches back into the last one rather than reporting form
+        over a single night. A player with fewer matches than asked for gets
+        the change across all of them, and the count says so.
         """
         if len(self.trail) < 2:
             return 0.0, 0
@@ -338,6 +341,10 @@ def _rate_season(
             pr.matches_played += previous.matches_played
             pr.singles_won += previous.singles_won
             pr.singles_played += previous.singles_played
+            # Join the trails so form can look back past the season boundary.
+            # A season is seeded from the rating the previous one ended on, so
+            # the two meet at the same value: drop the duplicate join point.
+            pr.trail = previous.trail[:-1] + pr.trail
     return ratings
 
 

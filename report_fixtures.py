@@ -69,10 +69,53 @@ def dump(fixture: dict) -> None:
         print(f"      [{classes:26}] {text!r}")
 
 
+def club_fixtures(season: str, prefix: str) -> None:
+    """Every fixture for a club's teams, across all divisions, by date.
+
+    A club's teams share a venue, so the question "can we host another match
+    that night" is answered across the whole club, not one division. Rule 30
+    allows two matches on a night only with two tables and the opponents'
+    agreement.
+    """
+    from scraper import division_slugs
+
+    rows = []
+    for slug, number in division_slugs(season):
+        try:
+            html = _fetch_html(_fixtures_url(slug, season))
+        except Exception as exc:
+            print(f"  {slug}: {type(exc).__name__}: {exc}")
+            continue
+        for f in parse_all_fixtures(html, season):
+            if f["home"].startswith(prefix) or f["away"].startswith(prefix):
+                rows.append((f["date"], number, f))
+
+    print(f"{season} — every fixture involving a team starting {prefix!r}\n")
+    for when, number, f in sorted(rows, key=lambda r: (r[0] or date.min, r[1])):
+        home = f["home"].startswith(prefix)
+        print(f"  {str(when):10}  D{number}  {'HOME' if home else 'away'}  "
+              f"{f['home']:24.24} v {f['away']:24.24}  @{f['venue']}")
+
+    print("\n  nights when more than one of the club's teams is at home:")
+    homes: dict = {}
+    for when, _n, f in rows:
+        if f["home"].startswith(prefix):
+            homes.setdefault(when, []).append(f["home"])
+    clashes = {d: t for d, t in homes.items() if len(t) > 1}
+    for when, teams in sorted(clashes.items(), key=lambda kv: kv[0] or date.min):
+        print(f"    {when}: {', '.join(sorted(teams))}")
+    if not clashes:
+        print("    none")
+
+
 def main() -> None:
     season = sys.argv[1] if len(sys.argv) > 1 else "2026-27"
     division = sys.argv[2] if len(sys.argv) > 2 else "Division_Four"
     team = sys.argv[3] if len(sys.argv) > 3 else None
+
+    # "club:<prefix>" in place of a division scans every division instead.
+    if division.startswith("club:"):
+        return club_fixtures(season, division.split(":", 1)[1])
 
     url = _fixtures_url(division, season)
     print(f"{season} — {division}\n  {url}")

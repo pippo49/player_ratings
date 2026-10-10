@@ -315,6 +315,10 @@ Because early matches in the season are evaluated against division-seeded rating
 
 ## Project structure
 
+`HANDOFF.md` is the orientation document: current state, the two ideas
+that explain the design, and the gotchas that have already caused bugs.
+
+
 - `main.py` — CLI entry point, prints tables and handles search
 - `scraper.py` — fetches and parses fixture pages from tabletennis365.com
 - `elo.py` — ELO rating engine with iterative convergence

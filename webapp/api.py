@@ -146,6 +146,8 @@ def _records_by_season(
 def _player_dict(
     pr: PlayerRating, by_season: dict[str, dict[str, int]] | None = None
 ) -> dict:
+    season_played = (by_season or {}).get(CURRENT_SEASON, {}).get("played", 0)
+    form_delta, form_matches = pr.form() if season_played else (0.0, 0)
     return {
         "id": pr.player_id,
         "name": pr.name,
@@ -160,8 +162,15 @@ def _player_dict(
         # year's. `played`/`won` above stay career totals, and season_* is
         # kept for the current season because every view uses it.
         "by_season": by_season or {},
-        "season_played": (by_season or {}).get(CURRENT_SEASON, {}).get("played", 0),
+        "season_played": season_played,
         "season_won": (by_season or {}).get(CURRENT_SEASON, {}).get("won", 0),
+        # Rating movement over the player's last three team matches, and how
+        # many it is actually measured over. Only meaningful for a player who
+        # has played this season: a rating is carried from the season it was
+        # earned in, so without this gate someone who has not turned out would
+        # be shown last season's closing form as if it were current.
+        "form": round(form_delta, 1),
+        "form_matches": form_matches,
     }
 
 

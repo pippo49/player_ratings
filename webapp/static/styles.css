@@ -168,6 +168,13 @@ main { padding: 12px 14px 24px; }
   color: var(--text-dim);
 }
 .provisional { color: var(--warn); }
+
+/* Form: rating movement over a player's last few team matches. The arrow and
+   the sign carry the meaning, so it still reads without the colour. */
+.form { font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.form.up { color: var(--good); }
+.form.down { color: var(--bad); }
+.form.flat { color: var(--text-dim); }
 .warn-note { color: var(--warn) !important; }
 
 .empty {

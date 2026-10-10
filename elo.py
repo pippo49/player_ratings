@@ -2,7 +2,7 @@
 
 import json
 from collections import Counter
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import date
 
 from models import Match, PlayerResult, TeamResult
@@ -105,6 +105,25 @@ class PlayerRating:
     matches_played: int = 0
     singles_won: int = 0       # total singles matches won
     singles_played: int = 0   # total singles matches played (3 per team match)
+    # The rating after each team match of the season being rated, starting
+    # with the seed it began on. Recorded on every convergence pass and reset
+    # at the start of each, so what survives is the final pass — the
+    # trajectory that produced the rating now shown.
+    trail: list[float] = field(default_factory=list)
+
+    def form(self, over: int = 3) -> tuple[float, int]:
+        """Rating change across the last *over* team matches, and how many.
+
+        Opponent ratings are held at their converged values through the final
+        pass, so this is what the player's own recent results moved them by,
+        not an artefact of everyone else moving at the same time. A player with
+        fewer matches than asked for gets the change across all of them, and
+        the count says so.
+        """
+        if len(self.trail) < 2:
+            return 0.0, 0
+        played = min(over, len(self.trail) - 1)
+        return self.trail[-1] - self.trail[-1 - played], played
 
     @property
     def reliable(self) -> bool:
@@ -227,6 +246,7 @@ def _run_single_pass(
         r.singles_won = 0
         r.singles_played = 0
         r.rating = seeds[pid]
+        r.trail = [seeds[pid]]
 
     # Replay matches in chronological order so the final pass gives
     # temporally-ordered ratings (latest form matters most).
@@ -271,6 +291,7 @@ def _run_single_pass(
             pr.matches_played += 1
             pr.singles_won += real_wins
             pr.singles_played += n_opponents
+            pr.trail.append(pr.rating)
 
         for player in home_players:
             _update(player, away_players)

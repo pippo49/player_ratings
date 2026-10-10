@@ -318,6 +318,11 @@ function playerRow(p, rank) {
   const end = el("div", "row-end");
   const rating = el("div", "rating");
   rating.textContent = fmtRating(p.rating);
+  const form = formBadge(p);
+  if (form) {
+    rating.append(document.createTextNode(" "));
+    rating.append(form);
+  }
   const sub2 = el("small");
   // Career figures, with this season's record alongside once they have played
   // — a 60-match career total says nothing about current form.
@@ -337,6 +342,19 @@ function playerRow(p, rank) {
   row.append(rankEl, main, end);
   row.onclick = () => openPlayerSheet(p);
   return row;
+}
+
+/** Rating movement over a player's recent matches, as a coloured arrow. */
+function formBadge(p) {
+  if (!p.form_matches) return null;
+  const rounded = Math.round(p.form);
+  const dir = rounded > 0 ? "up" : rounded < 0 ? "down" : "flat";
+  const arrow = dir === "up" ? "\u25b2" : dir === "down" ? "\u25bc" : "\u2013";
+  const el_ = el("span", `form ${dir}`);
+  const over = p.form_matches === 1 ? "1 match" : `${p.form_matches} matches`;
+  el_.textContent = `${arrow} ${rounded > 0 ? "+" : ""}${rounded}`;
+  el_.title = `${rounded > 0 ? "+" : ""}${rounded} rating points over the last ${over}`;
+  return el_;
 }
 
 /** This player's record in one season, or null where they did not play. */
@@ -965,6 +983,11 @@ function openPlayerSheet(p) {
       stats.append(stat);
     };
     add(fmtRating(p.rating), p.reliable ? "ELO rating" : "ELO rating (provisional)");
+    if (p.form_matches) {
+      const rounded = Math.round(p.form);
+      add(`${rounded > 0 ? "+" : ""}${rounded}`,
+          `Rating over last ${p.form_matches === 1 ? "match" : p.form_matches + " matches"}`);
+    }
     // Season by season, newest first, so a change in form is visible rather
     // than averaged away into a career total.
     const seasons = (state.data.seasons || []).slice().reverse();

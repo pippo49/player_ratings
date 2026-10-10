@@ -120,13 +120,27 @@ def parse_fixtures(html: str, season: str | None = None) -> list[dict]:
     return fixtures
 
 
+# A side that turns up short still has three slots on the card, and the empty
+# one is filled with a placeholder rather than left blank. Taken literally it
+# becomes a player: rated, seeded, added to the team's squad, and — because
+# the side then looks like a full three — it stops the walkover discount from
+# firing, so beating an absent opponent counts as a real win.
+NOT_A_PLAYER = re.compile(
+    r"^(forfeit(ed)?|walk\s*-?\s*over|w[/.]?o|default(ed)?|conceded?|"
+    r"no\s*player|absent|vacant|unknown|n/a|tbc|bye)$",
+    re.I,
+)
+
+
 def _names(cell) -> list[str]:
     """Player names in a match-card cell — two of them on the doubles row."""
     links = cell.find_all("a", class_="tt-player-link") or cell.find_all("a")
     if links:
-        return [a.get_text(strip=True) for a in links if a.get_text(strip=True)]
-    text = cell.get_text(" ", strip=True)
-    return [text] if text else []
+        found = [a.get_text(strip=True) for a in links if a.get_text(strip=True)]
+    else:
+        text = cell.get_text(" ", strip=True)
+        found = [text] if text else []
+    return [n for n in found if not NOT_A_PLAYER.match(" ".join(n.split()))]
 
 
 def parse_match_card(html: str) -> dict | None:

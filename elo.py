@@ -79,6 +79,17 @@ def seed_for(season: str, division: int) -> float:
 K_NEW = 48       # K-factor for players with < K_THRESHOLD team matches (converge faster)
 K_ESTABLISHED = 32  # K-factor for players with >= K_THRESHOLD team matches
 K_THRESHOLD = 15    # team matches before switching to the lower K-factor
+
+# A carried rating is a stale prior. Months pass over the summer, players
+# improve or fall away, and nothing in last season's results knows about it —
+# so the start of a season is treated as provisional again, whatever a
+# player's career record says. For their first few team matches of a season
+# they move on the high K, then settle onto the low one.
+#
+# Six is about the first quarter of a twenty-match season: long enough for a
+# real change in standard to show, short enough that one freak night cannot
+# define someone's year. Raising it buys responsiveness and pays in noise.
+K_SEASON_SETTLE = 6
 CONVERGENCE_THRESHOLD = 0.5  # max rating change per iteration to declare convergence
 MAX_ITERATIONS = 20
 MIN_MATCHES = 15  # minimum singles matches before a rating is considered reliable
@@ -246,8 +257,15 @@ def _run_single_pass(
             )
             actual_frac = real_wins / n_opponents
             expected_frac = total_expected / n_opponents
-            played = experience.get(player.player_id, 0) + pr.matches_played
-            k = K_NEW if played < K_THRESHOLD else K_ESTABLISHED
+            # matches_played is reset each pass, so it counts this season's
+            # matches already processed — the ones before this one.
+            this_season = pr.matches_played
+            career = experience.get(player.player_id, 0) + this_season
+            k = (
+                K_NEW
+                if this_season < K_SEASON_SETTLE or career < K_THRESHOLD
+                else K_ESTABLISHED
+            )
             pr.rating += k * (actual_frac - expected_frac)
 
             pr.matches_played += 1
@@ -374,6 +392,9 @@ def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
     Within a season the algorithm is:
       1. Seed each player from their carried-over rating, or their
          division's starting rating if they are new.
+      1a. Treat everyone as provisional for their first K_SEASON_SETTLE team
+         matches of the season, so a summer's change in standard shows up
+         rather than being held back by a rating built before it.
       2. Repeatedly replay the season's matches, updating ratings each pass.
       3. Stop when the maximum rating change between passes falls below
          CONVERGENCE_THRESHOLD, or after MAX_ITERATIONS.

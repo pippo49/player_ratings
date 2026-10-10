@@ -304,7 +304,13 @@ Because early matches in the season are evaluated against division-seeded rating
 
 ### Parameters
 
-- **K-factor**: 32 (controls how much a single team match can shift a rating)
+- **K-factor**: 48 while provisional, 32 once established (controls how much a
+  single team match can shift a rating)
+- **Provisional**: fewer than 15 career team matches, *or* fewer than 6 team
+  matches so far this season. A carried rating is a stale prior — a summer
+  passes and players improve or fall away — so everyone starts a season
+  provisional again whatever their career record. Sweeping 3/3 against equals
+  moves a provisional player about 22 points and an established one about 15.
 - **Minimum matches**: 15 singles matches (players with fewer are flagged with `*` in the output)
 
 ## Project structure

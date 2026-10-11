@@ -18,6 +18,42 @@ from webapp.api import build_payload
 OUTPUT = Path(__file__).parent / "static" / "ratings.json"
 
 
+def check(payload: dict) -> list[str]:
+    """Assertions over the payload that have each caught a real bug.
+
+    Cheap to run and loud when they fail, which is the point: every one of
+    these held right up until some change in how the league records things
+    quietly broke it, and the symptom was wrong numbers rather than a crash.
+    """
+    problems = []
+
+    # A player's seasons must account for their whole career. Catches a
+    # record filed under an identity the ratings do not use.
+    for p in payload["players"]:
+        seasons = p.get("by_season", {})
+        if sum(v["played"] for v in seasons.values()) != p["played"] or sum(
+            v["won"] for v in seasons.values()
+        ) != p["won"]:
+            problems.append(
+                f"{p['name']}: seasons {seasons} do not sum to career "
+                f"{p['won']}/{p['played']}"
+            )
+
+    # One row per player, except where two really do share a name. Those are
+    # kept apart on purpose and the payload names them, so only an unexpected
+    # duplicate is a problem — the kind that means one person has been split
+    # in two by an identity that does not match everywhere.
+    known = {n.casefold() for n in payload.get("ambiguous_names", [])}
+    seen: dict[str, int] = {}
+    for p in payload["players"]:
+        seen[p["name"]] = seen.get(p["name"], 0) + 1
+    for name, n in seen.items():
+        if n > 1 and name.casefold() not in known:
+            problems.append(f"{name}: {n} rows share this name")
+
+    return problems
+
+
 def export(verbose: bool = True) -> Path | None:
     """Recompute ratings from the cache and write them into the static bundle."""
     matches = load_matches()
@@ -28,6 +64,12 @@ def export(verbose: bool = True) -> Path | None:
 
     payload = build_payload(matches)
     payload["live"] = False  # a committed snapshot cannot scrape
+
+    problems = check(payload)
+    if problems and verbose:
+        print(f"CHECK: {len(problems)} problem(s) in the payload")
+        for line in problems[:10]:
+            print(f"  {line}")
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(payload, separators=(",", ":")))
 

@@ -17,7 +17,7 @@ from elo import (
     canonical_ids,
     seed_for,
 )
-from models import Match
+from models import Match, real_singles
 from scraper import CURRENT_SEASON
 from player_identity import (
     DATA_DIR,
@@ -130,16 +130,17 @@ def _records_by_season(
     """
     records: dict[str, dict[str, dict[str, int]]] = {}
     for match in matches:
-        for side, other in ((match.home, match.away), (match.away, match.home)):
-            # A short opposing side hands out walkovers, which the rating
-            # engine discounts; discount them here too so the two agree.
-            walkovers = max(0, 3 - len(other.players))
+        # The same walkover handling the rating engine uses, from the one
+        # definition, so a player's record and their rating cannot disagree.
+        singles = real_singles(match)
+        for side in (match.home, match.away):
             for player in side.players:
+                won, played = singles[player.player_id]
                 pid = canonical.get(player.player_id, player.player_id)
                 seasons = records.setdefault(pid, {})
                 record = seasons.setdefault(match.season, {"played": 0, "won": 0})
-                record["played"] += len(other.players)
-                record["won"] += max(0, player.games_won - walkovers)
+                record["played"] += played
+                record["won"] += won
     return records
 
 
@@ -418,6 +419,12 @@ def build_payload(matches: list[Match]) -> dict:
         ratings, rosters, divisions, load_registered_squads(CURRENT_SEASON)
     )
 
+    # Names held by more than one player. They are kept as separate rows on
+    # purpose — guessing which one is which would hand someone else's rating
+    # to a player — so the payload says so and the export's duplicate check
+    # does not report them.
+    _index, ambiguous = build_index(ratings)
+
     by_season = _records_by_season(matches, canonical_ids(matches))
     players = sorted(
         (_player_dict(pr, by_season.get(pr.player_id)) for pr in ratings.values()),
@@ -455,6 +462,7 @@ def build_payload(matches: list[Match]) -> dict:
         # projection built from last season's ratings and known moves.
         "projected": projected,
         "registered_squads": len(registered),
+        "ambiguous_names": sorted(ambiguous),
         "seasons": sorted({m.season for m in matches}),
         "match_count": len(matches),
         "current_season_matches": sum(1 for m in matches if m.season == CURRENT_SEASON),

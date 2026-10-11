@@ -114,6 +114,15 @@ read last week's cache and the squad overwrite happened anyway.
 of their own club is not added to its squad — that is how Apex 4 borrows from
 Apex 5, and it is common.
 
+**A short side is recorded two different ways.** Where the card fills the
+empty slot with a placeholder, the opponents are credited with beating it, so
+a walkover is already inside their win counts. Where the card simply lists
+two players, it is not. The engine has to tell them apart before stripping
+walkovers, or it under-credits a whole side by one win each — compare the
+wins attributed against `len(home) x len(away)`, the singles that could
+really be played. **Do not assume a card's singles sum to 9**: that only
+holds when both sides field three.
+
 **Short sides put `Forfeit` in the empty slot.** Taken literally it became a
 rated player on two teams' rosters, and it made a short side look like a full
 three so the walkover discount never fired. `parser_v2.NOT_A_PLAYER` filters
@@ -143,6 +152,8 @@ split is 8/12, not 10/10. This is real scheduling, not a parse error.
 These catch whole classes of error, and did:
 
 - Every player's per-season records sum to their career totals.
+- Attributed singles on a card equal either 9, or `len(home) x len(away)`
+  when a side is short — anything else means the card was misread.
 - No duplicate rows per normalised name (except `jolanta gotovska`, two
   different players sharing a name in 2025/26, deliberately kept apart).
 - `validate_parser.py` re-parses finished 2025/26 matches and diffs them

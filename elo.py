@@ -262,14 +262,24 @@ def _run_single_pass(
         if not all(p.player_id in ratings for p in home_players + away_players):
             continue
 
+        # A short side is recorded two different ways, and which one decides
+        # whether a walkover is already counted in a player's wins. Where the
+        # card fills the empty slot with a placeholder, the opponents are
+        # credited with beating it; where it simply lists two players, they
+        # are not. Comparing the wins actually attributed against the singles
+        # that could really be played tells the two apart: more attributed
+        # than playable means the walkovers are in there.
+        playable = len(home_players) * len(away_players)
+        attributed = sum(p.games_won for p in home_players + away_players)
+        walkovers_counted = attributed > playable
+
         def _update(player: PlayerResult, opponents: list[PlayerResult]) -> None:
             pr = ratings[player.player_id]
             n_opponents = len(opponents)
 
-            # When the opposing team is short (2 players instead of 3),
-            # the player's shown score includes walkover wins.
-            # Subtract those to get real performance only.
-            walkovers = 3 - n_opponents
+            # Strip walkover wins so only real results move a rating — but
+            # only where the card put them there in the first place.
+            walkovers = (3 - n_opponents) if walkovers_counted else 0
             real_wins = max(0, player.games_won - walkovers)
 
             # Compare against each real opponent individually so that

@@ -184,8 +184,8 @@ async function loadRatings() {
   // A hosted snapshot cannot scrape — no server behind it — but the button
   // still has somewhere useful to go, so it is never hidden.
   $("#btn-update").classList.remove("hidden");
-  $("#q-player").value = state.playerQuery;
-  $("#pick-us").value = state.us;
+  setSearchValue($("#q-player"), state.playerQuery);
+  setSearchValue($("#pick-us"), state.us);
   const defaultTeam = resolveTeam(state.us);
   const nearest = defaultTeam && feederTeams(defaultTeam)[0];
   if (nearest) state.callUp.add(nearest.name);
@@ -1034,7 +1034,7 @@ function openTeamSheet(t) {
     action.textContent = "Select for this team";
     action.onclick = () => {
       state.us = t.name;
-      $("#pick-us").value = t.name;
+      setSearchValue($("#pick-us"), t.name);
       const nearest = feederTeams(t)[0];
       state.callUp = new Set(nearest ? [nearest.name] : []);
       state.unavailable = new Set();
@@ -1209,10 +1209,59 @@ function debounce(fn, ms) {
   };
 }
 
+/** Set a search box from script, keeping its clear button in step. */
+function setSearchValue(input, value) {
+  if (!input) return;
+  input.value = value;
+  if (input._syncClear) input._syncClear();
+}
+
+/** Give a text box a cross that empties it in one tap.
+
+    Wrapping in script rather than in the markup keeps every search box
+    consistent by construction: add an input, it gets one. The cross is only
+    drawn while there is something to clear, and clearing dispatches a real
+    input event so whatever listens for typing updates the same way.
+*/
+function addClearButton(input) {
+  if (!input || input.type === "number") return;
+  const wrap = el("span", "search-wrap");
+  input.parentNode.insertBefore(wrap, input);
+  wrap.append(input);
+
+  const btn = el("button", "btn-clear");
+  btn.type = "button";
+  btn.title = "Clear";
+  btn.setAttribute("aria-label", `Clear ${input.placeholder || "the box"}`);
+  btn.innerHTML =
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"' +
+    ' stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M5 5l10 10M15 5L5 15"/></svg>';
+  wrap.append(btn);
+
+  const sync = () => wrap.classList.toggle("has-value", input.value !== "");
+  // Pointer down, not click: a click fires after the input has already lost
+  // focus, which on iOS closes the keyboard and makes the box jump.
+  btn.onpointerdown = (e) => {
+    e.preventDefault();
+    input.value = "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    sync();
+    input.focus();
+  };
+  input.addEventListener("input", sync);
+  // The box is also set from script — picking a team, restoring state — so
+  // expose the sync for those paths to call.
+  input._syncClear = sync;
+  sync();
+}
+
 function wire() {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.onclick = () => switchView(tab.dataset.view);
   });
+
+  document.querySelectorAll("input.search").forEach(addClearButton);
 
   $("#q-player").oninput = debounce((e) => {
     state.playerQuery = e.target.value;

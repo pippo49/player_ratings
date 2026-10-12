@@ -132,6 +132,14 @@ three so the walkover discount never fired. `parser_v2.NOT_A_PLAYER` filters
 placeholders. Keep that pattern tight — a loose one deletes `Nabil Chair`,
 `Natalia Ivanova` and `Noa Bye-Smith`.
 
+**Added to the home screen, the app does not reload on reopening.** A
+standalone PWA resumes the page it was showing, so a scrape that finished in
+the background would never be seen. `app.js` re-checks `ratings.json` on
+`visibilitychange` and `focus`, throttled to once every 30 seconds, and bails
+on an unchanged `generated_at`. An open sheet is rebuilt with it — the update
+sheet lists the latest results, so stale content there would mislead. The
+service worker is network-first, so a reload still picks up new code.
+
 **Fixture dates carry no year** ("Fri 06 Nov"). The year comes from the
 season: August onwards is the first calendar year, January onwards the second.
 

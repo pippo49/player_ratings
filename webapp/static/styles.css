@@ -64,6 +64,13 @@ svg {
 .top-title { min-width: 0; flex: 1; }
 .top h1 { font-size: 17px; letter-spacing: -0.01em; }
 .meta { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+/* A background refresh changes the screen with nobody touching it, so
+   the header says so for a moment. */
+.meta.fresh { animation: freshen 2.4s ease-out; }
+@keyframes freshen {
+  0%, 60% { color: var(--good); font-weight: 600; }
+  100% { color: var(--text-dim); font-weight: 400; }
+}
 
 .icon-btn {
   flex: none;

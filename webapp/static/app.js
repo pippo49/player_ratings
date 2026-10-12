@@ -24,6 +24,8 @@ const state = {
   target: 7,                // points per match needed for promotion
   divisionsPinned: false,   // true once a division chip has been clicked
   polling: null,
+  sheet: null,              // the builder of the open sheet, or null
+  checkedAt: 0,             // last time ratings.json was re-checked
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -162,12 +164,18 @@ function relativeTime(iso) {
    Data loading
    ════════════════════════════════════════════════════════ */
 
-async function loadRatings() {
+async function loadRatings({ quiet = false } = {}) {
   // Relative so the bundle works from a subpath, and so the same call hits
   // the live server or the committed snapshot without knowing which.
   const res = await fetch("ratings.json", { cache: "no-cache" });
   if (!res.ok) throw new Error(`Ratings request failed (${res.status})`);
   const data = await res.json();
+
+  // A background check should cost nothing when nothing has changed: one
+  // timestamp decides, and the screen is left exactly as it was.
+  if (quiet && state.data && data.generated_at === state.data.generated_at) {
+    return false;
+  }
 
   state.data = data;
   state.players = new Map(data.players.map((p) => [p.id, p]));
@@ -193,6 +201,10 @@ async function loadRatings() {
   buildChips();
   buildTeamOptions();
   renderAll();
+  // The update sheet lists the latest results, so it has to be rebuilt too —
+  // that is the one place where stale content would be actively misleading.
+  if (state.sheet && !state.polling) openSheet(state.sheet);
+  return true;
 }
 
 function renderMeta() {
@@ -954,6 +966,7 @@ function squadCard(team, pool) {
 function openSheet(build) {
   const body = $("#sheet-body");
   body.textContent = "";
+  state.sheet = build;
   build(body);
   $("#sheet").classList.remove("hidden");
   $("#scrim").classList.remove("hidden");
@@ -962,6 +975,7 @@ function openSheet(build) {
 function closeSheet() {
   $("#sheet").classList.add("hidden");
   $("#scrim").classList.add("hidden");
+  state.sheet = null;
   if (state.polling) { clearInterval(state.polling); state.polling = null; }
 }
 
@@ -1136,7 +1150,8 @@ function hostedUpdateSheet(body) {
 
   const note = el("p", "sub");
   note.textContent =
-    "Opens GitHub. Give it a minute after the run finishes, then reload here.";
+    "Opens GitHub. Come back when the run finishes — this page picks up the "
+    + "new ratings on its own.";
   body.append(actions, note);
 
   const results = recentResultsBlock(12);
@@ -1358,7 +1373,36 @@ function wire() {
   });
 }
 
+/*
+ * Added to the home screen, this is a standalone app: reopening it resumes
+ * the page it was showing rather than loading it again, so a scrape that
+ * finished in the background would otherwise never be seen. Re-check
+ * whenever it comes back to the front.
+ */
+function checkForNewRatings() {
+  if (document.visibilityState !== "visible") return;
+  if (state.polling) return;                      // a live scrape is running
+  if (Date.now() - state.checkedAt < 30000) return;
+  state.checkedAt = Date.now();
+  loadRatings({ quiet: true })
+    .then((changed) => { if (changed) flashMeta(); })
+    // Offline, or the run is still going: keep showing what we have.
+    .catch(() => {});
+}
+
+/** Mark the header briefly so a silent update is still noticeable. */
+function flashMeta() {
+  const meta = $("#meta");
+  meta.classList.remove("fresh");
+  void meta.offsetWidth;              // restart the animation
+  meta.classList.add("fresh");
+}
+
+document.addEventListener("visibilitychange", checkForNewRatings);
+window.addEventListener("focus", checkForNewRatings);
+
 wire();
+state.checkedAt = Date.now();
 loadRatings().catch((err) => {
   $("#meta").textContent = `Could not load ratings — ${err.message}`;
 });

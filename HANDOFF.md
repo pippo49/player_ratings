@@ -45,7 +45,10 @@ GitHub Pages      static app, offline-capable
 ```
 
 Everything runs through `.github/workflows/publish.yml`, which scrapes,
-commits and deploys. It runs weekly (Mondays 07:00 UTC) and on demand.
+commits and deploys. Results are scraped every six hours (23 minutes past,
+to miss the on-the-hour crush); the squad refresh is the slow half — every
+team page — so it runs once a day at 06:47 UTC and is skipped by the
+six-hourly schedule. Also runs on demand from the Actions tab.
 **Step order matters** — see the gotchas.
 
 The development sandbox cannot reach tabletennis365.com. Anything needing the

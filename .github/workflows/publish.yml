@@ -15,8 +15,18 @@ name: Publish
 
 on:
   schedule:
-    # Mondays 07:00 UTC — after the week's fixtures have been posted.
-    - cron: "0 7 * * 1"
+    # Results arrive irregularly: captains have 48 hours to send a scorecard
+    # (Rule 33) and matches are played on five nights of the week, so a
+    # weekly scrape left results sitting unseen for days. Four times a day
+    # costs about twenty page fetches a run and finishes in under a minute.
+    #
+    # Not on the hour: scheduled runs bunch at minute zero and get delayed.
+    - cron: "23 */6 * * *"
+    # Once a day, the same plus a squad refresh. That walks all ninety-odd
+    # team pages and takes the run from under a minute to about four, which
+    # is not worth doing six-hourly for a squad list that changes by a player
+    # or two a day.
+    - cron: "47 6 * * *"
   workflow_dispatch:
     inputs:
       fetch_structure:
@@ -122,6 +132,7 @@ jobs:
       # squad with just the players who happen to have turned out.
       - name: Refresh squads
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
+          && (github.event_name != 'schedule' || github.event.schedule == '47 6 * * *')
         continue-on-error: true
         run: uv run python fetch_squads.py 2026-27
 

@@ -41,20 +41,23 @@ involved. The whole setup can be done from a browser that way.
 
 ### Publishing it
 
-`.github/workflows/publish.yml` scrapes the league every Monday, commits any
-new results, and publishes `webapp/static/` to GitHub Pages. It also publishes
-on any push to `master` that touches the bundle, and can be run on demand from
-the Actions tab. One-time setup:
+`.github/workflows/publish.yml` scrapes the league **every six hours**, commits
+any new results, and publishes `webapp/static/` to GitHub Pages. Once a day it
+also refreshes the squads, which walks every team page and is the slow half —
+a results-only run takes under a minute, a run with squads about four. It also
+publishes on any push to `master` that touches the bundle, and can be run on
+demand from the Actions tab. One-time setup:
 
 1. The repository must be **public** — Pages needs a paid plan on private repos.
    (Actions minutes are also unlimited on public repos; private repos get 2,000
-   a month, which is still far more than a weekly scrape uses.)
+   a month, which still comfortably covers six-hourly runs.)
 2. Settings → Pages → Source: **GitHub Actions**.
 
-With that in place the weekly refresh needs nothing from you — the site updates
-itself and phones pick it up next time they have signal. Running `--update`
-from a terminal still works and still publishes, for when you want results
-immediately rather than waiting for Monday.
+With that in place the refresh needs nothing from you — the site updates itself
+and phones pick it up next time they have signal. To pull results in right now
+rather than waiting for the next slot, open the **Actions** tab, choose
+**Publish**, and press **Run workflow**; leave every input blank for the normal
+scrape. Running `--update` from a terminal does the same thing.
 
 Scraping and deploying live in one workflow because a push made with the
 default `GITHUB_TOKEN` does not trigger other workflows, so a separate deploy
@@ -332,7 +335,7 @@ that explain the design, and the gotchas that have already caused bugs.
   - `static/` — the deployable bundle: `index.html`, `app.js`, `styles.css`,
     `sw.js`, `manifest.json`, icons and `ratings.json` (no build step)
 - `data/matches.json` — scraped match data, committed
-- `.github/workflows/publish.yml` — weekly scrape and GitHub Pages deploy
+- `.github/workflows/publish.yml` — scheduled scrape and GitHub Pages deploy
 - `NEXT_SEASON.md` — what needs changing when the 2026/27 fixtures go up
 
 The web app adds no dependencies: the server is `http.server` from the standard

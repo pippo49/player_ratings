@@ -330,6 +330,8 @@ td.lose { color: var(--bad); }
 .action.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .action small { display: block; font-weight: 400; font-size: 12px; opacity: 0.75; margin-top: 2px; }
 .action:disabled { opacity: 0.5; }
+/* The hosted copy's actions are links out to the scrape job, not buttons. */
+a.action { display: block; box-sizing: border-box; text-decoration: none; }
 
 .log {
   margin-top: 12px;

@@ -181,8 +181,9 @@ async function loadRatings() {
     state.playerDiv = home ? home.division : null;
     state.teamDiv = state.playerDiv;
   }
-  // Scraping needs the local server; a hosted snapshot cannot do it.
-  $("#btn-update").classList.toggle("hidden", !data.live);
+  // A hosted snapshot cannot scrape — no server behind it — but the button
+  // still has somewhere useful to go, so it is never hidden.
+  $("#btn-update").classList.remove("hidden");
   $("#q-player").value = state.playerQuery;
   $("#pick-us").value = state.us;
   const defaultTeam = resolveTeam(state.us);
@@ -1049,8 +1050,52 @@ function openTeamSheet(t) {
    Update flow
    ════════════════════════════════════════════════════════ */
 
+// Where a hosted copy sends you to run a scrape. A button here cannot call
+// the GitHub API itself: that needs a token, and a token in a page anyone can
+// read is a token anyone can push with.
+const WORKFLOW_URL =
+  "https://github.com/pippo49/player_ratings/actions/workflows/publish.yml";
+
+/** On a hosted copy, link out to the job that can actually scrape. */
+function hostedUpdateSheet(body) {
+  const h = el("h2");
+  h.textContent = "Fetch latest results";
+  const sub = el("p", "sub");
+  sub.textContent = state.data && state.data.generated_at
+    ? `Ratings calculated ${relativeTime(state.data.generated_at)}. `
+      + "This copy updates itself every six hours."
+    : "";
+  body.append(h, sub);
+
+  const actions = el("div", "sheet-actions");
+  const link = (label, detail, primary) => {
+    const a = el("a", `action${primary ? " primary" : ""}`);
+    a.href = WORKFLOW_URL;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.append(document.createTextNode(label));
+    const small = el("small");
+    small.textContent = detail;
+    a.append(small);
+    return a;
+  };
+  actions.append(
+    link("Fetch results now",
+         "Run workflow → set results_only to 1 → about a minute", true),
+    link("Full refresh",
+         "Run workflow → leave every box blank → about four minutes", false),
+  );
+
+  const note = el("p", "sub");
+  note.textContent =
+    "Opens GitHub. Give it a minute after the run finishes, then reload here.";
+  body.append(actions, note);
+}
+
 function openUpdateSheet() {
   openSheet((body) => {
+    if (!(state.data && state.data.live)) return hostedUpdateSheet(body);
+
     const h = el("h2");
     h.textContent = "Fetch latest results";
     const sub = el("p", "sub");

@@ -29,6 +29,13 @@ on:
     - cron: "47 6 * * *"
   workflow_dispatch:
     inputs:
+      results_only:
+        description: >-
+          Any value skips the squad refresh, which is the slow half — a
+          results-only run takes under a minute against about four. Use it
+          when you just want tonight's scores in.
+        type: string
+        default: ""
       fetch_structure:
         description: >-
           Season to fetch the published division structure for (e.g. 2026-27).
@@ -132,6 +139,7 @@ jobs:
       # squad with just the players who happen to have turned out.
       - name: Refresh squads
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
+          && inputs.results_only == ''
           && (github.event_name != 'schedule' || github.event.schedule == '47 6 * * *')
         continue-on-error: true
         run: uv run python fetch_squads.py 2026-27

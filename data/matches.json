@@ -46219,5 +46219,149 @@
       ],
       "total_score": 5
     }
+  },
+  {
+    "match_id": "464719",
+    "season": "2026-27",
+    "division": 4,
+    "date": "2026-10-09",
+    "home": {
+      "name": "Fusion 8 Jr",
+      "players": [
+        {
+          "name": "Haruki Bohl",
+          "player_id": "haruki bohl",
+          "games_won": 1
+        },
+        {
+          "name": "Tejasri Narula",
+          "player_id": "tejasri narula",
+          "games_won": 0
+        },
+        {
+          "name": "Calen Dawson",
+          "player_id": "calen dawson",
+          "games_won": 1
+        }
+      ],
+      "total_score": 2
+    },
+    "away": {
+      "name": "St Katharines Trust 5",
+      "players": [
+        {
+          "name": "Nameer Jasim",
+          "player_id": "nameer jasim",
+          "games_won": 3
+        },
+        {
+          "name": "Nikolay Karlov",
+          "player_id": "nikolay karlov",
+          "games_won": 2
+        },
+        {
+          "name": "Igors Ivenkovs",
+          "player_id": "igors ivenkovs",
+          "games_won": 2
+        }
+      ],
+      "total_score": 8
+    }
+  },
+  {
+    "match_id": "464726",
+    "season": "2026-27",
+    "division": 5,
+    "date": "2026-10-09",
+    "home": {
+      "name": "Fusion 9 Jr",
+      "players": [
+        {
+          "name": "Alfred Morley",
+          "player_id": "alfred morley",
+          "games_won": 3
+        },
+        {
+          "name": "Felix Brand",
+          "player_id": "felix brand",
+          "games_won": 1
+        },
+        {
+          "name": "Stefan Lioumis Surbatis",
+          "player_id": "stefan lioumis surbatis",
+          "games_won": 0
+        }
+      ],
+      "total_score": 5
+    },
+    "away": {
+      "name": "Morpeth 12",
+      "players": [
+        {
+          "name": "Kate Ha",
+          "player_id": "kate ha",
+          "games_won": 2
+        },
+        {
+          "name": "Angela Chuang",
+          "player_id": "angela chuang",
+          "games_won": 1
+        },
+        {
+          "name": "Zehao Zhang",
+          "player_id": "zehao zhang",
+          "games_won": 2
+        }
+      ],
+      "total_score": 5
+    }
+  },
+  {
+    "match_id": "464299",
+    "season": "2026-27",
+    "division": 6,
+    "date": "2026-10-07",
+    "home": {
+      "name": "Fulham Brunswick 5",
+      "players": [
+        {
+          "name": "Oscar Sterling",
+          "player_id": "oscar sterling",
+          "games_won": 2
+        },
+        {
+          "name": "Aaron Bryden",
+          "player_id": "aaron bryden",
+          "games_won": 0
+        },
+        {
+          "name": "Philip Sangchin",
+          "player_id": "philip sangchin",
+          "games_won": 0
+        }
+      ],
+      "total_score": 3
+    },
+    "away": {
+      "name": "Highbury 6",
+      "players": [
+        {
+          "name": "Tarun Abraham",
+          "player_id": "tarun abraham",
+          "games_won": 3
+        },
+        {
+          "name": "Rishabh Chaterjee",
+          "player_id": "rishabh chaterjee",
+          "games_won": 2
+        },
+        {
+          "name": "Amiran Melua",
+          "player_id": "amiran melua",
+          "games_won": 2
+        }
+      ],
+      "total_score": 7
+    }
   }
 ]

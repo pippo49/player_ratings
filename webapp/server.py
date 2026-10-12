@@ -13,7 +13,7 @@ import argparse
 import json
 import socket
 import threading
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -119,8 +119,21 @@ class UpdateJob:
 
             if full:
                 matches, added = scraped, len(scraped)
+                arrived = scraped
             else:
+                held = {(m.season, m.match_id) for m in existing if m.match_id}
+                arrived = [m for m in scraped if (m.season, m.match_id) not in held]
                 matches, added = merge_matches(existing, scraped)
+
+            # Say what came in, not just how many. A count tells you something
+            # happened; the scores tell you whether it was your match.
+            for m in sorted(arrived, key=lambda m: (m.date or date.min))[:20]:
+                self._say(
+                    f"  {m.home.name} {m.home.total_score}-"
+                    f"{m.away.total_score} {m.away.name}"
+                )
+            if len(arrived) > 20:
+                self._say(f"  … and {len(arrived) - 20} more")
 
             save_matches(matches)
             self._say(f"Recalculating ratings over {len(matches)} matches…")

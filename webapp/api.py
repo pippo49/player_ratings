@@ -177,6 +177,28 @@ def _player_dict(
     }
 
 
+def _recent_results(matches: list[Match], season: str, limit: int = 30) -> list[dict]:
+    """The season's latest results, newest first.
+
+    A payload carrying every result would grow to a hundred kilobytes by
+    March, and after a scrape the question is only ever "what just came in",
+    so this is capped. Enough to cover a busy week across all eight divisions.
+    """
+    played = [m for m in matches if m.season == season]
+    played.sort(key=lambda m: (m.date or date.min, m.match_id), reverse=True)
+    return [
+        {
+            "date": m.date.isoformat() if m.date else None,
+            "division": m.division,
+            "home": m.home.name,
+            "home_score": m.home.total_score,
+            "away": m.away.name,
+            "away_score": m.away.total_score,
+        }
+        for m in played[:limit]
+    ]
+
+
 def _last_played(matches: list[Match]) -> date | None:
     dates = [m.date for m in matches if m.date]
     return max(dates) if dates else None
@@ -466,6 +488,7 @@ def build_payload(matches: list[Match]) -> dict:
         "seasons": sorted({m.season for m in matches}),
         "match_count": len(matches),
         "current_season_matches": sum(1 for m in matches if m.season == CURRENT_SEASON),
+        "recent_results": _recent_results(matches, CURRENT_SEASON),
         "player_count": len(players),
         "last_match_date": last.isoformat() if last else None,
         "min_matches": MIN_MATCHES,

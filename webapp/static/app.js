@@ -473,9 +473,14 @@ function buildTeamOptions() {
     });
 }
 
-/** "Apex 4" -> "Apex". Club teams are named for the club plus a number. */
+/** "Apex 4" -> "Apex". Club teams are named for the club plus a number.
+
+    The junior sides carry a "Jr" after the number — "Fusion 8 Jr" — and
+    without stripping it they looked like a club of their own, so a club with
+    junior teams found none of them when working out who it can call up.
+*/
 function clubOf(name) {
-  return name.replace(/\s+\d+[A-Za-z]?$/, "").trim();
+  return String(name || "").replace(/\s+\d+\s*(jr)?$/i, "").trim();
 }
 
 /** Resolve a typed team name to a team, tolerating case and partial entry. */
@@ -1050,6 +1055,49 @@ function openTeamSheet(t) {
    Update flow
    ════════════════════════════════════════════════════════ */
 
+/** The latest results, so a fetch shows what it actually brought in.
+
+    Rendered in the fetch sheet on both copies: on a hosted one it is what
+    the last scheduled run picked up, on a local one it is what the button
+    just fetched. Results involving your own club are marked, because that is
+    the row you are looking for.
+*/
+function recentResultsBlock(limit) {
+  const rows = (state.data && state.data.recent_results) || [];
+  if (!rows.length) return null;
+
+  const block = el("div", "results");
+  const h = el("h3");
+  h.textContent = "Latest results";
+  block.append(h);
+
+  const mine = clubOf(state.us).toLowerCase();
+  for (const r of rows.slice(0, limit)) {
+    const row = el("div", "result");
+    const same = (t) => clubOf(t).toLowerCase() === mine;
+    if (mine && (same(r.home) || same(r.away))) {
+      row.classList.add("mine");
+    }
+    const when = el("span", "when");
+    when.textContent = r.date ? shortDate(r.date) : "";
+    const badge = el("span", "badge");
+    badge.textContent = divisionShort(r.division);
+    const teams = el("span", "teams");
+    teams.textContent = `${r.home} ${r.home_score}\u2013${r.away_score} ${r.away}`;
+    row.append(when, badge, teams);
+    block.append(row);
+  }
+  return block;
+}
+
+/** "2026-10-09" -> "9 Oct". */
+function shortDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return Number.isNaN(d.getTime())
+    ? iso
+    : `${d.getDate()} ${d.toLocaleString("en-GB", { month: "short" })}`;
+}
+
 // Where a hosted copy sends you to run a scrape. A button here cannot call
 // the GitHub API itself: that needs a token, and a token in a page anyone can
 // read is a token anyone can push with.
@@ -1090,6 +1138,9 @@ function hostedUpdateSheet(body) {
   note.textContent =
     "Opens GitHub. Give it a minute after the run finishes, then reload here.";
   body.append(actions, note);
+
+  const results = recentResultsBlock(12);
+  if (results) body.append(results);
 }
 
 function openUpdateSheet() {
@@ -1125,6 +1176,9 @@ function openUpdateSheet() {
         "Replaces the cache from scratch — slower", false),
     );
     body.append(actions, log);
+
+    const results = recentResultsBlock(12);
+    if (results) body.append(results);
   });
 }
 

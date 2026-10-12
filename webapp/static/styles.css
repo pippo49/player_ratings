@@ -359,6 +359,21 @@ td.lose { color: var(--bad); }
 /* The hosted copy's actions are links out to the scrape job, not buttons. */
 a.action { display: block; box-sizing: border-box; text-decoration: none; }
 
+/* Latest results, shown in the fetch sheet so a scrape says what it brought
+   in. Your own club's rows are marked — that is the one you came to see. */
+.results { margin-top: 16px; }
+.results h3 { font-size: 13px; color: var(--text-dim); margin: 0 0 7px; }
+.result {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px;
+  font-size: 13px;
+  border-radius: 9px;
+}
+.result + .result { margin-top: 3px; }
+.result .when { color: var(--text-dim); white-space: nowrap; font-size: 12px; }
+.result .teams { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result.mine { background: var(--surface-2); font-weight: 600; }
+
 .log {
   margin-top: 12px;
   padding: 11px 12px;

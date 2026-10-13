@@ -1123,9 +1123,18 @@ function hostedUpdateSheet(body) {
   const h = el("h2");
   h.textContent = "Fetch latest results";
   const sub = el("p", "sub");
-  sub.textContent = state.data && state.data.generated_at
-    ? `Ratings calculated ${relativeTime(state.data.generated_at)}. `
-      + "This copy updates itself every six hours."
+  const stamp = state.data && state.data.generated_at;
+  const age = stamp ? (Date.now() - new Date(stamp).getTime()) / 3600000 : 0;
+  sub.textContent = stamp
+    ? `Ratings calculated ${relativeTime(stamp)}. `
+      // Every run rewrites the snapshot, so this is when one last happened,
+      // not when the league last changed. GitHub's scheduler is best-effort
+      // and does drop slots, so say what an old timestamp means rather than
+      // leaving it looking like the league has gone quiet.
+      + (age > 4
+         ? "That is older than the two-hourly run, so a scheduled run was "
+           + "skipped — fetch below to force one."
+         : "It refreshes itself every two hours through the day.")
     : "";
   body.append(h, sub);
 

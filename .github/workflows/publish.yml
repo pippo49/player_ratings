@@ -17,15 +17,21 @@ on:
   schedule:
     # Results arrive irregularly: captains have 48 hours to send a scorecard
     # (Rule 33) and matches are played on five nights of the week, so a
-    # weekly scrape left results sitting unseen for days. Four times a day
-    # costs about twenty page fetches a run and finishes in under a minute.
+    # weekly scrape left results sitting unseen for days.
+    #
+    # Every two hours through the day, not six. GitHub's scheduler is
+    # best-effort — it delayed one of these by 28 minutes and dropped the
+    # next two outright — so the gap between slots is the real staleness,
+    # not the nominal interval. Two hours makes a dropped slot cost two
+    # hours. Nothing is posted overnight, so the run stops at 23:23 and the
+    # squad refresh below picks the morning back up.
     #
     # Not on the hour: scheduled runs bunch at minute zero and get delayed.
-    - cron: "23 */6 * * *"
+    - cron: "23 7-23/2 * * *"
     # Once a day, the same plus a squad refresh. That walks all ninety-odd
     # team pages and takes the run from under a minute to about four, which
-    # is not worth doing six-hourly for a squad list that changes by a player
-    # or two a day.
+    # is not worth doing every two hours for a squad list that changes by a
+    # player or two a day.
     - cron: "47 6 * * *"
   workflow_dispatch:
     inputs:

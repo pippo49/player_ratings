@@ -45,10 +45,10 @@ GitHub Pages      static app, offline-capable
 ```
 
 Everything runs through `.github/workflows/publish.yml`, which scrapes,
-commits and deploys. Results are scraped every six hours (23 minutes past,
-to miss the on-the-hour crush); the squad refresh is the slow half — every
-team page — so it runs once a day at 06:47 UTC and is skipped by the
-six-hourly schedule. Also runs on demand from the Actions tab.
+commits and deploys. Results are scraped every two hours from 07:23 to 23:23
+UTC (23 minutes past, to miss the on-the-hour crush); the squad refresh is
+the slow half — every team page — so it runs once a day at 06:47 UTC and is
+skipped by the two-hourly schedule. Also runs on demand from the Actions tab.
 **Step order matters** — see the gotchas.
 
 The development sandbox cannot reach tabletennis365.com. Anything needing the
@@ -131,6 +131,19 @@ rated player on two teams' rosters, and it made a short side look like a full
 three so the walkover discount never fired. `parser_v2.NOT_A_PLAYER` filters
 placeholders. Keep that pattern tight — a loose one deletes `Nabil Chair`,
 `Natalia Ivanova` and `Noa Bye-Smith`.
+
+**GitHub's scheduler drops runs.** It is best-effort, and demonstrably so:
+of the first three six-hourly slots after the schedule was added, one ran 28
+minutes late and two never fired at all. Hence two-hourly — the gap between
+slots is the real staleness, not the nominal interval. Nothing in the repo
+can fix this; the app just has to be honest about it, so the update sheet
+says outright that a run was skipped once the snapshot is over four hours
+old.
+
+**`generated_at` is when a run last happened, not when the league last
+changed.** Every export stamps it with the current time, so `ratings.json`
+differs on every run and the commit always fires. That makes an old
+timestamp a real signal that the scheduler is asleep — worth keeping.
 
 **Added to the home screen, the app does not reload on reopening.** A
 standalone PWA resumes the page it was showing, so a scrape that finished in

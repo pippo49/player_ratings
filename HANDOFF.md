@@ -132,6 +132,23 @@ three so the walkover discount never fired. `parser_v2.NOT_A_PLAYER` filters
 placeholders. Keep that pattern tight — a loose one deletes `Nabil Chair`,
 `Natalia Ivanova` and `Noa Bye-Smith`.
 
+**One number cannot explain itself.** The form badge is a rating change
+over three team matches, and the window reaches back across the summer — a
+player one match into the season is measured against two from last March. So
+a sweep landing inside a bad run shows a red arrow, which was asked about
+twice in a row before the fix. The player sheet now lists the three matches
+behind the badge (`form_detail` in the payload, `formDetailBlock` in the
+app), with the date span spelled out. `export.check()` asserts the rows sum
+to the badge.
+
+Worth keeping in mind for anything similar: a derived figure that surprises
+someone is not usually wrong, it is unexplained, and the fix is to show its
+inputs rather than to change the maths.
+
+**A 3/3 can never lower a rating.** The change is `K x (actual - expected)`,
+actual is 1.0 at a sweep and expected is always below it. Any apparent drop
+after a sweep is the form window, not the engine.
+
 **GitHub's scheduler drops runs.** It is best-effort, and demonstrably so:
 of the first three six-hourly slots after the schedule was added, one ran 28
 minutes late and two never fired at all. Hence two-hourly — the gap between
@@ -176,6 +193,8 @@ split is 8/12, not 10/10. This is real scheduling, not a parse error.
 These catch whole classes of error, and did:
 
 - Every player's per-season records sum to their career totals.
+- The form rows shown under the badge sum to the badge, and there are as
+  many of them as it claims to span.
 - Attributed singles on a card equal either 9, or `len(home) x len(away)`
   when a side is short — anything else means the card was misread.
 - No duplicate rows per normalised name (except `jolanta gotovska`, two
@@ -204,8 +223,10 @@ These catch whole classes of error, and did:
 - `season_transition.py` ROSTER_OVERRIDES is dead weight now real squads
   supersede it.
 - The rating is a single current number. Per-season *records* are stored;
-  per-season *ratings* and a trend line are not. `PlayerRating.trail` holds
-  the trajectory in memory but is not exported.
+  per-season *ratings* and a full trend line are not. `PlayerRating.history`
+  holds the whole trajectory in memory; only the last three matches are
+  exported, as `form_detail`. Exporting all of it would roughly double the
+  payload, which is already 332 KB.
 
 ## Working style the user expects
 

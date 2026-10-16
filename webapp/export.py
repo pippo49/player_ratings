@@ -43,6 +43,27 @@ def check(payload: dict) -> list[str]:
     # kept apart on purpose and the payload names them, so only an unexpected
     # duplicate is a problem — the kind that means one person has been split
     # in two by an identity that does not match everywhere.
+    # The form badge and the rows the app shows under it are the same three
+    # matches, so they must agree. They are computed from one list, which is
+    # exactly why this is worth asserting: the previous version kept the
+    # number and the matches apart, and nobody could tell a sweep inside a
+    # bad run from a bad night.
+    for p in payload["players"]:
+        rows = p.get("form_detail") or []
+        if not rows:
+            continue
+        if len(rows) != p["form_matches"]:
+            problems.append(
+                f"{p['name']}: form over {p['form_matches']} matches but "
+                f"{len(rows)} rows"
+            )
+        total = sum(row[4] for row in rows)
+        if abs(total - p["form"]) > 0.15:  # each row is rounded to 0.1
+            problems.append(
+                f"{p['name']}: form rows sum to {total:+.1f}, badge says "
+                f"{p['form']:+.1f}"
+            )
+
     known = {n.casefold() for n in payload.get("ambiguous_names", [])}
     seen: dict[str, int] = {}
     for p in payload["players"]:

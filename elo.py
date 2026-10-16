@@ -95,6 +95,22 @@ MAX_ITERATIONS = 20
 MIN_MATCHES = 15  # minimum singles matches before a rating is considered reliable
 
 
+@dataclass(frozen=True)
+class MatchChange:
+    """What one team match did to one player's rating."""
+
+    date: date | None
+    opponent: str          # the team played against
+    won: int               # real singles won, walkovers stripped
+    played: int            # real singles played
+    before: float
+    after: float
+
+    @property
+    def change(self) -> float:
+        return self.after - self.before
+
+
 @dataclass
 class PlayerRating:
     name: str
@@ -105,11 +121,15 @@ class PlayerRating:
     matches_played: int = 0
     singles_won: int = 0       # total singles matches won
     singles_played: int = 0   # total singles matches played (3 per team match)
-    # The rating after each team match, starting with the seed the player's
-    # first season began on. Recorded on every convergence pass and reset at
-    # the start of each, so what survives is the final pass; seasons are then
-    # joined end to end, since each is seeded from the last one's close.
-    trail: list[float] = field(default_factory=list)
+    # One entry per team match, in order. Recorded on every convergence pass
+    # and reset at the start of each, so what survives is the final pass;
+    # seasons are then joined end to end, since each is seeded from the last
+    # one's close.
+    history: list[MatchChange] = field(default_factory=list)
+
+    def recent(self, over: int = 3) -> list[MatchChange]:
+        """The last *over* team matches, oldest first."""
+        return self.history[-over:] if over > 0 else []
 
     def form(self, over: int = 3) -> tuple[float, int]:
         """Rating change across the last *over* team matches, and how many.
@@ -118,15 +138,18 @@ class PlayerRating:
         pass, so this is what the player's own recent results moved them by,
         not an artefact of everyone else moving at the same time.
 
-        The trail runs across season boundaries, so three matches into a new
+        The history runs across season boundaries, so three matches into a new
         season still reaches back into the last one rather than reporting form
         over a single night. A player with fewer matches than asked for gets
-        the change across all of them, and the count says so.
+        the change across all of them, and the count says so. That window can
+        span a summer, which is why `recent()` exists: one number cannot say
+        which matches it came from, and a sweep landing inside a bad run still
+        shows red.
         """
-        if len(self.trail) < 2:
+        window = self.recent(over)
+        if not window:
             return 0.0, 0
-        played = min(over, len(self.trail) - 1)
-        return self.trail[-1] - self.trail[-1 - played], played
+        return window[-1].after - window[0].before, len(window)
 
     @property
     def reliable(self) -> bool:
@@ -249,7 +272,7 @@ def _run_single_pass(
         r.singles_won = 0
         r.singles_played = 0
         r.rating = seeds[pid]
-        r.trail = [seeds[pid]]
+        r.history = []
 
     # Replay matches in chronological order so the final pass gives
     # temporally-ordered ratings (latest form matters most).
@@ -266,9 +289,14 @@ def _run_single_pass(
         # in models.real_singles.
         singles = real_singles(match)
 
-        def _update(player: PlayerResult, opponents: list[PlayerResult]) -> None:
+        def _update(
+            player: PlayerResult,
+            opponents: list[PlayerResult],
+            opponent_team: str,
+        ) -> None:
             pr = ratings[player.player_id]
             real_wins, n_opponents = singles[player.player_id]
+            before = pr.rating
 
             # Compare against each real opponent individually so that
             # beating a stronger player counts for more.
@@ -292,13 +320,20 @@ def _run_single_pass(
             pr.matches_played += 1
             pr.singles_won += real_wins
             pr.singles_played += n_opponents
-            pr.trail.append(pr.rating)
+            pr.history.append(MatchChange(
+                date=match.date,
+                opponent=opponent_team,
+                won=real_wins,
+                played=n_opponents,
+                before=before,
+                after=pr.rating,
+            ))
 
         for player in home_players:
-            _update(player, away_players)
+            _update(player, away_players, match.away.name)
 
         for player in away_players:
-            _update(player, home_players)
+            _update(player, home_players, match.home.name)
 
     return {pid: pr.rating for pid, pr in ratings.items()}
 
@@ -339,10 +374,10 @@ def _rate_season(
             pr.matches_played += previous.matches_played
             pr.singles_won += previous.singles_won
             pr.singles_played += previous.singles_played
-            # Join the trails so form can look back past the season boundary.
-            # A season is seeded from the rating the previous one ended on, so
-            # the two meet at the same value: drop the duplicate join point.
-            pr.trail = previous.trail[:-1] + pr.trail
+            # Join the histories so form can look back past the season
+            # boundary. A season is seeded from the rating the previous one
+            # ended on, so the two meet without a gap.
+            pr.history = previous.history + pr.history
     return ratings
 
 

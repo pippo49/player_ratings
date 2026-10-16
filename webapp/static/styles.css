@@ -381,6 +381,14 @@ a.action { display: block; box-sizing: border-box; text-decoration: none; }
 .result .teams { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .result.mine { background: var(--surface-2); font-weight: 600; }
 
+/* The same rows on a player sheet: opponent on the left, what the
+   match was worth hard right so the column reads as a run. */
+.form-detail .result { background: var(--surface-2); }
+.form-detail .teams { flex: 1; }
+.form-detail .score { color: var(--text-dim); white-space: nowrap; }
+.form-detail .form { min-width: 38px; text-align: right; font-weight: 600; }
+.form-detail .sub { margin: 6px 0 0; font-size: 12px; }
+
 .log {
   margin-top: 12px;
   padding: 11px 12px;

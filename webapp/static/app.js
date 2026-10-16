@@ -372,6 +372,49 @@ function formBadge(p) {
   return el_;
 }
 
+/** The matches behind the form badge, so a red arrow explains itself.
+
+    The badge is one number over three team matches and the window reaches
+    back across the summer, so a sweep landing inside a bad run still shows
+    red. Laying the three rows out answers that without arithmetic: each
+    says what it was worth, and they sum to the badge.
+*/
+function formDetailBlock(p) {
+  const rows = p.form_detail || [];
+  if (rows.length < 1) return null;
+
+  const block = el("div", "results form-detail");
+  const h = el("h3");
+  const over = rows.length === 1 ? "match" : `last ${rows.length} matches`;
+  h.textContent = rows.length === 1 ? "Last match" : `Form over the ${over}`;
+  block.append(h);
+
+  for (const [when, opponent, won, played, change] of rows) {
+    const row = el("div", "result");
+    const date = el("span", "when");
+    date.textContent = when ? shortDate(when) : "";
+    const who = el("span", "teams");
+    who.textContent = `v ${opponent}`;
+    const score = el("span", "score");
+    score.textContent = `${won}/${played}`;
+    const delta = el("span", `form ${change > 0 ? "up" : change < 0 ? "down" : "flat"}`);
+    delta.textContent = `${change > 0 ? "+" : ""}${Math.round(change)}`;
+    row.append(date, who, score, delta);
+    block.append(row);
+  }
+
+  // Spelling out the span is the point: two of these rows can be seven
+  // months old, which is what makes the badge read wrong.
+  const note = el("p", "sub");
+  const first = rows[0][0];
+  const last = rows[rows.length - 1][0];
+  note.textContent = first && last && first !== last
+    ? `${shortDate(first)} to ${shortDate(last)}`
+    : "";
+  if (note.textContent) block.append(note);
+  return block;
+}
+
 /** This player's record in one season, or null where they did not play. */
 function seasonRecord(p, season) {
   const r = p.by_season && p.by_season[season];
@@ -1032,6 +1075,9 @@ function openPlayerSheet(p) {
       add(`${state.data.min_matches - p.played}`, "More matches to be rated");
     }
     body.append(stats);
+
+    const form = formDetailBlock(p);
+    if (form) body.append(form);
   });
 }
 

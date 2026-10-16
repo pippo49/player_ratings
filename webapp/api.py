@@ -174,6 +174,22 @@ def _player_dict(
         # app says so rather than implying it is current.
         "form": round(form_delta, 1),
         "form_matches": form_matches,
+        # The matches that single number came from, oldest first, so the app
+        # can show its working. One figure cannot say which matches it spans,
+        # and the window reaches back across the summer: a sweep landing
+        # inside a bad run reads as a fall until you see the three rows.
+        # Compact on purpose — [date, opponent, won, played, change] for
+        # every player is a third of the payload again if it is keyed.
+        "form_detail": [
+            [
+                c.date.isoformat() if c.date else None,
+                c.opponent,
+                c.won,
+                c.played,
+                round(c.change, 1),
+            ]
+            for c in pr.recent()
+        ],
     }
 
 

@@ -48033,5 +48033,53 @@
       ],
       "total_score": 6
     }
+  },
+  {
+    "match_id": "465142",
+    "season": "2026-27",
+    "division": 5,
+    "date": "2026-10-16",
+    "home": {
+      "name": "Clissold 4 Jr",
+      "players": [
+        {
+          "name": "Gene Valentine Taylor",
+          "player_id": "gene valentine taylor",
+          "games_won": 1
+        },
+        {
+          "name": "Daniel Cilibanov",
+          "player_id": "daniel cilibanov",
+          "games_won": 1
+        },
+        {
+          "name": "Daniel Lopez",
+          "player_id": "daniel lopez",
+          "games_won": 1
+        }
+      ],
+      "total_score": 3
+    },
+    "away": {
+      "name": "Fusion 9 Jr",
+      "players": [
+        {
+          "name": "Alfred Morley",
+          "player_id": "alfred morley",
+          "games_won": 3
+        },
+        {
+          "name": "Luca Murphy-Gonzalez",
+          "player_id": "luca murphy gonzalez",
+          "games_won": 3
+        },
+        {
+          "name": "Oliver Huang",
+          "player_id": "oliver huang",
+          "games_won": 0
+        }
+      ],
+      "total_score": 7
+    }
   }
 ]

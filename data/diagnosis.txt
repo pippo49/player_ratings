@@ -1,0 +1,10 @@
+diagnosis for 2026-27, written 2026-10-24
+cached match ids for this season: 77
+
+Division_One: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_One
+Division_Two: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Two
+Division_Three: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Three
+Division_Four: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Four
+Division_Five: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Five
+Division_Six: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Six
+Division_Seven: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Seven

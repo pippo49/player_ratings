@@ -189,9 +189,11 @@ async function loadRatings({ quiet = false } = {}) {
     state.playerDiv = home ? home.division : null;
     state.teamDiv = state.playerDiv;
   }
-  // A hosted snapshot cannot scrape — no server behind it — but the button
-  // still has somewhere useful to go, so it is never hidden.
+  // A hosted snapshot cannot scrape. The control stays, because the sheet
+  // behind it is where the latest results and the age of the data live.
   $("#btn-update").classList.remove("hidden");
+  $("#btn-update").title = state.data.live
+    ? "Fetch new results" : "Latest results and when they arrived";
   setSearchValue($("#q-player"), state.playerQuery);
   setSearchValue($("#pick-us"), state.us);
   const defaultTeam = resolveTeam(state.us);
@@ -1158,59 +1160,38 @@ function shortDate(iso) {
     : `${d.getDate()} ${d.toLocaleString("en-GB", { month: "short" })}`;
 }
 
-// Where a hosted copy sends you to run a scrape. A button here cannot call
-// the GitHub API itself: that needs a token, and a token in a page anyone can
-// read is a token anyone can push with.
-const WORKFLOW_URL =
-  "https://github.com/pippo49/player_ratings/actions/workflows/publish.yml";
+/** On a hosted copy there is no button that can fetch — so say where the
+    numbers come from instead of offering one that would do nothing.
 
-/** On a hosted copy, link out to the job that can actually scrape. */
+    Results are scraped from a machine at home and pushed; the workflow this
+    used to link to runs on GitHub's runners, which Cloudflare challenges, so
+    a run from there now fetches nothing. A button that quietly fails is
+    worse than no button.
+*/
 function hostedUpdateSheet(body) {
   const h = el("h2");
-  h.textContent = "Fetch latest results";
+  h.textContent = "Latest results";
   const sub = el("p", "sub");
   const stamp = state.data && state.data.generated_at;
   const age = stamp ? (Date.now() - new Date(stamp).getTime()) / 3600000 : 0;
   sub.textContent = stamp
     ? `Ratings calculated ${relativeTime(stamp)}. `
-      // Every run rewrites the snapshot, so this is when one last happened,
-      // not when the league last changed. GitHub's scheduler is best-effort
-      // and does drop slots, so say what an old timestamp means rather than
-      // leaving it looking like the league has gone quiet.
-      + (age > 4
-         ? "That is older than the two-hourly run, so a scheduled run was "
-           + "skipped — fetch below to force one."
-         : "It refreshes itself every two hours through the day.")
+      // Every scrape rewrites the snapshot, so this is when one last ran, not
+      // when the league last changed. Past a day that is worth flagging: it
+      // means the scrape at home has not run, which nothing else would show.
+      + (age > 24
+         ? "That is longer than usual — the scrape at home may not have run."
+         : "Results are fetched from home a few times a day.")
     : "";
   body.append(h, sub);
 
-  const actions = el("div", "sheet-actions");
-  const link = (label, detail, primary) => {
-    const a = el("a", `action${primary ? " primary" : ""}`);
-    a.href = WORKFLOW_URL;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.append(document.createTextNode(label));
-    const small = el("small");
-    small.textContent = detail;
-    a.append(small);
-    return a;
-  };
-  actions.append(
-    link("Fetch results now",
-         "Run workflow → set results_only to 1 → about a minute", true),
-    link("Full refresh",
-         "Run workflow → leave every box blank → about four minutes", false),
-  );
-
-  const note = el("p", "sub");
-  note.textContent =
-    "Opens GitHub. Come back when the run finishes — this page picks up the "
-    + "new ratings on its own.";
-  body.append(actions, note);
-
-  const results = recentResultsBlock(12);
-  if (results) body.append(results);
+  const results = recentResultsBlock(14);
+  if (results) {
+    // The heading is already above; this block brings its own.
+    const heading = results.querySelector("h3");
+    if (heading) heading.remove();
+    body.append(results);
+  }
 }
 
 function openUpdateSheet() {

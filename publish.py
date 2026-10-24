@@ -8,6 +8,11 @@ minute later.
     uv run python publish.py --squads   # also refresh squads (slower)
     uv run python publish.py --dry-run  # fetch and report, commit nothing
 
+Unattended from cron, every line is stamped so a log reads as a history, and
+a run that finds nothing says so rather than going silent — a quiet log and a
+broken one should not look alike. Exit status is 0 only when the run did what
+it set out to do, so cron can mail a failure.
+
 Why from here rather than from GitHub: since 18 October 2026 Cloudflare has
 challenged the scheduled runs, which come from datacenter IPs. A home
 connection is a different profile. If this is challenged here too, it will
@@ -17,7 +22,7 @@ say so plainly rather than reporting success and publishing nothing.
 import argparse
 import subprocess
 import sys
-from datetime import date
+from datetime import date, datetime
 
 from cache import CACHE_FILE, load_matches, merge_matches, save_matches
 from models import Match
@@ -47,6 +52,14 @@ def describe(matches: list[Match]) -> list[str]:
     ]
 
 
+def stamp(message: str = "") -> None:
+    """Print with a timestamp, so an unattended log is readable later."""
+    when = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for line in (message or "").split("\n"):
+        print(f"{when}  {line}" if line else "")
+    sys.stdout.flush()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--squads", action="store_true",
@@ -58,12 +71,12 @@ def main() -> int:
     cached = load_matches() or []
     known = {(m.season, m.match_id) for m in cached if m.match_id}
 
-    print("Fetching results from the league…\n")
+    stamp("Fetching results from the league…")
     try:
         scraped = scrape_all_divisions(verbose=True, known=known)
     except SeasonUnreachable as e:
         # The whole point of running from here. Say which wall we hit.
-        print(f"\nThe league site would not answer.\n\n{e}\n")
+        stamp(f"The league site would not answer.\n{e}")
         if "403" in str(e):
             print("A 403 from here as well means the challenge is not about\n"
                   "where the request comes from. Nothing was changed.")
@@ -71,12 +84,12 @@ def main() -> int:
 
     matches, added = merge_matches(cached, scraped)
     if not added:
-        print("\nNothing new — the app is already up to date.")
+        stamp("Nothing new — the app is already up to date.")
         return 0
 
     new_ones = matches[len(cached):]
-    print(f"\n{added} new result(s):")
-    print("\n".join(describe(new_ones)))
+    stamp(f"{added} new result(s):")
+    stamp("\n".join(describe(new_ones)))
 
     save_matches(matches)
     if args.squads:
@@ -101,19 +114,19 @@ def main() -> int:
               "not deploy.\nSwitch to master and run again.")
         return 1
 
-    print("\nPublishing…")
+    stamp("Publishing…")
     # Someone else's run may have committed in the meantime; rebase rather
     # than merge so the history stays a straight line of scrapes.
     git("pull", "--rebase", "origin", "master")
     git("add", *PUBLISHED)
     if not git("status", "--porcelain", "--", *PUBLISHED):
-        print("Nothing to commit after all — already published.")
+        stamp("Nothing to commit after all — already published.")
         return 0
     git("commit", "-m", f"Add {added} new result(s) from a local scrape")
     git("push", "origin", "master")
 
-    print(f"\nDone. {added} result(s) published — the app updates in about a "
-          "minute.\nReopen it and it will pick them up on its own.")
+    stamp(f"Done. {added} result(s) published — the app updates in about "
+          "a minute.")
     return 0
 
 

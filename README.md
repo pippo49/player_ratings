@@ -87,162 +87,86 @@ What you need, once:
    ```
 2. **uv**, which fetches the right Python itself:
    ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux
+   curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux / Pi
    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"   # Windows
    ```
-3. **Push access**, so the commit can reach GitHub. The simplest check is
-   `git push` — if it asks for a password, set up a credential helper or an
-   SSH key first. It needs to work before `publish.py` can publish.
+3. **Push access**, so the commit can reach GitHub. Check with `git push`
+   before relying on it.
 
-After that, each time you want results in:
+Then, each time:
 
 ```bash
-cd player_ratings
-git pull
-uv run python publish.py
+cd player_ratings && git pull && uv run python publish.py
 ```
 
-If the league site challenges your home connection too, `publish.py` says so
-and changes nothing. That is the answer to whether the datacenter IP was the
+If the league site challenges your connection too, `publish.py` says so and
+changes nothing. That is the answer to whether the datacenter IP was the
 trigger, and it is worth knowing either way.
 
-Scraping and deploying live in one workflow because a push made with the
-default `GITHUB_TOKEN` does not trigger other workflows, so a separate deploy
-workflow would never fire after the scrape commits. The bundle is uploaded as
-an artifact rather than served directly, because Pages can only serve a repo's
-root or `/docs`.
+## On a Raspberry Pi, unattended
 
-To change the schedule, edit the `cron` line; to stop it, disable the workflow
-in the Actions tab. Cloudflare Pages and Netlify are alternatives that work
-with private repos on their free tiers.
-
-### Using it offline on match day
-
-Open the published URL on your phone once, then *Share → Add to Home Screen*.
-A service worker caches the whole bundle, so it opens and works with no signal
-at the venue. It is network-first, so with signal you always get the latest
-ratings and it only falls back to the cached copy when there is none.
-
-The service worker needs HTTPS, which every static host gives you. It will
-**not** register over plain `http://` on a LAN address, so the local server
-below is for updating data, not for offline use. If your venues have signal you
-do not need it at all — delete `sw.js`, `manifest.json` and the registration
-block in `index.html` and everything else works unchanged.
-
-### Running it locally
+A Pi on the home connection is the right home for this: always on, and the
+residential IP is the whole point. Check the architecture first, because it
+decides whether `uv` can fetch a Python for you:
 
 ```bash
-.venv/bin/python3 -m webapp.server            # http://localhost:8000
-.venv/bin/python3 -m webapp.server --port 9000
+uname -m
 ```
 
-On startup it prints an address for this machine and one for your phone on the
-same Wi-Fi. In this mode the refresh button appears and ratings are served from
-a live calculation rather than the committed snapshot.
+- **`aarch64`** (64-bit Raspberry Pi OS, Pi 3 onwards) — `uv` ships builds and
+  fetches its own Python. Follow the steps above and you are done.
+- **`armv7l`** (32-bit OS) — `uv` has no managed Python build for it. Either
+  reflash with 64-bit Raspberry Pi OS, or use the system Python with
+  `pip install requests beautifulsoup4` and run `python3 publish.py`
+  directly. The code needs nothing newer; only `pyproject.toml` asks for
+  3.14, and that is a packaging floor rather than a language requirement.
 
-### Updating the data
-
-Any fresh fetch rewrites `webapp/static/ratings.json` automatically:
+**Pushing without a password.** cron cannot answer a prompt, so use an SSH
+key the Pi holds:
 
 ```bash
-.venv/bin/python3 main.py --update      # scrape, then re-export
-.venv/bin/python3 -m webapp.export      # re-export from the cache alone
-git add data webapp/static/ratings.json && git commit -m "Update ratings" && git push
+ssh-keygen -t ed25519 -C "pi-scraper" -f ~/.ssh/id_ed25519 -N ""
+cat ~/.ssh/id_ed25519.pub
 ```
 
-The refresh button in the running web app does the same thing, and says so when
-the snapshot has been rewritten. Pushing is what publishes it — the hosted site
-redeploys from the commit, and phones pick it up next time they have signal.
+Add that to GitHub under Settings → SSH and GPG keys, then point the clone at
+SSH and check it:
 
-### Tabs
-
-| Tab | Replaces | What it does |
-|-----|----------|--------------|
-| **Players** | `main.py "name"`, `-d N` | Search by player or team name, filter by division, toggle to rated players only (15+ matches). Tap a player for rank, win rate and singles record. |
-| **Teams** | `main.py -t "team"` | Search teams, ranked by the average of their top three. Tap a team for its full squad. |
-| **Select** | — | Pick the team you captain, mark who is available, and project the season against a promotion target. |
-
-### Match format and scoring
-
-A team match is **9 singles plus 1 doubles**, so 10 points are on offer and
-5–5 is a draw.
-
-**The doubles is not modelled.** The scraped data does not say which two
-players formed the pair, so predicting it would be inventing a number. The app
-projects the 9 singles and converts your target by assuming the doubles splits
-evenly: a 7.0 of 10 target becomes 6.5 of 9 singles.
-
-That conversion depends on the format being what we think it is. The doubles
-point should always be recoverable as a team's total minus its singles wins,
-split 0/1 between the sides. Run `check_doubles.py` after a scrape to confirm;
-the Select tab warns if it does not hold.
-
-`elo.py` rates singles only, for the same reason.
-
-### The Select tab
-
-**Call-ups.** Lower sides from the same club whose players you can draw on. The
-side directly below is included by default; tick others on if your league
-allows it.
-
-**Season outlook.** Your strongest available three against every other team in
-your division, each assumed to field its best three. Shows expected singles per
-fixture, the season average, and whether that clears the target, with fixtures
-sorted hardest-first.
-
-**A single fixture.** One opponent broken down, with a head-to-head grid.
-
-### Why there is no lineup optimiser
-
-Because all nine singles are a round robin, expected singles decompose into one
-independent term per selected player:
-
-```
-E[singles] = Σᵢ Σⱼ P(aᵢ beats bⱼ)  =  Σᵢ f(aᵢ)
+```bash
+git remote set-url origin git@github.com:pippo49/player_ratings.git
+git push      # should go through with no prompt
 ```
 
-Each `f(aᵢ)` depends only on that player's rating and the fixed opposing trio,
-and is strictly increasing in rating. So the best trio is always your three
-highest-rated available players — searching every combination provably cannot
-beat a sort. This was checked across 3,080 team pairings, optimising for
-expected score and for win probability separately; neither ever disagreed.
+**The schedule.** Keep it modest — twelve runs a day from one address is what
+the scheduled job was doing when Cloudflare started challenging it. Results
+are posted in the evening, and captains have 48 hours (Rule 33), so four
+spread across the day catches everything without being noticed:
 
-The interesting question is therefore not *which three* but *whether the three
-you have are enough*, which is what the season outlook answers.
+```cron
+17 8,13,19,23 * * *  cd /home/pi/player_ratings && /usr/bin/flock -n /tmp/ratings.lock /home/pi/.local/bin/uv run python publish.py >> /home/pi/ratings.log 2>&1
+```
 
-### Modelling assumptions
+- `flock -n` means a run that is still going is never doubled up on.
+- The log is append-only and every line is timestamped, so it reads as a
+  history. `tail -f ~/ratings.log` while a run happens; `grep -c "new result"
+  ~/ratings.log` to see it has been working.
+- cron mails you stderr on a non-zero exit, which is the failure case — a
+  league refusal, or a push that could not authenticate.
 
-- Each singles is treated as independent, so projections ignore form and
-  head-to-head history on the night.
-- Opponents are modelled on the three they can be expected to field, not their
-  strongest three. Across 937 matches the trio teams actually fielded averaged
-  72 rating points below their best three, and up to 233 for teams drawing on
-  a large pool, so assuming best-three badly overstates the opposition.
-  Weighting each player by how often they turned out tracks the real fielded
-  average to within about 9 points. Your own side is still whoever you pick,
-  since you control that.
-- Ratings marked `*` come from fewer than 15 singles and are less certain.
-- Nothing accounts for league rules on how often a player may be called up.
+Add the squad refresh weekly rather than daily; rosters change by a player or
+two a day and it walks every team page:
 
-### Seasons
+```cron
+41 7 * * 0  cd /home/pi/player_ratings && /home/pi/.local/bin/uv run python publish.py --squads >> /home/pi/ratings.log 2>&1
+```
 
-Ratings carry across seasons. Each season is converged on its own, seeded from
-the rating each player finished the previous one on, rather than replaying
-every season from division seeds. A player who sits a season out keeps their
-rating, team and division; a new player gets their division's seed. Match
-counts accumulate, so nobody reverts to provisional at a season boundary.
+**Check it is actually running.** The app shows the age of the data in the
+results sheet and says so past a day, which is the backstop. For a direct
+look:
 
-`scraper.SEASONS` lists the seasons to fetch, oldest first, with the last being
-current. `--update` fetches all of them, so last season's completed results and
-the new season's trickle land in one pass. A season whose pages are not up yet
-is reported as "not published yet" rather than as an error.
-
-Rosters and divisions come from the current season once it has results. Until
-then `season_transition.py` supplies the known division moves and any confirmed
-roster changes, and the app marks itself as showing a projection. That bridge
-disables itself automatically as soon as real results for the current season
-arrive — see `NEXT_SEASON.md`.
-
+```bash
+tail -20 ~/ratings.log
+```
 
 ## Command line usage
 

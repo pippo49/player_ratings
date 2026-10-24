@@ -44,8 +44,13 @@ webapp/export.py  → webapp/static/ratings.json
 GitHub Pages      static app, offline-capable
 ```
 
-**Results now come from the user's own machine.** `publish.py` fetches,
-rebuilds the snapshot, commits and pushes; the workflow deploys what arrives.
+**Results now come from the user's own machine — a Raspberry Pi on his home
+connection, on cron.** `publish.py` fetches, rebuilds the snapshot, commits
+and pushes; the workflow deploys what arrives. Four runs a day, deliberately
+modest: twelve a day from one address is what the GitHub schedule was doing
+when Cloudflare started challenging it. The hosted app no longer offers a
+fetch button, because the workflow it linked to can no longer fetch — it
+shows the age of the data and the latest results instead.
 The schedule was removed on 24 October 2026 because Cloudflare challenges
 GitHub's runners (see the gotchas), so a scrape from there fetches nothing
 however often it runs. `.github/workflows/publish.yml` still deploys on any

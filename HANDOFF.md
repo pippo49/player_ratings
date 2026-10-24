@@ -44,12 +44,14 @@ webapp/export.py  → webapp/static/ratings.json
 GitHub Pages      static app, offline-capable
 ```
 
-Everything runs through `.github/workflows/publish.yml`, which scrapes,
-commits and deploys. Results are scraped every two hours from 07:23 to 23:23
-UTC (23 minutes past, to miss the on-the-hour crush); the squad refresh is
-the slow half — every team page — so it runs once a day at 06:47 UTC and is
-skipped by the two-hourly schedule. Also runs on demand from the Actions tab.
-**Step order matters** — see the gotchas.
+**Results now come from the user's own machine.** `publish.py` fetches,
+rebuilds the snapshot, commits and pushes; the workflow deploys what arrives.
+The schedule was removed on 24 October 2026 because Cloudflare challenges
+GitHub's runners (see the gotchas), so a scrape from there fetches nothing
+however often it runs. `.github/workflows/publish.yml` still deploys on any
+push to `master` touching `webapp/static/`, and still runs on demand for
+squads, diagnostics and manual redeploys. **Step order matters** — see the
+gotchas.
 
 The development sandbox cannot reach tabletennis365.com. Anything needing the
 league site runs as a workflow dispatch and is read back from the job log.

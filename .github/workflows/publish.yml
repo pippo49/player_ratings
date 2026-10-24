@@ -1,9 +1,8 @@
-# Scrape the league weekly and publish the app to GitHub Pages.
+# Publish the app to GitHub Pages, and run the league scrape on demand.
 #
-# Runs on three triggers:
-#   schedule          — fetch new results, commit them, publish
-#   workflow_dispatch — the same, on demand
-#   push to master    — publish only, for changes made from a terminal
+# Runs on two triggers:
+#   push to master    — publish; this is how a local scrape reaches the app
+#   workflow_dispatch — scrape or diagnose on demand
 #
 # One-time setup: Settings -> Pages -> Source: "GitHub Actions". Until that is
 # done the deploy job has nowhere to publish to and will fail.
@@ -14,25 +13,12 @@
 name: Publish
 
 on:
-  schedule:
-    # Results arrive irregularly: captains have 48 hours to send a scorecard
-    # (Rule 33) and matches are played on five nights of the week, so a
-    # weekly scrape left results sitting unseen for days.
-    #
-    # Every two hours through the day, not six. GitHub's scheduler is
-    # best-effort — it delayed one of these by 28 minutes and dropped the
-    # next two outright — so the gap between slots is the real staleness,
-    # not the nominal interval. Two hours makes a dropped slot cost two
-    # hours. Nothing is posted overnight, so the run stops at 23:23 and the
-    # squad refresh below picks the morning back up.
-    #
-    # Not on the hour: scheduled runs bunch at minute zero and get delayed.
-    - cron: "23 7-23/2 * * *"
-    # Once a day, the same plus a squad refresh. That walks all ninety-odd
-    # team pages and takes the run from under a minute to about four, which
-    # is not worth doing every two hours for a squad list that changes by a
-    # player or two a day.
-    - cron: "47 6 * * *"
+  # No scheduled runs. Since 18 October 2026 Cloudflare has challenged
+  # requests from GitHub's runners — they are datacenter IPs — so a scrape
+  # from here fetches nothing however often it runs. Results now come from
+  # `publish.py` on a home connection, and this workflow's job is to deploy
+  # what that pushes. Dispatch still works for squads, diagnostics and a
+  # manual deploy; it just will not get past the challenge for results.
   workflow_dispatch:
     inputs:
       results_only:
@@ -148,8 +134,8 @@ jobs:
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == '' && inputs.diagnose == ''
         run: uv run python main.py --update
 
-      # Squads fill up over the opening weeks of a season, so the scheduled
-      # run refreshes them alongside results. Failure here must not stop the
+      # Squads fill up over the opening weeks of a season, so a full run
+      # refreshes them alongside results. Failure here must not stop the
       # results scrape, which is the more important half — hence results
       # first, which fetch_squads.py also depends on: it decides whether a
       # team's page is still its registration list by whether that team has
@@ -158,7 +144,6 @@ jobs:
       - name: Refresh squads
         if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == '' && inputs.diagnose == ''
           && inputs.results_only == ''
-          && (github.event_name != 'schedule' || github.event.schedule == '47 6 * * *')
         continue-on-error: true
         run: uv run python fetch_squads.py 2026-27
 
@@ -188,7 +173,7 @@ jobs:
             elif [ -n "${{ inputs.fetch_structure }}" ]; then
               git commit -m "Add published ${{ inputs.fetch_structure }} division structure"
             else
-              git commit -m "Update ratings from scheduled scrape"
+              git commit -m "Update ratings from a scrape"
             fi
             git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" \
               "HEAD:${{ github.ref_name }}"

@@ -41,23 +41,70 @@ involved. The whole setup can be done from a browser that way.
 
 ### Publishing it
 
-`.github/workflows/publish.yml` scrapes the league **every six hours**, commits
-any new results, and publishes `webapp/static/` to GitHub Pages. Once a day it
-also refreshes the squads, which walks every team page and is the slow half —
-a results-only run takes under a minute, a run with squads about four. It also
-publishes on any push to `master` that touches the bundle, and can be run on
-demand from the Actions tab. One-time setup:
+**Results are fetched from your own machine, not from GitHub.** Since
+18 October 2026 Cloudflare has answered GitHub's runners with a JavaScript
+challenge (`cf-mitigated: challenge`), because they are datacenter IPs. A
+scrape from there now fetches nothing however often it runs, so the schedule
+has been removed. A home connection is a different profile.
+
+One command does the whole loop — fetch, rebuild, commit, push:
+
+```bash
+uv run python publish.py
+```
+
+GitHub Pages redeploys on the push, so the app has the new results about a
+minute later. Options:
+
+| | |
+|---|---|
+| `publish.py` | results only — the everyday run |
+| `publish.py --squads` | also refresh squads; slower, every team page |
+| `publish.py --dry-run` | fetch and report, commit nothing |
+
+It stops rather than publishing nothing when the league will not answer, says
+how many results came in and what they were, and does nothing at all when
+there is nothing new.
+
+`.github/workflows/publish.yml` now only **deploys**: any push to `master`
+touching `webapp/static/` publishes the bundle. It can still be run from the
+Actions tab for squads, diagnostics or a manual redeploy — it just will not
+get past the challenge for results.
+
+One-time setup:
 
 1. The repository must be **public** — Pages needs a paid plan on private repos.
-   (Actions minutes are also unlimited on public repos; private repos get 2,000
-   a month, which still comfortably covers six-hourly runs.)
 2. Settings → Pages → Source: **GitHub Actions**.
 
-With that in place the refresh needs nothing from you — the site updates itself
-and phones pick it up next time they have signal. To pull results in right now
-rather than waiting for the next slot, open the **Actions** tab, choose
-**Publish**, and press **Run workflow**; leave every input blank for the normal
-scrape. Running `--update` from a terminal does the same thing.
+## Running a scrape from your own machine
+
+What you need, once:
+
+1. **Git**, and the repo cloned:
+   ```bash
+   git clone https://github.com/pippo49/player_ratings.git
+   cd player_ratings
+   ```
+2. **uv**, which fetches the right Python itself:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"   # Windows
+   ```
+3. **Push access**, so the commit can reach GitHub. The simplest check is
+   `git push` — if it asks for a password, set up a credential helper or an
+   SSH key first. It needs to work before `publish.py` can publish.
+
+After that, each time you want results in:
+
+```bash
+cd player_ratings
+git pull
+uv run python publish.py
+```
+
+If the league site challenges your home connection too, `publish.py` says so
+and changes nothing. That is the answer to whether the datacenter IP was the
+trigger, and it is worth knowing either way.
 
 Scraping and deploying live in one workflow because a push made with the
 default `GITHUB_TOKEN` does not trigger other workflows, so a separate deploy

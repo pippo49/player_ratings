@@ -70,6 +70,14 @@ on:
           the team map but in nobody's fixtures. Commits nothing.
         type: string
         default: ""
+      diagnose:
+        description: >-
+          Season to report what the fixtures pages currently hold (e.g.
+          2026-27), for when the scrape stops finding results. Writes
+          data/diagnosis.txt and commits it, because job logs and artifacts
+          both come from blob storage the development sandbox cannot read.
+        type: string
+        default: ""
       fetch_pages:
         description: >-
           Season to download raw league pages for (e.g. 2026-27), uploaded as
@@ -124,6 +132,10 @@ jobs:
         if: inputs.report_fixtures != ''
         run: uv run python report_fixtures.py ${{ inputs.report_fixtures }}
 
+      - name: Diagnose the fixtures pages
+        if: inputs.diagnose != ''
+        run: uv run python diagnose.py "${{ inputs.diagnose }}"
+
       - name: Fetch team squads
         if: inputs.fetch_squads != ''
         run: uv run python fetch_squads.py "${{ inputs.fetch_squads }}"
@@ -133,7 +145,7 @@ jobs:
         run: uv run python fetch_structure.py "${{ inputs.fetch_structure }}"
 
       - name: Scrape for new results
-        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == '' && inputs.diagnose == ''
         run: uv run python main.py --update
 
       # Squads fill up over the opening weeks of a season, so the scheduled
@@ -144,7 +156,7 @@ jobs:
       # played, and reading that from a stale cache lets the page overwrite a
       # squad with just the players who happen to have turned out.
       - name: Refresh squads
-        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == '' && inputs.diagnose == ''
           && inputs.results_only == ''
           && (github.event_name != 'schedule' || github.event.schedule == '47 6 * * *')
         continue-on-error: true
@@ -153,11 +165,11 @@ jobs:
       # Ratings are exported by main.py --update, before the squad refresh
       # above, so rebuild the snapshot once the squads are settled.
       - name: Rebuild the published snapshot
-        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == '' && inputs.diagnose == ''
         run: uv run python -m webapp.export
 
       - name: Verify the match format still holds
-        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == ''
+        if: inputs.fetch_structure == '' && inputs.fetch_pages == '' && inputs.fetch_squads == '' && inputs.validate_parser == '' && inputs.report_fixtures == '' && inputs.diagnose == ''
         run: uv run python check_doubles.py
 
       - name: Commit if anything changed
@@ -199,6 +211,7 @@ jobs:
       && inputs.fetch_squads == ''
       && inputs.validate_parser == ''
       && inputs.report_fixtures == ''
+      && inputs.diagnose == ''
       && needs.scrape.result != 'failure'
       && needs.scrape.result != 'cancelled'
     runs-on: ubuntu-latest

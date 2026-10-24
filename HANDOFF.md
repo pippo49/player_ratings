@@ -149,6 +149,25 @@ inputs rather than to change the maths.
 actual is 1.0 at a sweep and expected is always below it. Any apparent drop
 after a sweep is the form window, not the engine.
 
+**The league site can refuse the scraper, and silence looks like success.**
+On 18 October 2026 tabletennis365 began answering every fixtures page with
+403. `scrape_season` caught it with an `except HTTPError` written for the
+benign case — a season whose pages are not up yet 404s — so six days of
+scheduled runs went green while the app quietly went stale, and nothing in
+the app said so. Losing every division now raises `SeasonUnreachable`; all
+404s still pass quietly, and one season going dark no longer costs the other
+its results (`test_scrape_failure.py`).
+
+Do not answer a 403 by dressing the scraper up as a browser. That is bot-check
+circumvention, the sandbox refuses it, and the right move is to ask the league
+for access — it is their data and the user is a member club.
+
+Diagnosing anything that only happens on the runner now goes through
+`diagnose.py` and the workflow's `diagnose` input, which commits
+`data/diagnosis.txt`. Job logs and build artifacts both come from blob
+storage that the development sandbox is refused by policy, so a diagnostic
+that prints is one nobody can read.
+
 **GitHub's scheduler drops runs.** It is best-effort, and demonstrably so:
 of the first three six-hourly slots after the schedule was added, one ran 28
 minutes late and two never fired at all. Hence two-hourly — the gap between

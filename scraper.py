@@ -113,6 +113,28 @@ def division_slugs(season: str) -> list[tuple[str, int]]:
     return slugs
 
 
+class SeasonUnreachable(RuntimeError):
+    """Every division of a season failed to fetch.
+
+    Tolerating a failed division is deliberate — a season whose pages are not
+    up yet 404s, and one division being briefly unavailable should not lose
+    the other seven. But that tolerance was written for one benign case and
+    silently absorbed a fatal one: the site began refusing every request with
+    403, and because "nothing fetched" and "nothing new" end in the same
+    place, six days of scheduled runs reported success while the app quietly
+    went stale. Losing every division is not a quiet week; it is the scrape
+    not happening, and it has to be loud.
+    """
+
+    def __init__(self, season: str, failures: list[str]) -> None:
+        super().__init__(
+            f"every division of {season} failed to fetch:\n  "
+            + "\n  ".join(failures)
+        )
+        self.season = season
+        self.failures = failures
+
+
 def scrape_division_page(
     division_name: str,
     division: int,
@@ -164,10 +186,19 @@ def scrape_season(
     progress: Callable[[str, int, int, int | None, str | None], None] | None = None,
     known: set[tuple[str, str]] | None = None,
 ) -> list[Match]:
-    """Fetch and parse results for every division of one season."""
+    """Fetch and parse results for every division of one season.
+
+    Raises SeasonUnreachable where every division failed. A 404 on one
+    division is nothing to shout about; a failure on all of them is the site
+    refusing us, and that must not read as a quiet week.
+    """
     all_matches: list[Match] = []
     slugs = division_slugs(season)
     total = len(slugs)
+    failures: list[str] = []
+    # A season whose pages are all 404 is one not published yet, or retired.
+    # Anything else failing everywhere is the site refusing us.
+    all_404 = True
 
     for div_name, div_num in slugs:
         url = _fixtures_url(div_name, season)
@@ -185,16 +216,24 @@ def scrape_season(
         except requests.HTTPError as e:
             # A season whose pages are not up yet 404s; that is not an error
             # worth shouting about, just nothing to fetch.
-            note = "not published yet" if e.response is not None and e.response.status_code == 404 else str(e)
+            is_404 = e.response is not None and e.response.status_code == 404
+            note = "not published yet" if is_404 else str(e)
             print(f"{label} ({season}): {note}")
+            failures.append(f"{label}: {note}")
+            all_404 = all_404 and is_404
             if progress:
                 progress(season, div_num, total, None, note)
         except Exception as e:
             print(f"Error fetching {season} {label} ({url}): {type(e).__name__}: {e}")
+            failures.append(f"{label}: {type(e).__name__}: {e}")
+            all_404 = False
             if progress:
                 progress(season, div_num, total, None, f"{type(e).__name__}: {e}")
 
         time.sleep(REQUEST_DELAY)
+
+    if slugs and len(failures) == len(slugs) and not all_404:
+        raise SeasonUnreachable(season, failures)
 
     return all_matches
 
@@ -220,8 +259,19 @@ def scrape_all_divisions(
     cards are not re-fetched.
     """
     all_matches: list[Match] = []
-    for season in (seasons or SEASONS):
-        all_matches.extend(
-            scrape_season(season, verbose=verbose, progress=progress, known=known)
-        )
+    wanted = seasons or SEASONS
+    unreachable: list[SeasonUnreachable] = []
+    for season in wanted:
+        try:
+            all_matches.extend(
+                scrape_season(season, verbose=verbose, progress=progress, known=known)
+            )
+        except SeasonUnreachable as e:
+            # Carry on: last season going dark must not cost this season its
+            # results. Only a run that fetched nothing at all is a failed run.
+            print(f"WARNING: {e}")
+            unreachable.append(e)
+
+    if unreachable and len(unreachable) == len(wanted):
+        raise unreachable[-1]
     return all_matches

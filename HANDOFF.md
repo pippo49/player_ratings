@@ -149,18 +149,31 @@ inputs rather than to change the maths.
 actual is 1.0 at a sweep and expected is always below it. Any apparent drop
 after a sweep is the form window, not the engine.
 
-**The league site can refuse the scraper, and silence looks like success.**
-On 18 October 2026 tabletennis365 began answering every fixtures page with
-403. `scrape_season` caught it with an `except HTTPError` written for the
-benign case — a season whose pages are not up yet 404s — so six days of
-scheduled runs went green while the app quietly went stale, and nothing in
-the app said so. Losing every division now raises `SeasonUnreachable`; all
-404s still pass quietly, and one season going dark no longer costs the other
-its results (`test_scrape_failure.py`).
+**Cloudflare challenges the scraper, and silence looked like success.**
+Since 18 October 2026 every fixtures page answers `403` with
+`server: cloudflare`, `cf-mitigated: challenge` and the "Just a moment..."
+interstitial. It is a JavaScript challenge, not a block: nothing at the
+league or the platform refused us, Cloudflare interposed before the request
+reached the origin. `requests` does not execute JavaScript, so no
+combination of headers can satisfy it — the challenge is "run this code".
 
-Do not answer a 403 by dressing the scraper up as a browser. That is bot-check
-circumvention, the sandbox refuses it, and the right move is to ask the league
-for access — it is their data and the user is a member club.
+The likely trigger is the three signals together: GitHub Actions runners are
+Azure datacenter IPs (the cf-ray ends `-SJC`, a US edge hitting a London
+league), the User-Agent says `ratings-bot`, and the schedule went from four
+runs a day to twelve on 16 October, two days before it started.
+
+**Do not drive a headless browser at it.** That is bot-check circumvention
+rather than asking to be let in; the sandbox refuses it, and header rotation
+would not have worked anyway. The routes are to ask the platform for a feed
+or an allowlist, to cut the request rate, or to run the scrape from a home
+connection, whose profile is quite different.
+
+`scrape_season` caught the 403 with an `except HTTPError` written for the
+benign case — a season whose pages are not up yet 404s — so six days of
+scheduled runs went green while the app quietly went stale. Losing every
+division now raises `SeasonUnreachable`; all 404s still pass quietly, and one
+season going dark no longer costs the other its results
+(`test_scrape_failure.py`).
 
 Diagnosing anything that only happens on the runner now goes through
 `diagnose.py` and the workflow's `diagnose` input, which commits

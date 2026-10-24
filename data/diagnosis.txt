@@ -1,6 +1,14 @@
 diagnosis for 2026-27, written 2026-10-24
 cached match ids for this season: 77
 
+what the server says when it refuses: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Four
+    status 403 Forbidden, 5725 bytes
+    server: cloudflare
+    cf-ray: a4fa573f2c78ce60-SJC
+    cf-mitigated: challenge
+    content-type: text/html; charset=UTF-8
+    body: <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="content-security-policy" content="default-src &#39;none&#39;; script-src &#39;nonce-OaPJSa0M0MtfHmcQn3t8F5&#39; &#39;unsafe-eval&#39; https://challenges.cloudflare.com; script-src-attr &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src &#39;self&#39; https://challenges
+
 Division_One: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_One
 Division_Two: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Two
 Division_Three: FETCH FAILED HTTPError: 403 Client Error: Forbidden for url: https://www.tabletennis365.com/CentralLondon/Fixtures/Winter_2026-27/Division_Three

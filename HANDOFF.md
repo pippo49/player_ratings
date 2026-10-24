@@ -212,10 +212,17 @@ These catch whole classes of error, and did:
   *neither* side gets the 3-point bonus. Two emails are drafted in the
   conversation but unsent — they need the time their notice arrived and the
   reason given. The user asked not to be reminded again.
-- **Arturas Rybakas**, 44/45 (98%) last season, is registered for St Katharines
-  Trust 5 in Division 4 — stronger than every player in that club's Division 1
-  and Division 2 sides. Rule 28(a) rank-order query drafted, not sent. His
-  club has not played yet, so the registration page is still authoritative.
+- **Arturas Rybakas — settled, do not reopen.** 44/45 (98%) last season,
+  rated 1827 and registered for St Katharines Trust 5 in Division 4, above
+  everyone in that club's Division 1 and Division 2 sides. A Rule 28(a)
+  rank-order query was drafted; it was never sent, and should not be. The
+  league's "players restricted from playing up" list stars him, which *is*
+  the declaration Rule 28(b) requires, so the registration is in order. The
+  star locks him in the 5s: barred from playing up under 29(a), re-registrable
+  higher only on application to the Committee, and not at all in the last six
+  weeks. Nothing in the rules lets a higher-team player come down, so that
+  side cannot be reinforced from above either. He is a fixture of Division 4
+  for the season and the projections should be read with that as settled.
 - **ASIA 1** registered for Division 4 but appears in nobody's fixtures; the
   division is 11 teams, not 12.
 - **AA Academy** renamed from "AA Academy SJoA", so their squad fetches 404.

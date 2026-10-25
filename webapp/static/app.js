@@ -96,7 +96,11 @@ function expectedTrio(squad) {
     // as equally likely over-dilutes a squad whose best three are clearly its
     // first choice, so shift the best three down by the shortfall a squad
     // that size typically shows: 36 points, plus about 5 per extra player.
-    const shortfall = 36.1 + 5.3 * (ranked.length - 3);
+    // Fitted in our rating points, so it has to be converted when the
+    // league's scale is on screen: 36 of our points is a quarter of theirs.
+    const scale = (state.data && state.data.active_scale) || 250;
+    const units = scale / 250;
+    const shortfall = (36.1 + 5.3 * (ranked.length - 3)) * units;
     return ranked.slice(0, 3).map((p) => ({ ...p, rating: p.rating - shortfall }));
   }
   const weight = (p) => p.appearances || 0;
@@ -380,6 +384,12 @@ function formBadge(p) {
   const dir = rounded > 0 ? "up" : rounded < 0 ? "down" : "flat";
   const arrow = dir === "up" ? "\u25b2" : dir === "down" ? "\u25bc" : "\u2013";
   const el_ = el("span", `form ${dir}`);
+  if (state.ratingSource === "tt365") {
+    el_.textContent = `${arrow} ${rounded > 0 ? "+" : ""}${rounded}`;
+    el_.title = `${rounded > 0 ? "+" : ""}${rounded} rating points this month, `
+      + "as published by the league";
+    return el_;
+  }
   const over = p.form_matches === 1 ? "1 match" : `${p.form_matches} matches`;
   const when = p.season_played ? "" : ", all of them last season";
   el_.textContent = `${arrow} ${rounded > 0 ? "+" : ""}${rounded}`;
@@ -396,6 +406,9 @@ function formBadge(p) {
     says what it was worth, and they sum to the badge.
 */
 function formDetailBlock(p) {
+  // The breakdown is a trail of our own rating changes; it says nothing
+  // about a rating on the league's scale.
+  if (state.ratingSource === "tt365") return null;
   const rows = p.form_detail || [];
   if (rows.length < 1) return null;
 
@@ -449,13 +462,26 @@ function applyRatingSource(data) {
   const haveTheirs = data.players.some((p) => p.rating_tt365 != null);
   if (state.ratingSource === "tt365" && !haveTheirs) state.ratingSource = "elo";
 
+  const theirs = state.ratingSource === "tt365";
   for (const p of data.players) {
-    if (p.rating_elo === undefined) p.rating_elo = p.rating;   // keep ours
-    p.rating = state.ratingSource === "tt365" && p.rating_tt365 != null
-      ? p.rating_tt365
-      : p.rating_elo;
+    if (p.rating_elo === undefined) {       // keep ours, once
+      p.rating_elo = p.rating;
+      p.form_elo = p.form;
+      p.form_matches_elo = p.form_matches;
+    }
+    p.rating = theirs && p.rating_tt365 != null ? p.rating_tt365 : p.rating_elo;
+    // Form is a movement in rating points, so it has to come from whichever
+    // list is on screen — ours in our points, theirs in theirs. A player
+    // their list does not carry has no movement to show.
+    p.form = theirs ? (p.form_tt365 ?? 0) : p.form_elo;
+    p.form_matches = theirs ? (p.form_tt365 == null ? 0 : 1) : p.form_matches_elo;
   }
-  data.active_scale = state.ratingSource === "tt365"
+  // The payload arrives sorted by our ratings, and several things read that
+  // order — the list, the overall rank, the rank within a division. Swapping
+  // the ratings without re-sorting showed their numbers in our order.
+  data.players.sort((a, b) => b.rating - a.rating);
+
+  data.active_scale = theirs
     ? (data.prediction_scale_tt365 || data.prediction_scale)
     : data.prediction_scale;
 }

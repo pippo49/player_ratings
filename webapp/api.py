@@ -150,6 +150,7 @@ def _player_dict(
     pr: PlayerRating,
     by_season: dict[str, dict[str, int]] | None = None,
     tt365: float | None = None,
+    tt365_move: float | None = None,
 ) -> dict:
     season_played = (by_season or {}).get(CURRENT_SEASON, {}).get("played", 0)
     form_delta, form_matches = pr.form()
@@ -161,6 +162,8 @@ def _player_dict(
         "rating": round(pr.rating, 1),
         # The league's own number for the same player, on its own scale.
         "rating_tt365": round(tt365, 1) if tt365 is not None else None,
+        # Their month's movement, in their points — ours is in ours.
+        "form_tt365": tt365_move,
         "played": pr.singles_played,
         "won": pr.singles_won,
         "win_rate": round(pr.win_rate, 4),
@@ -500,6 +503,18 @@ def _tt365_for(ratings: dict[str, PlayerRating], season: str) -> dict[str, float
     return theirs
 
 
+def _tt365_moves(season: str) -> dict[str, float]:
+    """{player id: how far the league moved them this month}.
+
+    Our own form is a change in our rating points, which means nothing beside
+    a rating on their scale. They publish their own movement, so the badge can
+    stay in whatever units are on screen.
+    """
+    return {pid: float(entry["month"])
+            for pid, entry in _tt365_ratings(season).items()
+            if entry.get("month") is not None}
+
+
 def _last_detailed_date(matches: list[Match]) -> str | None:
     """The newest result we hold a line-up for."""
     dated = [m.date for m in matches
@@ -510,8 +525,6 @@ def _last_detailed_date(matches: list[Match]) -> str | None:
 def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""
     ratings = calculate_ratings(matches)
-    theirs = _tt365_for(ratings, CURRENT_SEASON)
-    tt365_used = int(theirs.pop("__ranked__", 0))
     doubles = _doubles_report(matches)
 
     projected = not any(m.season == CURRENT_SEASON for m in matches)
@@ -539,6 +552,13 @@ def build_payload(matches: list[Match]) -> dict:
         ratings, rosters, divisions, load_registered_squads(CURRENT_SEASON)
     )
 
+    # After every player exists, including squad members with no results —
+    # computing it earlier left those with no league rating at all, so the
+    # app fell back to ours for them and showed two scales in one list.
+    theirs = _tt365_for(ratings, CURRENT_SEASON)
+    tt365_used = int(theirs.pop("__ranked__", 0))
+    moves = _tt365_moves(CURRENT_SEASON)
+
     # Names held by more than one player. They are kept as separate rows on
     # purpose — guessing which one is which would hand someone else's rating
     # to a player — so the payload says so and the export's duplicate check
@@ -547,7 +567,8 @@ def build_payload(matches: list[Match]) -> dict:
 
     by_season = _records_by_season(matches, canonical_ids(matches))
     players = sorted(
-        (_player_dict(pr, by_season.get(pr.player_id), theirs.get(pr.player_id))
+        (_player_dict(pr, by_season.get(pr.player_id),
+                      theirs.get(pr.player_id), moves.get(pr.player_id))
          for pr in ratings.values()),
         key=lambda p: p["rating"],
         reverse=True,

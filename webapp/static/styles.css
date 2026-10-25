@@ -219,6 +219,8 @@ main { padding: 12px 14px 24px; }
   min-width: 42px; text-align: right; font-weight: 600;
 }
 
+.estimated { color: var(--warn); font-weight: 700; }
+
 .form.up { color: var(--good); }
 .form.down { color: var(--bad); }
 .form.flat { color: var(--text-dim); }

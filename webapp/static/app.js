@@ -342,6 +342,16 @@ function playerRow(p, rank) {
     flag.title = "Provisional — few matches played";
     name.append(flag);
   }
+  // A rating the league does not actually publish for this player: their
+  // division's median, standing in. It lands on a real player's number, so
+  // without saying so it cannot be told from a measured one.
+  if (state.ratingSource === "tt365" && p.ranked_tt365 === false) {
+    const flag = el("span", "estimated");
+    flag.textContent = " ~";
+    flag.title = "Not on the league's ranking — shown at this division's "
+      + "median";
+    name.append(flag);
+  }
   const sub = el("div", "row-sub");
   const badge = el("span", "badge");
   badge.textContent = divisionShort(p.division);

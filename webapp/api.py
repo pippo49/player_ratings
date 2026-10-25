@@ -151,6 +151,7 @@ def _player_dict(
     by_season: dict[str, dict[str, int]] | None = None,
     tt365: float | None = None,
     tt365_move: float | None = None,
+    tt365_real: bool = False,
 ) -> dict:
     season_played = (by_season or {}).get(CURRENT_SEASON, {}).get("played", 0)
     form_delta, form_matches = pr.form()
@@ -164,6 +165,9 @@ def _player_dict(
         "rating_tt365": round(tt365, 1) if tt365 is not None else None,
         # Their month's movement, in their points — ours is in ours.
         "form_tt365": tt365_move,
+        # False where the league does not list this player and the rating
+        # above is their division's median standing in for one.
+        "ranked_tt365": tt365_real,
         "played": pr.singles_played,
         "won": pr.singles_won,
         "win_rate": round(pr.win_rate, 4),
@@ -497,6 +501,10 @@ def _tt365_for(ratings: dict[str, PlayerRating], season: str) -> dict[str, float
     medians = {d: sorted(v)[len(v) // 2] for d, v in by_division.items() if v}
     fallback = sorted(medians.values())[len(medians) // 2] if medians else 0.0
 
+    # Which are real matters as much as the numbers: a stand-in lands on the
+    # division median, which is some real player's rating, so the two are
+    # indistinguishable on screen unless they are marked.
+    theirs["__real__"] = set(theirs)
     for pid, pr in ratings.items():
         theirs.setdefault(pid, medians.get(pr.division, fallback))
     theirs["__ranked__"] = float(ranked)
@@ -557,6 +565,7 @@ def build_payload(matches: list[Match]) -> dict:
     # app fell back to ours for them and showed two scales in one list.
     theirs = _tt365_for(ratings, CURRENT_SEASON)
     tt365_used = int(theirs.pop("__ranked__", 0))
+    really_ranked = theirs.pop("__real__", set())
     moves = _tt365_moves(CURRENT_SEASON)
 
     # Names held by more than one player. They are kept as separate rows on
@@ -568,7 +577,8 @@ def build_payload(matches: list[Match]) -> dict:
     by_season = _records_by_season(matches, canonical_ids(matches))
     players = sorted(
         (_player_dict(pr, by_season.get(pr.player_id),
-                      theirs.get(pr.player_id), moves.get(pr.player_id))
+                      theirs.get(pr.player_id), moves.get(pr.player_id),
+                      pr.player_id in really_ranked)
          for pr in ratings.values()),
         key=lambda p: p["rating"],
         reverse=True,

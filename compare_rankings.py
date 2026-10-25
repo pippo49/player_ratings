@@ -10,6 +10,7 @@ table. If it cannot, it prints what it did find so the parser can be fixed
 against the real thing rather than against an assumption.
 """
 
+import random
 import re
 import sys
 from pathlib import Path
@@ -20,6 +21,7 @@ from cache import load_matches
 from parser_v2 import parse_fixtures, parse_match_card
 from elo import calculate_ratings
 from player_identity import identity, load_aliases
+from scraper import CURRENT_SEASON
 
 
 def tables(html: str) -> list[list[list[str]]]:
@@ -84,6 +86,79 @@ def spearman(pairs: list[tuple[int, int]]) -> float:
     va = sum((a - mean_a) ** 2 for a, _ in pairs) ** 0.5
     vb = sum((b - mean_b) ** 2 for _, b in pairs) ** 0.5
     return cov / (va * vb) if va and vb else 0.0
+
+
+def predict(their_rank: dict[str, int], aliases) -> None:
+    """Which ordering better calls the results, rather than merely agreeing.
+
+    A correlation says how much two rankings agree, not which is right. Each
+    player meets three opponents in a match, so a ranking predicts how many
+    of them they beat: the ones it places below them. Comparing that with
+    what happened scores both orderings on the same results.
+
+    Ours is rated on last season alone, so this season is genuinely unseen.
+    Theirs is a current ranking that already includes these results. The
+    comparison is therefore tilted their way, which is the right direction
+    for it to be tilted: a tie means ours did as well on harder terms.
+    """
+    from elo import calculate_ratings
+    from models import real_singles
+
+    matches = load_matches() or []
+    past = [m for m in matches if m.season != CURRENT_SEASON]
+    now = [m for m in matches if m.season == CURRENT_SEASON]
+    if not past or not now:
+        return
+
+    before = calculate_ratings(past)
+    our_rank = {pid: i + 1 for i, pr in enumerate(
+        sorted(before.values(), key=lambda p: -p.rating)) for pid in [pr.player_id]}
+
+    # A shuffled ordering, so the two scores can be read against what
+    # knowing nothing would get. Seeded, so the figure does not wander
+    # between runs.
+    shuffled = list(our_rank)
+    random.Random(0).shuffle(shuffled)
+    chance_rank = {pid: i + 1 for i, pid in enumerate(shuffled)}
+
+    ours_error = theirs_error = chance_error = 0.0
+    scored = 0
+    for match in now:
+        singles = real_singles(match)
+        for side, other in ((match.home, match.away), (match.away, match.home)):
+            for player in side.players:
+                me = identity(player.name, aliases)
+                opponents = [identity(o.name, aliases) for o in other.players]
+                if me not in our_rank or me not in their_rank:
+                    continue
+                usable = [o for o in opponents
+                          if o in our_rank and o in their_rank and o != me]
+                if not usable:
+                    continue
+                actual, _ = singles[player.player_id]
+                # Lower rank number is better, so "below me" is a larger one.
+                ours_said = sum(1 for o in usable if our_rank[o] > our_rank[me])
+                theirs_said = sum(1 for o in usable if their_rank[o] > their_rank[me])
+                # Scale the actual to the pairings both systems could judge.
+                share = actual * len(usable) / max(1, len(opponents))
+                chance_said = sum(1 for o in usable
+                                  if chance_rank[o] > chance_rank[me])
+                ours_error += abs(ours_said - share)
+                theirs_error += abs(theirs_said - share)
+                chance_error += abs(chance_said - share)
+                scored += 1
+
+    if not scored:
+        print("\nNo pairings this season have both players in both systems.")
+        return
+    print(f"\nCalling this season's results ({scored} player-matches, "
+          "ours rated on last\nseason only, theirs already including them):")
+    print(f"  average error, ours:    {ours_error / scored:.3f} wins out of 3")
+    print(f"  average error, theirs:  {theirs_error / scored:.3f}")
+    print(f"  average error, shuffled:{chance_error / scored:7.3f}")
+    better = "ours" if ours_error < theirs_error else "theirs"
+    gap = abs(ours_error - theirs_error) / scored
+    print(f"  {better} closer by {gap:.3f} per player-match\n")
 
 
 def main(target: str) -> int:
@@ -280,6 +355,8 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
 
     # The same, among players neither system is guessing about. These are
     # the disagreements worth defending; the rest are sample size.
+    predict({pid: i + 1 for i, pid in enumerate(order)}, aliases)
+
     firm = [g for g in gaps if ratings[g[3]].singles_played >= 15]
     take = min(6, len(firm) // 2)
     if take:

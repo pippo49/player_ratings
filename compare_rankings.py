@@ -124,7 +124,7 @@ def main(target: str) -> int:
 
 
 def report(rows, col, known, aliases, our_rank, ratings) -> int:
-    theirs, unmatched = [], 0
+    theirs, missing_names = [], []
     for row in rows[1:]:          # skip the header
         if len(row) <= col:
             continue
@@ -135,7 +135,8 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
         if pid in known:
             theirs.append(pid)
         elif " " in cell:         # looks like a name, but not one we know
-            unmatched += 1
+            missing_names.append(cell)
+    unmatched = len(missing_names)
 
     seen, order = set(), []
     for pid in theirs:          # keep page order, drop repeats
@@ -144,8 +145,31 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
             order.append(pid)
 
     pairs = [(i + 1, our_rank[pid]) for i, pid in enumerate(order)]
-    print(f"{len(order)} ranked players matched to ours; "
-          f"{unmatched} of theirs not recognised.")
+
+    # What the comparison actually covers. A correlation over the overlap
+    # says nothing about either list's remainder, and the two lists are
+    # different populations: theirs may be capped or paginated, ours holds
+    # everyone who has ever appeared in a result.
+    ours_absent = [pr for pid, pr in ratings.items() if pid not in set(order)]
+    print(f"Coverage: {len(rows) - 1} rows on their page, "
+          f"{len(order)} matched to ours, {unmatched} of theirs unrecognised.")
+    print(f"          {len(ratings)} players rated here, "
+          f"{len(ours_absent)} of them not on their page.")
+    if unmatched:
+        print(f"\n  On their page, unknown to us — spelling differences here "
+              f"would be splitting a player's record in two:")
+        for name in missing_names[:12]:
+            print(f"    {name}")
+        if unmatched > 12:
+            print(f"    ...and {unmatched - 12} more")
+    strong = sorted((p for p in ours_absent if p.singles_played >= 15),
+                    key=lambda p: -p.rating)[:8]
+    if strong:
+        print(f"\n  Rated here but not on their page (15+ singles):")
+        for pr in strong:
+            print(f"    {pr.name:26s} {pr.rating:7.1f}  "
+                  f"{pr.singles_won}/{pr.singles_played}  D{pr.division}")
+    print()
     print(f"Rank correlation, all matched players: {spearman(pairs):.3f}")
 
     # Where the two disagree, the question is whether it is substance or

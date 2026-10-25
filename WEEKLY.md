@@ -34,19 +34,19 @@ from what is on screen, which is all the importer needs.
 ## 3. Save the match cards
 
 ```bash
-uv run python import_saved.py "$D" --open
+uv run python import_saved.py "$D"
 ```
 
 It lists the cards it needs and writes them as clickable links to
 `C:\Users\ThroX\Downloads\tt365\_cards_to_save.html`, then opens it.
 
-`--open` opens every card as a tab. Then in each one: `Ctrl+S` → `Enter` →
-`Ctrl+W`. Chrome remembers the folder and the **HTML Only** setting, so it is
-three keystrokes a card.
+Open `C:\Users\ThroX\Downloads\tt365\_cards_to_save.html` in Windows — the
+command prints that path. Then for each link: click it, let it load, `Ctrl+S`
+→ `Enter` → `Ctrl+W`. Chrome remembers the folder and the **HTML Only**
+setting, so it is a click and three keystrokes a card.
 
-If they did not open, use the links page — it also has an **Open the next 10**
-button, though the browser may block all but the first until you allow
-pop-ups for it.
+Nothing opens a browser for you. Launching one from WSL was tried and gave,
+in turn, `gio` errors, a single tab, and Windows error dialogs.
 
 Expect 35–40 of them in a normal week.
 
@@ -82,6 +82,5 @@ has, so partial progress always counts.
 | | |
 |---|---|
 | `--dry-run` | Report what it found, write and push nothing |
-| `--open` | Also open the link page in your browser |
 | `--links` | Just print the fixtures page URL and stop |
 | `--divisions 3,4,7` | Only import those divisions (currently importing all) |

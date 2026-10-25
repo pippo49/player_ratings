@@ -28,11 +28,7 @@ by the two team names.
 
 import argparse
 import json
-import os
-import subprocess
 import sys
-import time
-import webbrowser
 from pathlib import Path
 
 from cache import load_matches, merge_matches, save_matches
@@ -165,12 +161,16 @@ def print_links(season: str, open_them: bool = False,
         print(f"  {url}")
 
 
-def show(urls: list[str], open_them: bool) -> None:
-    """Print each link, and with --open load the first in your browser."""
+def show(urls: list[str], open_them: bool = False) -> None:
+    """Print each link. Opening a browser from here is not attempted.
+
+    Three goes at launching one from the shell produced, in order: gio
+    errors under WSL, a single tab where dozens were asked for, and Windows
+    error dialogs. A printed path cannot misfire, and the links page is one
+    click away once it is open.
+    """
     for url in urls:
         print(f"  {url}")
-    if open_them and urls and not open_in_browser(urls[0]):
-        print("  (could not open it from here — paste it into your browser)")
 
 
 def windows_path(path: Path) -> str | None:
@@ -180,69 +180,6 @@ def windows_path(path: Path) -> str | None:
         rest = "\\".join(parts[3:])
         return f"{parts[2].upper()}:\\{rest}"
     return None
-
-
-def open_urls(urls: list[str]) -> int:
-    """Open every URL as a browser tab. Returns how many were launched.
-
-    Not from a page: a click can only open one tab before the pop-up blocker
-    swallows the rest, and on a file:// page "always allow" often will not
-    stick. Asking the OS to open each URL is an ordinary browser launch, which
-    nothing blocks.
-
-    Staggered, because thirty tabs loading at once is the request burst that
-    drew the challenge in the first place.
-    """
-    if under_wsl():
-        # One cmd.exe for the lot: `start` hands each URL to the default
-        # browser. Safe to join with & — these URLs carry none.
-        joined = " & ".join(f'start "" "{u}"' for u in urls)
-        done = subprocess.run(["cmd.exe", "/c", joined],
-                              capture_output=True, text=True, check=False)
-        if done.returncode == 0:
-            return len(urls)
-
-    launched = 0
-    for url in urls:
-        if open_in_browser(url):
-            launched += 1
-            time.sleep(0.3)
-    return launched
-
-
-def under_wsl() -> bool:
-    if os.environ.get("WSL_DISTRO_NAME"):
-        return True
-    try:
-        return "microsoft" in Path("/proc/version").read_text().lower()
-    except OSError:
-        return False
-
-
-def open_in_browser(target: str, windows: str | None = None) -> bool:
-    """Open one thing in the user's browser, quietly reporting a failure.
-
-    Under WSL `webbrowser` falls through to `gio`, which has no handler and
-    writes "Operation not supported" to stderr. Windows opens its own default
-    browser through cmd.exe, which needs nothing installed on the Linux side —
-    so a Windows path, where we have one, is tried first.
-    """
-    if windows and under_wsl():
-        done = subprocess.run(
-            ["cmd.exe", "/c", "start", "", windows],
-            capture_output=True, text=True, check=False,
-        )
-        if done.returncode == 0:
-            return True
-
-    with open(os.devnull, "w") as quiet:
-        stderr, sys.stderr = sys.stderr, quiet
-        try:
-            return webbrowser.open_new_tab(target)
-        except Exception:
-            return False
-        finally:
-            sys.stderr = stderr
 
 
 def write_link_page(folder: Path, missing: list[tuple[int, dict]]) -> Path:
@@ -259,27 +196,6 @@ def write_link_page(folder: Path, missing: list[tuple[int, dict]]) -> Path:
         f'{f["home"]} v {f["away"]}</a></li>'
         for d, f in missing
     )
-    # Opening dozens of tabs at once is what the browser's popup blocker is
-    # for, so it is offered in tens: enough to work through in one pass, few
-    # enough that the first batch is what prompts for permission.
-    script = """
- const links = [...document.querySelectorAll('ol a')];
- let at = 0;
- const button = document.getElementById('more');
- function render() {
-   const left = links.length - at;
-   button.textContent = left ? `Open the next ${Math.min(10, left)}` : 'All opened';
-   button.disabled = !left;
-   document.getElementById('count').textContent =
-     at ? `${at} of ${links.length} opened` : '';
- }
- button.onclick = () => {
-   for (const a of links.slice(at, at + 10)) window.open(a.href, '_blank');
-   at = Math.min(at + 10, links.length);
-   render();
- };
- render();
-"""
     page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>Match cards to save</title>
@@ -292,11 +208,7 @@ def write_link_page(folder: Path, missing: list[tuple[int, dict]]) -> Path:
 <h1>{len(missing)} match cards to save</h1>
 <p>Open each, let it finish loading, then <b>Ctrl+S</b> into this same folder
 as <b>Webpage, HTML Only</b>. Then run the importer again.</p>
-<p><button id="more"></button> <span id="count"></span></p>
-<p><small>The browser may block the first batch — allow pop-ups for this page
-and press it again.</small></p>
 <ol>{rows}</ol>
-<script>{script}</script>
 </body></html>"""
     path = folder / LINK_PAGE
     path.write_text(page)
@@ -319,7 +231,9 @@ def main() -> int:
     ap.add_argument("--links", action="store_true",
                     help="list the fixtures pages to save, and stop")
     ap.add_argument("--open", action="store_true",
-                    help="open the pages still to save as tabs in your browser")
+                    help="accepted and ignored; opening a browser from the "
+                         "shell proved unreliable, so the links page is "
+                         "written and you open it yourself")
     ap.add_argument("--dry-run", action="store_true",
                     help="report what would be imported, change nothing")
     args = ap.parse_args()
@@ -400,15 +314,8 @@ def main() -> int:
         windows = windows_path(page)
         print(f"\n  All {len(missing)} as clickable links: {windows or page}")
 
-        if args.open:
-            urls = [_match_card_url(f["match_id"]) for _, f in missing]
-            launched = open_urls(urls)
-            if launched:
-                print(f"  Opened {launched} tab(s). In each: Ctrl+S, "
-                      'save as "Webpage, HTML Only", then Ctrl+W.')
-            else:
-                print("  (could not open them from here — use the links page "
-                      "above)")
+        print("  Open that file, then for each link: click it, let it load, "
+              "Ctrl+S,\n  save as \"Webpage, HTML Only\", Ctrl+W.")
 
     if not (built or missing):
         stamp("Nothing new on those pages — the app is already up to date.")

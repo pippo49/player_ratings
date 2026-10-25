@@ -25,6 +25,7 @@ matched to its fixture by the two team names.
 
 import argparse
 import json
+import os
 import sys
 import webbrowser
 from pathlib import Path
@@ -53,6 +54,9 @@ def pair(home: str, away: str) -> tuple[str, str]:
     return normalise(home), normalise(away)
 
 
+# The page of links this writes, which lands in the folder it also reads.
+LINK_PAGE = "_cards_to_save.html"
+
 # What a browser writes when you pick the wrong "Save as" option. MHTML is a
 # MIME container, not HTML, so nothing here can read it.
 SAVED_WRONG = {
@@ -80,6 +84,8 @@ def read_folder(folder: Path, season: str) -> tuple[list[dict], list[dict], list
         if suffix in SAVED_WRONG:
             unknown.append(f"{path.name}: {SAVED_WRONG[suffix]}")
             continue
+        if path.name == LINK_PAGE:
+            continue  # our own list of links, not a saved page
         if suffix not in (".html", ".htm"):
             unknown.append(f"{path.name}: not an HTML file")
             continue
@@ -145,11 +151,71 @@ def print_links(season: str, open_them: bool = False,
 
 
 def show(urls: list[str], open_them: bool) -> None:
-    """Print each link, and with --open hand it to your own browser to load."""
+    """Print each link, and with --open load the first in your browser."""
     for url in urls:
         print(f"  {url}")
-        if open_them:
-            webbrowser.open_new_tab(url)
+    if open_them and urls and not open_in_browser(urls[0]):
+        print("  (could not open it from here — paste it into your browser)")
+
+
+def windows_path(path: Path) -> str | None:
+    """`/mnt/c/Users/x/y` -> `C:\\Users\\x\\y`, for printing under WSL."""
+    parts = path.resolve().parts
+    if len(parts) > 2 and parts[0] == "/" and parts[1] == "mnt" and len(parts[2]) == 1:
+        rest = "\\".join(parts[3:])
+        return f"{parts[2].upper()}:\\{rest}"
+    return None
+
+
+def open_in_browser(target: str) -> bool:
+    """Open one thing in the user's browser, quietly reporting a failure.
+
+    Under WSL `webbrowser` falls through to `gio`, which has no handler and
+    writes "Operation not supported" to stderr for every call. One target
+    rather than dozens keeps that to a single line, and the return value lets
+    the caller say what to do instead.
+    """
+    with open(os.devnull, "w") as quiet:
+        stderr, sys.stderr = sys.stderr, quiet
+        try:
+            return webbrowser.open_new_tab(target)
+        except Exception:
+            return False
+        finally:
+            sys.stderr = stderr
+
+
+def write_link_page(folder: Path, missing: list[tuple[int, dict]]) -> Path:
+    """A page of the cards still to save, so they open from one click each.
+
+    Opening dozens of tabs from the shell is unreliable — under WSL it does
+    not work at all — and dozens of tabs is an awkward thing to work through
+    anyway. One page, one link per card, is the same work without depending
+    on anything being installed.
+    """
+    rows = "\n".join(
+        f'<li><a href="{_match_card_url(f["match_id"])}" target="_blank">'
+        f'{f["date"]} &middot; {"Prem" if d == 0 else f"D{d}"} &middot; '
+        f'{f["home"]} v {f["away"]}</a></li>'
+        for d, f in missing
+    )
+    page = f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Match cards to save</title>
+<style>
+ body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 44rem; margin: 2rem auto;
+        padding: 0 1rem; }}
+ li {{ margin: .35rem 0; }}
+ p {{ color: #555; }}
+</style></head><body>
+<h1>{len(missing)} match cards to save</h1>
+<p>Open each, let it finish loading, then Ctrl+S into this same folder
+("Webpage, Complete" or "HTML Only"). Then run the importer again.</p>
+<ol>{rows}</ol>
+</body></html>"""
+    path = folder / LINK_PAGE
+    path.write_text(page)
+    return path
 
 
 def main() -> int:
@@ -240,11 +306,14 @@ def main() -> int:
             label = "Prem" if division == 0 else f"D{division}"
             print(f"\n  {f['date']}  {label:4s} {f['home']} v {f['away']}")
             print(f"    {_match_card_url(f['match_id'])}")
-            if args.open:
-                webbrowser.open_new_tab(_match_card_url(f["match_id"]))
-        if args.open:
-            print(f"\n  ({len(missing)} tabs opened — Ctrl+S each into the "
-                  "same folder, then run again)")
+
+        page = write_link_page(args.folder, missing)
+        print(f"\n  All {len(missing)} as clickable links: {page}")
+        windows = windows_path(page)
+        if windows:
+            print(f"  From Windows: {windows}")
+        if args.open and not open_in_browser(page.as_uri()):
+            print("  (could not open it from here — open that file yourself)")
 
     if not (built or missing):
         stamp("Nothing new on those pages — the app is already up to date.")

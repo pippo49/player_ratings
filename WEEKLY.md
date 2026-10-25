@@ -1,14 +1,14 @@
 # The weekly update
 
-About ten minutes. Everything runs in WSL from
+About five minutes. Everything runs in WSL from
 `~/python_projects/player_ratings`.
 
 Results are saved by hand because Cloudflare challenges scripted requests to
 tabletennis365 — from GitHub and from home alike. `import_saved.py` never
 contacts the league; it only reads what the browser saved.
 
-**It is one command, run two or three times.** Each run reads the folder,
-publishes whatever it can, and tells you what is still missing.
+**Three pages, then one command.** One fixtures page and two ranking pages;
+the command reads the folder and publishes.
 
 ```bash
 uv run python import_saved.py /mnt/c/Users/ThroX/Downloads/tt365
@@ -41,39 +41,40 @@ cancels it, leaving a `_files` folder and no page. Not "Single File" — that
 writes `.mhtml`, which cannot be read. HTML Only writes one file instantly
 from what is on screen, which is all the importer needs.
 
-## 3. Run it — it lists the match cards it needs
+## 3. Save the ranking — two pages
+
+<https://www.tabletennis365.com/CentralLondon/Ranking>
+<https://www.tabletennis365.com/CentralLondon/Ranking?p=2>
+
+Same again: wait for the table, `Ctrl+S`, **Webpage, HTML Only**. Check for a
+`?p=3` — save it too if there is one. These carry a rating for every active
+player, which is what replaces the forty match cards.
+
+## 4. Run it — this publishes
 
 ```bash
 uv run python import_saved.py /mnt/c/Users/ThroX/Downloads/tt365
 ```
 
-It writes the outstanding cards as clickable links and prints the path:
-
-```
-All 37 as clickable links: C:\Users\ThroX\Downloads\tt365\_cards_to_save.html
-```
-
-**Open that file in Windows yourself.** Nothing opens a browser for you —
-launching one from WSL was tried and gave, in turn, `gio` errors, a single
-tab, and Windows error dialogs.
-
-Then for each link: click it, let it load, `Ctrl+S` → `Enter` → `Ctrl+W`.
-Chrome remembers the folder and the **HTML Only** setting, so it is a click
-and three keystrokes a card. Expect 35–40 in a normal week.
-
-## 4. Run it again — this publishes
-
-```bash
-uv run python import_saved.py /mnt/c/Users/ThroX/Downloads/tt365
-```
-
-Same command. Merges the results, rebuilds the ratings, commits and pushes.
-The app updates about a minute later:
+Merges the results, takes player ratings from the ranking, rebuilds, commits
+and pushes. The app updates about a minute later:
 <https://pippo49.github.io/player_ratings/>
 
-If some cards did not save it publishes the rest and lists what is left —
-save those and run it once more. **Partial progress always counts**, so you
-can stop and come back.
+### What this does and does not keep current
+
+| | |
+|---|---|
+| Player ratings, form | the league's ranking — current |
+| Results, division table, projections | the fixtures page — current |
+| Per-player win/loss records | **frozen** — they need match cards |
+
+The app says so: the header reads "league ratings", and a player's sheet
+notes the date their record runs to.
+
+To bring records up to date as well, add `--with-cards` and it will list a
+match card per result to save — about forty a week. Worth doing occasionally
+rather than weekly; a card saved later fills in a result already stored,
+without duplicating it.
 
 ---
 

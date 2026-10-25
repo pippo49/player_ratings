@@ -67,15 +67,28 @@ def merge_matches(existing: list[Match], new: list[Match]) -> tuple[list[Match],
     unique within a season — if they restart each year, keying on the ID
     alone would silently drop a new season's matches as duplicates.
 
+    A fixtures page gives the team score without saying who played, so a
+    result can arrive first as a stub with no line-up and later in full, once
+    its match card is saved. A full card replaces a stub; a stub never
+    replaces anything.
+
     Returns (merged list, count of newly added matches).
     """
-    seen = {(m.season, m.match_id) for m in existing if m.match_id}
-    added = 0
+    def detailed(m: Match) -> bool:
+        return bool(m.home.players or m.away.players)
+
+    index = {(m.season, m.match_id): i
+             for i, m in enumerate(existing) if m.match_id}
     merged = list(existing)
+    added = 0
     for m in new:
         key = (m.season, m.match_id)
-        if m.match_id and key not in seen:
+        if not m.match_id:
+            continue
+        if key not in index:
+            index[key] = len(merged)
             merged.append(m)
-            seen.add(key)
             added += 1
+        elif detailed(m) and not detailed(merged[index[key]]):
+            merged[index[key]] = m      # the card has arrived for a stub
     return merged, added

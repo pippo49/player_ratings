@@ -233,6 +233,7 @@ function renderMeta() {
     const previous = (d.seasons || []).filter((s) => s !== d.season_id).pop();
     parts.push(previous ? `ratings from ${previous.replace("-", "/")}` : "no results yet");
   }
+  if (d.rating_source === "tt365") parts.push("league ratings");
   if (d.projected && d.registered_squads) {
     parts.push(`${d.registered_squads} squads registered`);
   }
@@ -1148,6 +1149,19 @@ function openPlayerSheet(p) {
     if (seasons.filter((s) => seasonRecord(p, s)).length > 1) {
       add(fmtPct(p.win_rate), "Singles win rate, career");
       add(`${p.won}/${p.played}`, "Singles won, career");
+    }
+    // Records come from match cards; ratings can come from the league's own
+    // ranking. On the three-page routine the cards stop arriving, so a record
+    // that has stopped moving should say so rather than look current.
+    const stale = state.data.records_to
+      && state.data.last_match_date
+      && state.data.records_to < state.data.last_match_date;
+    if (stale) {
+      const note = el("p", "sub");
+      note.textContent =
+        `Win/loss records run to ${formatDate(state.data.records_to)}; `
+        + "ratings are the league's own and stay current.";
+      body.append(note);
     }
     add(ordinal(overall), "Overall rank");
     add(ordinal(inDiv), `Rank in ${divisionName(p.division)}`);

@@ -33,6 +33,7 @@ import sys
 from pathlib import Path
 
 from cache import load_matches, merge_matches, save_matches
+from models import Match, TeamResult
 from parser_v2 import build_match, parse_fixtures, parse_match_card
 from player_identity import normalise
 from publish import commit_and_push, describe, stamp
@@ -45,6 +46,24 @@ from webapp.export import export
 
 TEAMS_DIR = Path(__file__).parent / "data"
 RANKING_FILE = TEAMS_DIR / "tt365_ranking_{season}.json"
+
+
+def stub_match(fixture: dict, division: int, season: str) -> Match:
+    """A result with its score but no line-up.
+
+    The fixtures page gives one row per match: who played whom and the team
+    score, but not which player beat which. That is enough for the results
+    list, the division table and the standings; only per-player records need
+    the card.
+    """
+    return Match(
+        division=division,
+        date=fixture["date"],
+        season=season,
+        match_id=fixture["match_id"],
+        home=TeamResult(fixture["home"], [], fixture["home_score"]),
+        away=TeamResult(fixture["away"], [], fixture["away_score"]),
+    )
 
 
 def cached_ids(matches) -> set[str]:
@@ -234,6 +253,11 @@ def main() -> int:
     ap.add_argument("folder", nargs="?", type=Path,
                     help="folder holding the saved pages")
     ap.add_argument("--season", default=CURRENT_SEASON)
+    ap.add_argument("--with-cards", action="store_true",
+                    help="also expect a match card per result, for per-player "
+                         "records. Without it a fixtures page alone is enough: "
+                         "the team scores are stored and player ratings come "
+                         "from the league's ranking")
     ap.add_argument("--divisions", metavar="3,4,7",
                     help="only these divisions (0 or prem for Premier). The "
                          "weekly saving is roughly five pages per division, "
@@ -307,7 +331,13 @@ def main() -> int:
             continue
         card = cards_by_pair.get(key)
         if card is None:
-            missing.append((division, fixture))
+            if args.with_cards:
+                missing.append((division, fixture))
+                continue
+            # No card wanted: keep the team score, which is what the results
+            # list and the division table need. A card saved later fills in
+            # the line-up without creating a duplicate.
+            built.append(stub_match(fixture, division, season))
             continue
         match = build_match(fixture, card, division=division, season=season)
         if match is None or not match.played:
@@ -320,7 +350,7 @@ def main() -> int:
     if skipped:
         print(f"  skipped {skipped} result(s) outside --divisions {args.divisions}")
 
-    if missing:
+    if missing and args.with_cards:
         # Each link under its own fixture. Printed as two lists they were in
         # different orders — the fixtures sorted by date, the links not — so
         # line 12 of one was not line 12 of the other.

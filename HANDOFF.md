@@ -44,6 +44,24 @@ webapp/export.py  → webapp/static/ratings.json
 GitHub Pages      static app, offline-capable
 ```
 
+**Player ratings come from the league's own ranking, not from our engine.**
+`import_saved.py` reads two saved ranking pages into
+`data/tt365_ranking_<season>.json`, and `webapp/api.py` uses them when they
+exist (`RATING_SOURCE=auto`). That is what makes the week three page saves
+rather than forty: the match cards existed only to feed our engine.
+
+The two are a dead heat on accuracy — Brier 0.0964 theirs against 0.0980
+ours, with ours rated on last season alone so it was genuinely predicting,
+against 0.1463 for ignoring ratings. There is no accuracy argument either
+way; the effort is the whole argument.
+
+What it costs: **per-player win/loss records stop moving**, since those come
+from match cards. Results, the division table and projections stay current
+from the fixtures page, which is stored as a result with a team score and no
+line-up. `records_to` in the payload says how far the records reach and the
+app shows it. `--with-cards` brings them back for a week's work. Our engine
+is untouched and `RATING_SOURCE=elo` returns to it.
+
 **Results now come from the user's own machine — a Raspberry Pi on his home
 connection, on cron.** `publish.py` fetches, rebuilds the snapshot, commits
 and pushes; the workflow deploys what arrives. Four runs a day, deliberately

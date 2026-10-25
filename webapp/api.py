@@ -437,7 +437,11 @@ def _apply_season_overrides(
 # with ours rated on last season alone so it is genuinely predicting: theirs
 # 0.0964, ours 0.0980, against 0.1463 for ignoring ratings. The saving in
 # effort is the whole argument; there is no accuracy argument either way.
-RATING_SOURCE = os.environ.get("RATING_SOURCE", "elo")
+# "auto" uses the league's ranking when one has been imported and falls back
+# to our own engine when it has not, so the weekly routine decides this
+# rather than an environment variable nobody will remember to set. "elo" or
+# "tt365" force it either way.
+RATING_SOURCE = os.environ.get("RATING_SOURCE", "auto")
 
 # Their scale is printed in larger units than ours: about 960 of their points
 # per factor of ten in odds, against 250 of ours. Both carry about the same
@@ -485,11 +489,18 @@ def _apply_tt365(ratings: dict[str, PlayerRating], season: str) -> int:
     return sum(1 for pr in ratings.values() if getattr(pr, "ranked", False))
 
 
+def _last_detailed_date(matches: list[Match]) -> str | None:
+    """The newest result we hold a line-up for."""
+    dated = [m.date for m in matches
+             if m.date and (m.home.players or m.away.players)]
+    return max(dated).isoformat() if dated else None
+
+
 def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""
     ratings = calculate_ratings(matches)
     tt365_used = (_apply_tt365(ratings, CURRENT_SEASON)
-                  if RATING_SOURCE == "tt365" else 0)
+                  if RATING_SOURCE in ("tt365", "auto") else 0)
     doubles = _doubles_report(matches)
 
     projected = not any(m.season == CURRENT_SEASON for m in matches)
@@ -558,6 +569,10 @@ def build_payload(matches: list[Match]) -> dict:
         "prediction_scale": (TT365_PREDICTION_SCALE if tt365_used
                              else PREDICTION_SCALE),
         "rating_source": "tt365" if tt365_used else "elo",
+        # Per-player records come from match cards. On the three-page routine
+        # those stop arriving, so the app can say what the records cover
+        # instead of showing a frozen number as though it were current.
+        "records_to": _last_detailed_date(matches),
         "ranked_players": tt365_used,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "season": SEASON_LABEL,

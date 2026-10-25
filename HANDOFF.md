@@ -246,6 +246,28 @@ These catch whole classes of error, and did:
 - A rating change must only ever touch players who played in the season
   being changed.
 
+## The ladder and the scale must agree
+
+`SCALE` (400) updates ratings; `PREDICTION_SCALE` (120) converts a rating gap
+into a chance of winning. Splitting them fixed forecasts *within* a division —
+scoreline error 1.76 to 1.17 — and broke them *between* divisions, because the
+seed ladder is still 100 points per division.
+
+At 400 that ladder meant one division up was a 64% matchup; at 120 it means
+87%, and D7 to D4 reads as 99.7%. The model now gives a 6/6 Division 7 player
+a 1% chance against a median Division 4 player, which is absurd.
+
+The evidence that exists: 13 appearances in a higher division than the one
+registered, winning 0.77 singles of 3 against a predicted 0.50 — and for
+three divisions up, 1.00 actual against 0.03 predicted. Far too thin to fit a
+ladder from, but enough to say the current one is far too steep.
+
+**So cross-division numbers are not to be trusted, and call-up projections are
+the place that bites.** Fixing it means re-expressing the ladder in the new
+scale's units — roughly 30 points per division preserves the odds the old
+ladder implied — which changes every seed and so every rating, and wants
+measuring rather than assuming.
+
 ## Open items
 
 - **Apex 4 v Highbury 3, 6 October, cancelled by Highbury 3.** Under Rule

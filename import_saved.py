@@ -40,9 +40,19 @@ from scraper import (
     CURRENT_SEASON, DIVISION_NAMES, PREMIER_SLUGS, _fixtures_url,
     _match_card_url, all_fixtures_url,
 )
+from tt365_ranking import parse_folder as parse_ranking
 from webapp.export import export
 
 TEAMS_DIR = Path(__file__).parent / "data"
+RANKING_FILE = TEAMS_DIR / "tt365_ranking_{season}.json"
+
+
+def cached_ids(matches) -> set[str]:
+    """Every player we have ever seen in a result, for recognising the table."""
+    return {normalise(p.name)
+            for m in matches
+            for side in (m.home, m.away)
+            for p in side.players}
 
 
 def team_divisions(season: str) -> dict[str, int]:
@@ -98,6 +108,8 @@ def read_folder(folder: Path, season: str) -> tuple[list[dict], list[dict], list
             continue
         if path.name == LINK_PAGE:
             continue  # our own list of links, not a saved page
+        if "ranking" in path.name.lower():
+            continue  # read separately, for the ratings rather than results
         if suffix not in (".html", ".htm"):
             unknown.append(f"{path.name}: not an HTML file")
             continue
@@ -255,6 +267,14 @@ def main() -> int:
     cached = load_matches() or []
     known = {m.match_id for m in cached if m.season == season and m.match_id}
     divisions = team_divisions(season)
+
+    ranking = parse_ranking(args.folder, set(divisions) | set(cached_ids(cached)))
+    if ranking:
+        path = Path(str(RANKING_FILE).format(season=season))
+        path.write_text(json.dumps(ranking, indent=1, sort_keys=True))
+        rated = sum(1 for v in ranking.values() if v.get("provisional"))
+        print(f"Read the league's ranking: {len(ranking)} players, "
+              f"{rated} with a rating -> {path.name}")
 
     fixtures, cards, unknown = read_folder(args.folder, season)
     for name in unknown:

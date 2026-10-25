@@ -6,6 +6,7 @@ team roster, and a little metadata about the data set.
 """
 
 import json
+import os
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -428,9 +429,67 @@ def _apply_season_overrides(
             pr.division = None
 
 
+# Where player ratings come from. "elo" computes them here from match cards;
+# "tt365" takes the league's own published ranking, which removes the need to
+# save a match card per fixture — forty a week against three pages.
+#
+# The two are a dead heat on accuracy. Scored by Brier on the same matches,
+# with ours rated on last season alone so it is genuinely predicting: theirs
+# 0.0964, ours 0.0980, against 0.1463 for ignoring ratings. The saving in
+# effort is the whole argument; there is no accuracy argument either way.
+RATING_SOURCE = os.environ.get("RATING_SOURCE", "elo")
+
+# Their scale is printed in larger units than ours: about 960 of their points
+# per factor of ten in odds, against 250 of ours. Both carry about the same
+# information — their middle half of players spans 1.6 factors of ten, ours
+# 1.5. Re-measure with compare_rankings.py as results accumulate.
+TT365_PREDICTION_SCALE = 960.0
+
+
+def _tt365_ratings(season: str) -> dict[str, dict]:
+    path = Path(__file__).parent.parent / "data" / f"tt365_ranking_{season}.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text())
+
+
+def _apply_tt365(ratings: dict[str, PlayerRating], season: str) -> int:
+    """Replace our ratings with the league's own. Returns how many were set.
+
+    A player the ranking does not carry keeps a seat at their division's
+    median, on the same scale — that is a new or inactive player rather than
+    a weak one, and dropping them would empty line-ups. Mixing the two
+    scales would be worse than either.
+    """
+    published = _tt365_ratings(season)
+    if not published:
+        return 0
+
+    for pid, pr in ratings.items():
+        entry = published.get(pid)
+        value = (entry or {}).get("provisional") or (entry or {}).get("current")
+        if value:
+            pr.rating = float(value)
+            pr.ranked = True
+
+    by_division: dict[int, list[float]] = {}
+    for pr in ratings.values():
+        if getattr(pr, "ranked", False) and pr.division is not None:
+            by_division.setdefault(pr.division, []).append(pr.rating)
+    medians = {d: sorted(v)[len(v) // 2] for d, v in by_division.items() if v}
+    fallback = sorted(medians.values())[len(medians) // 2] if medians else 0.0
+
+    for pr in ratings.values():
+        if not getattr(pr, "ranked", False):
+            pr.rating = medians.get(pr.division, fallback)
+    return sum(1 for pr in ratings.values() if getattr(pr, "ranked", False))
+
+
 def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""
     ratings = calculate_ratings(matches)
+    tt365_used = (_apply_tt365(ratings, CURRENT_SEASON)
+                  if RATING_SOURCE == "tt365" else 0)
     doubles = _doubles_report(matches)
 
     projected = not any(m.season == CURRENT_SEASON for m in matches)
@@ -496,7 +555,10 @@ def build_payload(matches: list[Match]) -> dict:
     return {
         # What a rating gap means as a chance of winning. Not the constant
         # the ratings were built with — see elo.PREDICTION_SCALE.
-        "prediction_scale": PREDICTION_SCALE,
+        "prediction_scale": (TT365_PREDICTION_SCALE if tt365_used
+                             else PREDICTION_SCALE),
+        "rating_source": "tt365" if tt365_used else "elo",
+        "ranked_players": tt365_used,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "season": SEASON_LABEL,
         "season_id": CURRENT_SEASON,

@@ -718,6 +718,44 @@ function seasonOutlook(team, squad) {
   return { trio, rivals, average };
 }
 
+/**
+ * Every side in a division, by the points a match they project to take.
+ *
+ * Each is judged the same way — its strongest three against the three each
+ * opponent usually fields — so the ordering is a like-for-like comparison
+ * rather than a mix of best cases and likely ones. The doubles is not
+ * modelled, so an even split is assumed when turning singles into points.
+ */
+function divisionProjection(division) {
+  const sides = state.data.teams.filter((t) => t.division === division);
+  const trios = new Map(sides.map((t) => [t.name, expectedTrio(squadFor(t))]));
+
+  return sides
+    .map((team) => {
+      const mine = bestTrio(squadFor(team));
+      if (mine.length < 3) return null;
+      const scores = sides
+        .filter((o) => o.name !== team.name && (trios.get(o.name) || []).length >= 3)
+        .map((o) => evaluateLineup(mine, trios.get(o.name)).expectedSingles);
+      if (!scores.length) return null;
+      const singles = scores.reduce((a, b) => a + b, 0) / scores.length;
+      return { name: team.name, points: singles + 0.5 };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.points - a.points);
+}
+
+/** What it should take to go up, and what it should take to stay up. */
+function divisionBars(division) {
+  const table = divisionProjection(division);
+  if (table.length < 4) return null;
+  return {
+    table,
+    promotion: table[1].points,                 // second place goes up
+    relegation: table[table.length - 2].points, // second from bottom goes down
+  };
+}
+
 function seasonCard(team, squad) {
   const { trio, rivals, average } = seasonOutlook(team, squad);
   // The target is set in match points (of 10). The doubles is not modelled,
@@ -746,22 +784,53 @@ function seasonCard(team, squad) {
   score.append(avg, of);
   card.append(score);
 
-  const verdict = el("div", "prob");
-  const strong = el("strong");
-  // Round before judging, so a gap that displays as 0.0 does not read as a miss.
-  const gap = Math.round((average - target) * 10) / 10;
-  const onTrack = gap >= 0;
-  strong.textContent = onTrack ? "On track" : "Short of target";
-  strong.className = onTrack ? "good" : "bad";
-  verdict.append(strong, document.createTextNode(
-    ` — ${gap > 0 ? "+" : ""}${gap.toFixed(1)} against ${fmtScore(target)} singles`
-  ));
-  card.append(verdict);
+  // Both ends of the table, from the division itself rather than a number
+  // typed into a box: second place is what promotion costs, second from
+  // bottom is what safety costs.
+  const bars = divisionBars(team.division);
+  if (bars) {
+    const mine = average + 0.5;
+    const place = bars.table.findIndex((row) => row.name === team.name) + 1;
+    const line = (label, bar, wantAbove) => {
+      const row = el("div", "bar-row");
+      const name = el("span", "bar-label");
+      name.textContent = label;
+      const value = el("b");
+      value.textContent = fmtScore(bar);
+      const gap = Math.round((mine - bar) * 10) / 10;
+      const safe = wantAbove ? gap >= 0 : gap > 0;
+      const diff = el("span", safe ? "good" : "bad");
+      diff.textContent = `${gap > 0 ? "+" : ""}${gap.toFixed(1)}`;
+      row.append(name, value, diff);
+      return row;
+    };
+    const block = el("div", "bars");
+    block.append(
+      line("Promotion (2nd)", bars.promotion, true),
+      line("Safety (2nd bottom)", bars.relegation, false),
+    );
+    card.append(block);
+
+    const verdict = el("div", "prob");
+    const strong = el("strong");
+    const n = bars.table.length;
+    const up = mine >= bars.promotion;
+    const down = mine <= bars.relegation;
+    strong.textContent = up ? "Promotion pace" : down ? "Relegation risk" : "Mid-table";
+    strong.className = up ? "good" : down ? "bad" : "";
+    verdict.append(strong, document.createTextNode(
+      ` — projected ${fmtScore(mine)} points a match, ${ordinal(place)} of ${n}`
+    ));
+    card.append(verdict);
+  }
 
   const bar = el("div", "bar");
   const fill = el("i");
   fill.style.width = `${Math.min(100, Math.round((average / state.data.singles_per_match) * 100))}%`;
-  if (gap < 0) fill.classList.add("short");
+  // Short of the promotion bar where the division gives one, and of the
+  // hand-set target where it does not.
+  const shortOf = bars ? (average + 0.5) < bars.promotion : average < target;
+  if (shortOf) fill.classList.add("short");
   bar.append(fill);
   card.append(bar);
 

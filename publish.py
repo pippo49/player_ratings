@@ -60,6 +60,30 @@ def stamp(message: str = "") -> None:
     sys.stdout.flush()
 
 
+def commit_and_push(message: str, added: int) -> int:
+    """Commit the snapshot and push it, which is what redeploys the app."""
+    branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    if branch != "master":
+        print(f"\nOn branch {branch}, not master — publishing from here would "
+              "not deploy.\nSwitch to master and run again.")
+        return 1
+
+    stamp("Publishing…")
+    # Someone else's run may have committed in the meantime; rebase rather
+    # than merge so the history stays a straight line of scrapes.
+    git("pull", "--rebase", "--autostash", "origin", "master")
+    git("add", *PUBLISHED)
+    if not git("status", "--porcelain", "--", *PUBLISHED):
+        stamp("Nothing to commit after all — already published.")
+        return 0
+    git("commit", "-m", message, "--", *PUBLISHED)
+    git("push", "origin", "master")
+
+    stamp(f"Done. {added} result(s) published — the app updates in about "
+          "a minute.")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--squads", action="store_true",
@@ -108,26 +132,7 @@ def main() -> int:
               f"{CACHE_FILE} and the snapshot were written.")
         return 0
 
-    branch = git("rev-parse", "--abbrev-ref", "HEAD")
-    if branch != "master":
-        print(f"\nOn branch {branch}, not master — publishing from here would "
-              "not deploy.\nSwitch to master and run again.")
-        return 1
-
-    stamp("Publishing…")
-    # Someone else's run may have committed in the meantime; rebase rather
-    # than merge so the history stays a straight line of scrapes.
-    git("pull", "--rebase", "origin", "master")
-    git("add", *PUBLISHED)
-    if not git("status", "--porcelain", "--", *PUBLISHED):
-        stamp("Nothing to commit after all — already published.")
-        return 0
-    git("commit", "-m", f"Add {added} new result(s) from a local scrape")
-    git("push", "origin", "master")
-
-    stamp(f"Done. {added} result(s) published — the app updates in about "
-          "a minute.")
-    return 0
+    return commit_and_push(f"Add {added} new result(s) from a local scrape", added)
 
 
 if __name__ == "__main__":

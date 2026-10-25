@@ -47,6 +47,20 @@ challenge (`cf-mitigated: challenge`), because they are datacenter IPs. A
 scrape from there now fetches nothing however often it runs, so the schedule
 has been removed. A home connection is a different profile.
 
+**Since 25 October 2026 a home connection is challenged too**, so for now
+the weekly update is done from pages saved in your own browser —
+`import_saved.py` parses them and publishes, and never contacts the site:
+
+```bash
+uv run python import_saved.py ~/Downloads/tt365 --open   # opens fixtures pages; save each there
+uv run python import_saved.py ~/Downloads/tt365 --open   # publishes, opens missing match cards
+uv run python import_saved.py ~/Downloads/tt365          # after saving those: publishes the rest
+```
+
+Save with Ctrl+S into that one folder; names do not matter. If the league
+ever allowlists the scraper or offers a feed, `publish.py` below becomes the
+one command again.
+
 One command does the whole loop — fetch, rebuild, commit, push:
 
 ```bash

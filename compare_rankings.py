@@ -88,9 +88,17 @@ def spearman(pairs: list[tuple[int, int]]) -> float:
     return cov / (va * vb) if va and vb else 0.0
 
 
-def rating_column(rows: list[list[str]], name_col: int, pos_col: int | None) -> int | None:
-    """A column of plain numbers big enough to be ratings, not counts."""
+def rating_columns(rows: list[list[str]], name_col: int,
+                   pos_col: int | None) -> list[int]:
+    """Every column of plain numbers big enough to be ratings, not counts.
+
+    The page carries more than one — a published figure and a provisional
+    one — and they are not equally useful: the ranking is republished
+    monthly, so one of them can be weeks behind the results it is meant to
+    describe. Which is which is settled by fitting both.
+    """
     width = max(len(r) for r in rows)
+    found = []
     for col in range(width):
         if col in (name_col, pos_col):
             continue
@@ -101,8 +109,8 @@ def rating_column(rows: list[list[str]], name_col: int, pos_col: int | None) -> 
                 if m:
                     values.append(int(m.group(1)))
         if len(values) >= len(rows) * 0.8 and len(set(values)) > 10:
-            return col
-    return None
+            found.append(col)
+    return found
 
 
 def calibrate(their_rating: dict[str, float], aliases) -> None:
@@ -430,8 +438,7 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
     # the disagreements worth defending; the rest are sample size.
     predict({pid: i + 1 for i, pid in enumerate(order)}, aliases)
 
-    rat_col = rating_column(rows, col, position_column(rows, col))
-    if rat_col is not None:
+    for rat_col in rating_columns(rows, col, position_column(rows, col)):
         their_rating = {}
         for row in rows[1:]:
             if len(row) <= max(col, rat_col):
@@ -440,8 +447,8 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
             pid = identity(row[col], aliases)
             if m and pid in known:
                 their_rating.setdefault(pid, float(m.group(1)))
-        print(f"\nTheir rating column is #{rat_col} ({rows[0][rat_col]!r}), "
-              f"read for {len(their_rating)} players.")
+        label = rows[0][rat_col] if len(rows[0]) > rat_col else f"column {rat_col}"
+        print(f"\n--- their {label!r} column, {len(their_rating)} players ---")
         calibrate(their_rating, aliases)
 
     firm = [g for g in gaps if ratings[g[3]].singles_played >= 15]

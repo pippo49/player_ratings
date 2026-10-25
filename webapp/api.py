@@ -147,7 +147,9 @@ def _records_by_season(
 
 
 def _player_dict(
-    pr: PlayerRating, by_season: dict[str, dict[str, int]] | None = None
+    pr: PlayerRating,
+    by_season: dict[str, dict[str, int]] | None = None,
+    tt365: float | None = None,
 ) -> dict:
     season_played = (by_season or {}).get(CURRENT_SEASON, {}).get("played", 0)
     form_delta, form_matches = pr.form()
@@ -157,6 +159,8 @@ def _player_dict(
         "team": pr.team,
         "division": pr.division,
         "rating": round(pr.rating, 1),
+        # The league's own number for the same player, on its own scale.
+        "rating_tt365": round(tt365, 1) if tt365 is not None else None,
         "played": pr.singles_played,
         "won": pr.singles_won,
         "win_rate": round(pr.win_rate, 4),
@@ -457,36 +461,43 @@ def _tt365_ratings(season: str) -> dict[str, dict]:
     return json.loads(path.read_text())
 
 
-def _apply_tt365(ratings: dict[str, PlayerRating], season: str) -> int:
-    """Replace our ratings with the league's own. Returns how many were set.
+def _tt365_for(ratings: dict[str, PlayerRating], season: str) -> dict[str, float]:
+    """{player id: the league's own rating}, carried alongside ours.
 
-    A player the ranking does not carry keeps a seat at their division's
-    median, on the same scale — that is a new or inactive player rather than
-    a weak one, and dropping them would empty line-ups. Mixing the two
-    scales would be worse than either.
+    Both are published so the app can show either without a rebuild, which is
+    what makes them comparable: the two were a dead heat when measured, and
+    our own calibration has since been corrected, so which is better is an
+    open question worth keeping open.
+
+    A player the ranking does not carry sits at their division's median on
+    that same scale — a new or inactive player rather than a weak one, and
+    dropping them would empty line-ups. Mixing the two scales in one list
+    would be worse than either.
     """
     published = _tt365_ratings(season)
     if not published:
-        return 0
+        return {}
 
-    for pid, pr in ratings.items():
-        entry = published.get(pid)
-        value = (entry or {}).get("provisional") or (entry or {}).get("current")
+    theirs: dict[str, float] = {}
+    for pid in ratings:
+        entry = published.get(pid) or {}
+        value = entry.get("provisional") or entry.get("current")
         if value:
-            pr.rating = float(value)
-            pr.ranked = True
+            theirs[pid] = float(value)
+    ranked = len(theirs)
 
     by_division: dict[int, list[float]] = {}
-    for pr in ratings.values():
-        if getattr(pr, "ranked", False) and pr.division is not None:
-            by_division.setdefault(pr.division, []).append(pr.rating)
+    for pid, value in theirs.items():
+        division = ratings[pid].division
+        if division is not None:
+            by_division.setdefault(division, []).append(value)
     medians = {d: sorted(v)[len(v) // 2] for d, v in by_division.items() if v}
     fallback = sorted(medians.values())[len(medians) // 2] if medians else 0.0
 
-    for pr in ratings.values():
-        if not getattr(pr, "ranked", False):
-            pr.rating = medians.get(pr.division, fallback)
-    return sum(1 for pr in ratings.values() if getattr(pr, "ranked", False))
+    for pid, pr in ratings.items():
+        theirs.setdefault(pid, medians.get(pr.division, fallback))
+    theirs["__ranked__"] = float(ranked)
+    return theirs
 
 
 def _last_detailed_date(matches: list[Match]) -> str | None:
@@ -499,8 +510,8 @@ def _last_detailed_date(matches: list[Match]) -> str | None:
 def build_payload(matches: list[Match]) -> dict:
     """Compute ratings and package everything the front end needs."""
     ratings = calculate_ratings(matches)
-    tt365_used = (_apply_tt365(ratings, CURRENT_SEASON)
-                  if RATING_SOURCE in ("tt365", "auto") else 0)
+    theirs = _tt365_for(ratings, CURRENT_SEASON)
+    tt365_used = int(theirs.pop("__ranked__", 0))
     doubles = _doubles_report(matches)
 
     projected = not any(m.season == CURRENT_SEASON for m in matches)
@@ -536,7 +547,8 @@ def build_payload(matches: list[Match]) -> dict:
 
     by_season = _records_by_season(matches, canonical_ids(matches))
     players = sorted(
-        (_player_dict(pr, by_season.get(pr.player_id)) for pr in ratings.values()),
+        (_player_dict(pr, by_season.get(pr.player_id), theirs.get(pr.player_id))
+         for pr in ratings.values()),
         key=lambda p: p["rating"],
         reverse=True,
     )
@@ -566,9 +578,12 @@ def build_payload(matches: list[Match]) -> dict:
     return {
         # What a rating gap means as a chance of winning. Not the constant
         # the ratings were built with — see elo.PREDICTION_SCALE.
-        "prediction_scale": (TT365_PREDICTION_SCALE if tt365_used
-                             else PREDICTION_SCALE),
-        "rating_source": "tt365" if tt365_used else "elo",
+        "prediction_scale": PREDICTION_SCALE,
+        "prediction_scale_tt365": TT365_PREDICTION_SCALE,
+        # Which source the app opens on. Both sets of ratings travel in the
+        # payload, so switching between them is a toggle, not a rebuild.
+        "rating_source": ("tt365" if tt365_used and RATING_SOURCE != "elo"
+                          else "elo"),
         # Per-player records come from match cards. On the three-page routine
         # those stop arriving, so the app can say what the records cover
         # instead of showing a frozen number as though it were current.

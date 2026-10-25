@@ -22,6 +22,7 @@ const state = {
   callUp: new Set(),        // lower club sides players can be drawn from
   unavailable: new Set(),   // player ids ticked out for this fixture
   target: 7,                // points per match needed for promotion
+  ratingSource: null,       // "elo" or "tt365"; set from the payload on load
   divisionsPinned: false,   // true once a division chip has been clicked
   polling: null,
   sheet: null,              // the builder of the open sheet, or null
@@ -49,7 +50,8 @@ const el = (tag, cls) => {
  * sit too close to even.
  */
 function expected(a, b) {
-  const scale = (state.data && state.data.prediction_scale) || 95;
+  const scale = (state.data
+    && (state.data.active_scale || state.data.prediction_scale)) || 250;
   return 1 / (1 + Math.pow(10, (b - a) / scale));
 }
 
@@ -187,6 +189,7 @@ async function loadRatings({ quiet = false } = {}) {
   }
 
   state.data = data;
+  applyRatingSource(data);
   state.players = new Map(data.players.map((p) => [p.id, p]));
   state.teams = new Map(data.teams.map((t) => [t.name, t]));
 
@@ -233,7 +236,8 @@ function renderMeta() {
     const previous = (d.seasons || []).filter((s) => s !== d.season_id).pop();
     parts.push(previous ? `ratings from ${previous.replace("-", "/")}` : "no results yet");
   }
-  if (d.rating_source === "tt365") parts.push("league ratings");
+  parts.push(state.ratingSource === "tt365" ? "league ratings" : "own ratings");
+  renderSourceToggle();
   if (d.projected && d.registered_squads) {
     parts.push(`${d.registered_squads} squads registered`);
   }
@@ -425,6 +429,63 @@ function formDetailBlock(p) {
     : "";
   if (note.textContent) block.append(note);
   return block;
+}
+
+/**
+ * Which set of ratings the app runs on.
+ *
+ * Both travel in the payload — ours and the league's own — because which is
+ * better is an open question: they were a dead heat when measured and our
+ * calibration has since been corrected. Rather than thread a choice through
+ * every place that reads a rating, the chosen one is copied into `rating`
+ * here, once, and everything downstream is unchanged.
+ */
+function applyRatingSource(data) {
+  if (!state.ratingSource) {
+    let saved = null;
+    try { saved = localStorage.getItem("ratingSource"); } catch (e) { /* private */ }
+    state.ratingSource = saved || data.rating_source || "elo";
+  }
+  const haveTheirs = data.players.some((p) => p.rating_tt365 != null);
+  if (state.ratingSource === "tt365" && !haveTheirs) state.ratingSource = "elo";
+
+  for (const p of data.players) {
+    if (p.rating_elo === undefined) p.rating_elo = p.rating;   // keep ours
+    p.rating = state.ratingSource === "tt365" && p.rating_tt365 != null
+      ? p.rating_tt365
+      : p.rating_elo;
+  }
+  data.active_scale = state.ratingSource === "tt365"
+    ? (data.prediction_scale_tt365 || data.prediction_scale)
+    : data.prediction_scale;
+}
+
+/** The control for it, shown only once both sets of ratings exist. */
+function renderSourceToggle() {
+  const host = $("#rating-source");
+  if (!host) return;
+  const haveTheirs = state.data.players.some((p) => p.rating_tt365 != null);
+  host.classList.toggle("hidden", !haveTheirs);
+  if (!haveTheirs) return;
+  host.textContent = "";
+  for (const [key, label] of [["elo", "Mine"], ["tt365", "League"]]) {
+    const b = el("button", "chip");
+    b.type = "button";
+    b.textContent = label;
+    b.setAttribute("aria-pressed", String(state.ratingSource === key));
+    b.onclick = () => setRatingSource(key);
+    host.append(b);
+  }
+}
+
+/** Switch between our ratings and the league's, and redraw. */
+function setRatingSource(which) {
+  state.ratingSource = which;
+  try { localStorage.setItem("ratingSource", which); } catch (e) { /* private */ }
+  applyRatingSource(state.data);
+  state.players = new Map(state.data.players.map((p) => [p.id, p]));
+  renderMeta();
+  renderAll();
 }
 
 /** This player's record in one season, or null where they did not play. */

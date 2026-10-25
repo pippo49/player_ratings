@@ -71,6 +71,13 @@ and pushes. The app updates about a minute later:
 The app says so: the header reads "league ratings", and a player's sheet
 notes the date their record runs to.
 
+**Both sets of ratings are kept.** The payload carries ours and the league's,
+and a **Mine / League** switch under the header moves between them — no
+rebuild, and the choice is remembered. Which is better is still open: they
+were a dead heat when measured and our calibration has since been corrected.
+Saving match cards again (`--with-cards`) is what would settle it, since a
+card saved later fills in a result already stored.
+
 To bring records up to date as well, add `--with-cards` and it will list a
 match card per result to save — about forty a week. Worth doing occasionally
 rather than weekly; a card saved later fills in a result already stored,

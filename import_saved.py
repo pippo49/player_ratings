@@ -7,8 +7,9 @@ here contacts the league site.
 
     uv run python import_saved.py ~/Downloads/tt365            # import, publish
     uv run python import_saved.py ~/Downloads/tt365 --dry-run  # report only
-    uv run python import_saved.py --links                      # pages to open
-    uv run python import_saved.py ~/Downloads/tt365 --open     # ...in your browser
+    uv run python import_saved.py --links                      # pages to save
+
+WEEKLY.md has the routine with real paths.
 
 Two passes a week:
 

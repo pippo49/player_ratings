@@ -172,7 +172,9 @@ runs a day to twelve on 16 October, two days before it started.
 **Do not drive a headless browser at it.** That is bot-check circumvention
 rather than asking to be let in; the sandbox refuses it, and header rotation
 would not have worked anyway. The routes are to ask the platform for a feed
-or an allowlist, to cut the request rate, or to run the scrape from a home
+or an allowlist (**parked — the user has the draft and does not want it
+raised again; do not suggest it, append it to an answer, or close with it**),
+to cut the request rate, or to run the scrape from a home
 connection, whose profile is quite different.
 
 `scrape_season` caught the 403 with an `except HTTPError` written for the
@@ -281,3 +283,8 @@ unwelcome — he has twice corrected a too-optimistic framing and prefers the
 blunt version. Flag bugs found along the way rather than quietly fixing them.
 He confirms every identity decision himself and is happy to be asked, but
 does not want repeated reminders about things he has parked.
+
+Take that last point literally. Once he has said something is noted, it is
+off the table — including as a closing line, a caveat, or "worth saying
+plainly". Saying it a second time is a reminder; a third is nagging. This was
+learned by doing it three answers running with the allowlist request.

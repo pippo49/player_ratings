@@ -40,10 +40,13 @@ uv run python import_saved.py "$D" --open
 It lists the cards it needs and writes them as clickable links to
 `C:\Users\ThroX\Downloads\tt365\_cards_to_save.html`, then opens it.
 
-That page has an **Open the next 10** button — press it, allow pop-ups when
-the browser asks, and press it again for each batch. Then in each tab:
-`Ctrl+S` → `Enter` → `Ctrl+W`. Chrome remembers the folder and the
-**HTML Only** setting, so it is three keystrokes a card.
+`--open` opens every card as a tab. Then in each one: `Ctrl+S` → `Enter` →
+`Ctrl+W`. Chrome remembers the folder and the **HTML Only** setting, so it is
+three keystrokes a card.
+
+If they did not open, use the links page — it also has an **Open the next 10**
+button, though the browser may block all but the first until you allow
+pop-ups for it.
 
 Expect 35–40 of them in a normal week.
 

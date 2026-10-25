@@ -31,6 +31,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import webbrowser
 from pathlib import Path
 
@@ -179,6 +180,34 @@ def windows_path(path: Path) -> str | None:
         rest = "\\".join(parts[3:])
         return f"{parts[2].upper()}:\\{rest}"
     return None
+
+
+def open_urls(urls: list[str]) -> int:
+    """Open every URL as a browser tab. Returns how many were launched.
+
+    Not from a page: a click can only open one tab before the pop-up blocker
+    swallows the rest, and on a file:// page "always allow" often will not
+    stick. Asking the OS to open each URL is an ordinary browser launch, which
+    nothing blocks.
+
+    Staggered, because thirty tabs loading at once is the request burst that
+    drew the challenge in the first place.
+    """
+    if under_wsl():
+        # One cmd.exe for the lot: `start` hands each URL to the default
+        # browser. Safe to join with & — these URLs carry none.
+        joined = " & ".join(f'start "" "{u}"' for u in urls)
+        done = subprocess.run(["cmd.exe", "/c", joined],
+                              capture_output=True, text=True, check=False)
+        if done.returncode == 0:
+            return len(urls)
+
+    launched = 0
+    for url in urls:
+        if open_in_browser(url):
+            launched += 1
+            time.sleep(0.3)
+    return launched
 
 
 def under_wsl() -> bool:
@@ -368,12 +397,18 @@ def main() -> int:
             print(f"    {_match_card_url(f['match_id'])}")
 
         page = write_link_page(args.folder, missing)
-        print(f"\n  All {len(missing)} as clickable links: {page}")
         windows = windows_path(page)
-        if windows:
-            print(f"  From Windows: {windows}")
-        if args.open and not open_in_browser(page.as_uri(), windows):
-            print("  (could not open it from here — open that file yourself)")
+        print(f"\n  All {len(missing)} as clickable links: {windows or page}")
+
+        if args.open:
+            urls = [_match_card_url(f["match_id"]) for _, f in missing]
+            launched = open_urls(urls)
+            if launched:
+                print(f"  Opened {launched} tab(s). In each: Ctrl+S, "
+                      'save as "Webpage, HTML Only", then Ctrl+W.')
+            else:
+                print("  (could not open them from here — use the links page "
+                      "above)")
 
     if not (built or missing):
         stamp("Nothing new on those pages — the app is already up to date.")

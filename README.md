@@ -117,6 +117,40 @@ If the league site challenges your connection too, `publish.py` says so and
 changes nothing. That is the answer to whether the datacenter IP was the
 trigger, and it is worth knowing either way.
 
+## Weekly update from saved pages
+
+Cloudflare challenges scripted requests from everywhere now, home included,
+so `publish.py` cannot fetch. Until the allowlist request is answered, the
+pages are saved by hand in a normal browser and `import_saved.py` reads them.
+It never contacts the league.
+
+**Save only the divisions you follow.** The work is roughly five pages per
+division per week, so this is the difference between an afternoon and ten
+minutes. Ratings in the divisions you skip stop moving until you import them;
+nothing breaks, and importing them later catches up.
+
+```bash
+cd ~/player_ratings && git pull
+D=~/tt365 && rm -rf "$D" && mkdir -p "$D"
+
+# 1. the fixtures pages — Ctrl+S each into $D
+uv run python import_saved.py "$D" --divisions 3,4,7 --open
+
+# 2. it now lists the match cards it needs; --open puts them in tabs, save each
+uv run python import_saved.py "$D" --divisions 3,4,7 --open
+
+# 3. publish
+uv run python import_saved.py "$D" --divisions 3,4,7
+```
+
+Use `--dry-run` on the first pass to see what it found without writing
+anything. `--divisions` takes numbers, with `0` or `prem` for the Premier;
+leave it off for the whole league.
+
+Wait for each page to finish loading before saving it: a page saved during
+the "Just a moment" check contains the check rather than the results, and the
+importer says so by name rather than silently skipping it.
+
 ## On a Raspberry Pi, unattended
 
 A Pi on the home connection is the right home for this: always on, and the

@@ -68,19 +68,43 @@ def read_folder(folder: Path, season: str) -> tuple[list[dict], list[dict], list
         if found:
             fixtures.extend(found)
         elif "Just a moment" in html:
-            unknown.append(f"{path.name} (saved before the browser check finished)")
+            unknown.append(
+                f"{path.name}: saved while the browser check was still "
+                "running — open it again, wait for the results, then re-save")
         else:
-            unknown.append(path.name)
+            unknown.append(f"{path.name}: not a fixtures page or a match card")
     return fixtures, cards, unknown
 
 
-def fixtures_links(season: str) -> list[str]:
-    return [_fixtures_url(name, season) for name in (PREMIER_SLUGS[0], *DIVISION_NAMES)]
+# Premier is division 0, as everywhere else in the project.
+SLUG_FOR = {0: PREMIER_SLUGS[0], **{i: n for i, n in enumerate(DIVISION_NAMES, 1)}}
 
 
-def print_links(season: str, open_them: bool = False) -> None:
+def parse_divisions(text: str | None) -> set[int] | None:
+    """"3,4,7" -> {3, 4, 7}. None means every division."""
+    if not text:
+        return None
+    wanted = set()
+    for part in text.split(","):
+        part = part.strip().lower()
+        if part in ("prem", "premier"):
+            wanted.add(0)
+        elif part.isdigit() and int(part) in SLUG_FOR:
+            wanted.add(int(part))
+        else:
+            raise SystemExit(f"{part!r} is not a division — use 0 (or prem) to 7")
+    return wanted
+
+
+def fixtures_links(season: str, only: set[int] | None = None) -> list[str]:
+    return [_fixtures_url(SLUG_FOR[d], season)
+            for d in sorted(SLUG_FOR) if only is None or d in only]
+
+
+def print_links(season: str, open_them: bool = False,
+                only: set[int] | None = None) -> None:
     print("Fixtures pages to save (the Premier slug may differ):")
-    show(fixtures_links(season), open_them)
+    show(fixtures_links(season, only), open_them)
 
 
 def show(urls: list[str], open_them: bool) -> None:
@@ -97,6 +121,13 @@ def main() -> int:
     ap.add_argument("folder", nargs="?", type=Path,
                     help="folder holding the saved pages")
     ap.add_argument("--season", default=CURRENT_SEASON)
+    ap.add_argument("--divisions", metavar="3,4,7",
+                    help="only these divisions (0 or prem for Premier). The "
+                         "weekly saving is roughly five pages per division, "
+                         "so narrowing it to the ones you follow is the "
+                         "difference between an afternoon and ten minutes. "
+                         "Ratings in the divisions you skip simply stop "
+                         "moving until you import them.")
     ap.add_argument("--links", action="store_true",
                     help="list the fixtures pages to save, and stop")
     ap.add_argument("--open", action="store_true",
@@ -105,8 +136,9 @@ def main() -> int:
                     help="report what would be imported, change nothing")
     args = ap.parse_args()
 
+    only = parse_divisions(args.divisions)
     if args.links or args.folder is None:
-        print_links(args.season, args.open)
+        print_links(args.season, args.open, only)
         return 0
     if not args.folder.is_dir():
         print(f"{args.folder} is not a folder.")
@@ -119,11 +151,11 @@ def main() -> int:
 
     fixtures, cards, unknown = read_folder(args.folder, season)
     for name in unknown:
-        print(f"  ignored {name}: not a fixtures page or a match card")
+        print(f"  ignored {name}")
     print(f"Read {len(fixtures)} played fixture(s) and {len(cards)} match card(s).")
     if not fixtures:
         print("No fixtures pages in that folder — save those first.\n")
-        print_links(season, args.open)
+        print_links(season, args.open, only)
         return 1
 
     new = {}
@@ -132,16 +164,19 @@ def main() -> int:
             new[pair(f["home"], f["away"])] = f
     cards_by_pair = {pair(c["home"], c["away"]): c for c in cards}
 
-    built, missing, problems = [], [], []
+    built, missing, problems, skipped = [], [], [], 0
     for key, fixture in new.items():
-        card = cards_by_pair.get(key)
-        if card is None:
-            missing.append(fixture)
-            continue
         division = divisions.get(key[0], divisions.get(key[1]))
         if division is None:
             problems.append(f"{fixture['home']} v {fixture['away']}: team not in "
                             f"teams_{season}.json, so its division is unknown")
+            continue
+        if only is not None and division not in only:
+            skipped += 1
+            continue
+        card = cards_by_pair.get(key)
+        if card is None:
+            missing.append(fixture)
             continue
         match = build_match(fixture, card, division=division, season=season)
         if match is None or not match.played:
@@ -151,6 +186,8 @@ def main() -> int:
 
     for line in problems:
         print(f"  skipped {line}")
+    if skipped:
+        print(f"  skipped {skipped} result(s) outside --divisions {args.divisions}")
 
     if missing:
         print(f"\n{len(missing)} new result(s) still need their match card saved:")
@@ -158,7 +195,7 @@ def main() -> int:
             print(f"  {f['date']}  {f['home']} v {f['away']}")
         show([_match_card_url(f["match_id"]) for f in missing], args.open)
 
-    if not new:
+    if not (built or missing):
         stamp("Nothing new on those pages — the app is already up to date.")
         return 0
 

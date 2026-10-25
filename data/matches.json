@@ -49420,5 +49420,581 @@
       ],
       "total_score": 1
     }
+  },
+  {
+    "match_id": "476047",
+    "season": "2026-27",
+    "division": 0,
+    "date": "2026-10-23",
+    "home": {
+      "name": "Table Tennis Fight Club 1",
+      "players": [
+        {
+          "name": "Ugur Saglik",
+          "player_id": "ugur saglik",
+          "games_won": 2
+        },
+        {
+          "name": "Borui Chen",
+          "player_id": "borui chen",
+          "games_won": 2
+        },
+        {
+          "name": "Hui Zeng",
+          "player_id": "hui zeng",
+          "games_won": 1
+        }
+      ],
+      "total_score": 6
+    },
+    "away": {
+      "name": "St Katharines Trust 2",
+      "players": [
+        {
+          "name": "Azeez Jamiu",
+          "player_id": "azeez jamiu",
+          "games_won": 2
+        },
+        {
+          "name": "Daniel Howard",
+          "player_id": "daniel howard",
+          "games_won": 2
+        },
+        {
+          "name": "Nana Ansah",
+          "player_id": "nana ansah",
+          "games_won": 0
+        }
+      ],
+      "total_score": 4
+    }
+  },
+  {
+    "match_id": "475842",
+    "season": "2026-27",
+    "division": 2,
+    "date": "2026-10-22",
+    "home": {
+      "name": "Exiles 1",
+      "players": [
+        {
+          "name": "John Bispham",
+          "player_id": "john bispham",
+          "games_won": 3
+        },
+        {
+          "name": "Peter Schmidt",
+          "player_id": "peter schmidt",
+          "games_won": 2
+        },
+        {
+          "name": "Michael Loveder",
+          "player_id": "michael loveder",
+          "games_won": 2
+        }
+      ],
+      "total_score": 8
+    },
+    "away": {
+      "name": "Exiles 2",
+      "players": [
+        {
+          "name": "Leslie Samuels",
+          "player_id": "leslie samuels",
+          "games_won": 0
+        },
+        {
+          "name": "Andrew Muller",
+          "player_id": "andrew muller",
+          "games_won": 0
+        },
+        {
+          "name": "John Crawford",
+          "player_id": "john crawford",
+          "games_won": 2
+        }
+      ],
+      "total_score": 2
+    }
+  },
+  {
+    "match_id": "476171",
+    "season": "2026-27",
+    "division": 2,
+    "date": "2026-10-23",
+    "home": {
+      "name": "Morpeth 8",
+      "players": [
+        {
+          "name": "Elias Momann",
+          "player_id": "elias momann",
+          "games_won": 1
+        },
+        {
+          "name": "Sihui Xiong",
+          "player_id": "sihui xiong",
+          "games_won": 1
+        },
+        {
+          "name": "Christopher Alexander",
+          "player_id": "christopher alexander",
+          "games_won": 1
+        }
+      ],
+      "total_score": 4
+    },
+    "away": {
+      "name": "Irving 1",
+      "players": [
+        {
+          "name": "Alfredo Bianco",
+          "player_id": "alfredo bianco",
+          "games_won": 1
+        },
+        {
+          "name": "Will Lines",
+          "player_id": "will lines",
+          "games_won": 2
+        },
+        {
+          "name": "Gary Lin",
+          "player_id": "gary lin",
+          "games_won": 3
+        }
+      ],
+      "total_score": 6
+    }
+  },
+  {
+    "match_id": "476041",
+    "season": "2026-27",
+    "division": 3,
+    "date": "2026-10-23",
+    "home": {
+      "name": "Fusion 6 Jr",
+      "players": [
+        {
+          "name": "Nicolas Da Costa",
+          "player_id": "nicolas da costa",
+          "games_won": 3
+        },
+        {
+          "name": "Calvin Yin",
+          "player_id": "calvin yin",
+          "games_won": 2
+        },
+        {
+          "name": "Lixin Loh",
+          "player_id": "lixin loh",
+          "games_won": 3
+        }
+      ],
+      "total_score": 9
+    },
+    "away": {
+      "name": "Moberly 3",
+      "players": [
+        {
+          "name": "Bernardo Falcon",
+          "player_id": "bernardo falcon",
+          "games_won": 1
+        },
+        {
+          "name": "John Ferguson",
+          "player_id": "john ferguson",
+          "games_won": 0
+        },
+        {
+          "name": "Ahmed Ashraf",
+          "player_id": "ahmed ashraf",
+          "games_won": 0
+        }
+      ],
+      "total_score": 1
+    }
+  },
+  {
+    "match_id": "475840",
+    "season": "2026-27",
+    "division": 4,
+    "date": "2026-10-22",
+    "home": {
+      "name": "Morpeth 9",
+      "players": [
+        {
+          "name": "Yifan Xie",
+          "player_id": "yifan xie",
+          "games_won": 0
+        },
+        {
+          "name": "Yang He",
+          "player_id": "yang he",
+          "games_won": 3
+        },
+        {
+          "name": "Chi Ying Luk",
+          "player_id": "chi ying luk",
+          "games_won": 1
+        }
+      ],
+      "total_score": 5
+    },
+    "away": {
+      "name": "Morpeth 10",
+      "players": [
+        {
+          "name": "Avery Peng",
+          "player_id": "avery peng",
+          "games_won": 2
+        },
+        {
+          "name": "Waihang Chan",
+          "player_id": "waihang chan",
+          "games_won": 2
+        },
+        {
+          "name": "Luca Minudel",
+          "player_id": "luca minudel",
+          "games_won": 1
+        }
+      ],
+      "total_score": 5
+    }
+  },
+  {
+    "match_id": "476163",
+    "season": "2026-27",
+    "division": 4,
+    "date": "2026-10-23",
+    "home": {
+      "name": "St Katharines Trust 5",
+      "players": [
+        {
+          "name": "Arturas Rybakas",
+          "player_id": "arturas rybakas",
+          "games_won": 3
+        },
+        {
+          "name": "Nikolay Karlov",
+          "player_id": "nikolay karlov",
+          "games_won": 3
+        },
+        {
+          "name": "Nameer Jasim",
+          "player_id": "nameer jasim",
+          "games_won": 3
+        }
+      ],
+      "total_score": 9
+    },
+    "away": {
+      "name": "Apex 4",
+      "players": [
+        {
+          "name": "Debbie O'Neill",
+          "player_id": "debbie o neill",
+          "games_won": 0
+        },
+        {
+          "name": "Philip Parsons",
+          "player_id": "philip parsons",
+          "games_won": 0
+        },
+        {
+          "name": "Alina Binte Rashad",
+          "player_id": "alina binte rashad",
+          "games_won": 0
+        }
+      ],
+      "total_score": 1
+    }
+  },
+  {
+    "match_id": "475850",
+    "season": "2026-27",
+    "division": 5,
+    "date": "2026-10-22",
+    "home": {
+      "name": "Fulham Brunswick 4 Jr",
+      "players": [
+        {
+          "name": "Joel Martins Alexandre",
+          "player_id": "joel martins alexandre",
+          "games_won": 1
+        },
+        {
+          "name": "Evie Samuels",
+          "player_id": "evie samuels",
+          "games_won": 2
+        },
+        {
+          "name": "Ray Nieminen",
+          "player_id": "ray nieminen",
+          "games_won": 2
+        }
+      ],
+      "total_score": 6
+    },
+    "away": {
+      "name": "AA Academy 4",
+      "players": [
+        {
+          "name": "Gouda Abdelrazek",
+          "player_id": "gouda abdelrazek",
+          "games_won": 3
+        },
+        {
+          "name": "Pablo Lopez Robles",
+          "player_id": "pablo lopez robles",
+          "games_won": 1
+        },
+        {
+          "name": "Tom Edge",
+          "player_id": "tom edge",
+          "games_won": 0
+        }
+      ],
+      "total_score": 4
+    }
+  },
+  {
+    "match_id": "476173",
+    "season": "2026-27",
+    "division": 5,
+    "date": "2026-10-23",
+    "home": {
+      "name": "Fusion 9 Jr",
+      "players": [
+        {
+          "name": "Alfred Morley",
+          "player_id": "alfred morley",
+          "games_won": 2
+        },
+        {
+          "name": "Gabriel Balcerek",
+          "player_id": "gabriel balcerek",
+          "games_won": 2
+        },
+        {
+          "name": "Luca Murphy-Gonzalez",
+          "player_id": "luca murphy gonzalez",
+          "games_won": 2
+        }
+      ],
+      "total_score": 6
+    },
+    "away": {
+      "name": "Table Tennis Fight Club 3",
+      "players": [
+        {
+          "name": "Utkarsh Sharma",
+          "player_id": "utkarsh sharma",
+          "games_won": 0
+        },
+        {
+          "name": "Scott Zhang",
+          "player_id": "scott zhang",
+          "games_won": 3
+        },
+        {
+          "name": "Mei Kubota",
+          "player_id": "mei kubota",
+          "games_won": 0
+        }
+      ],
+      "total_score": 4
+    }
+  },
+  {
+    "match_id": "476001",
+    "season": "2026-27",
+    "division": 5,
+    "date": "2026-10-23",
+    "home": {
+      "name": "TJ TTC 2",
+      "players": [
+        {
+          "name": "Henry Ulzen-Plange",
+          "player_id": "henry ulzen plange",
+          "games_won": 3
+        },
+        {
+          "name": "Eneffiok Anderson",
+          "player_id": "eneffiok anderson",
+          "games_won": 3
+        },
+        {
+          "name": "Oluwagbenga Owolabi",
+          "player_id": "oluwagbenga owolabi",
+          "games_won": 2
+        }
+      ],
+      "total_score": 9
+    },
+    "away": {
+      "name": "Fulham Brunswick 3",
+      "players": [
+        {
+          "name": "Luigi Bianchi",
+          "player_id": "luigi bianchi",
+          "games_won": 0
+        },
+        {
+          "name": "Jean-Philippe Wilsch",
+          "player_id": "jean philippe wilsch",
+          "games_won": 1
+        },
+        {
+          "name": "susie valenzuela",
+          "player_id": "susie valenzuela",
+          "games_won": 0
+        }
+      ],
+      "total_score": 1
+    }
+  },
+  {
+    "match_id": "476169",
+    "season": "2026-27",
+    "division": 5,
+    "date": "2026-10-23",
+    "home": {
+      "name": "Clissold 4 Jr",
+      "players": [
+        {
+          "name": "Gene Valentine Taylor",
+          "player_id": "gene valentine taylor",
+          "games_won": 1
+        },
+        {
+          "name": "Daniel Cilibanov",
+          "player_id": "daniel cilibanov",
+          "games_won": 1
+        },
+        {
+          "name": "Daniel Lopez",
+          "player_id": "daniel lopez",
+          "games_won": 0
+        }
+      ],
+      "total_score": 2
+    },
+    "away": {
+      "name": "Morpeth 12",
+      "players": [
+        {
+          "name": "Tunde Alabi",
+          "player_id": "tunde alabi",
+          "games_won": 3
+        },
+        {
+          "name": "Kate Ha",
+          "player_id": "kate ha",
+          "games_won": 3
+        },
+        {
+          "name": "Larry Ren",
+          "player_id": "larry ren",
+          "games_won": 1
+        }
+      ],
+      "total_score": 8
+    }
+  },
+  {
+    "match_id": "475542",
+    "season": "2026-27",
+    "division": 6,
+    "date": "2026-10-21",
+    "home": {
+      "name": "Fulham Brunswick 5",
+      "players": [
+        {
+          "name": "Aaron Bryden",
+          "player_id": "aaron bryden",
+          "games_won": 0
+        },
+        {
+          "name": "Oscar Sterling",
+          "player_id": "oscar sterling",
+          "games_won": 3
+        },
+        {
+          "name": "Philip Sangchin",
+          "player_id": "philip sangchin",
+          "games_won": 1
+        }
+      ],
+      "total_score": 4
+    },
+    "away": {
+      "name": "St Katharines Trust 7",
+      "players": [
+        {
+          "name": "Ugur Yukseloglu",
+          "player_id": "ugur yukseloglu",
+          "games_won": 1
+        },
+        {
+          "name": "Senthoran Perananthan",
+          "player_id": "senthoran perananthan",
+          "games_won": 2
+        },
+        {
+          "name": "Ceri Jones",
+          "player_id": "ceri jones",
+          "games_won": 2
+        }
+      ],
+      "total_score": 6
+    }
+  },
+  {
+    "match_id": "476491",
+    "season": "2026-27",
+    "division": 7,
+    "date": "2026-10-22",
+    "home": {
+      "name": "Fulham Brunswick 7 Jr",
+      "players": [
+        {
+          "name": "Aleksei Vishniakov",
+          "player_id": "aleksei vishniakov",
+          "games_won": 2
+        },
+        {
+          "name": "Gabriel Faillat",
+          "player_id": "gabriel faillat",
+          "games_won": 2
+        },
+        {
+          "name": "Gael Lelong",
+          "player_id": "gael lelong",
+          "games_won": 0
+        }
+      ],
+      "total_score": 5
+    },
+    "away": {
+      "name": "Highbury 7",
+      "players": [
+        {
+          "name": "Taline Das",
+          "player_id": "taline das",
+          "games_won": 1
+        },
+        {
+          "name": "Kaushik Das",
+          "player_id": "kaushik das",
+          "games_won": 2
+        },
+        {
+          "name": "Matteo Scubla",
+          "player_id": "matteo scubla",
+          "games_won": 2
+        }
+      ],
+      "total_score": 5
+    }
   }
 ]

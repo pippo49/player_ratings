@@ -53,11 +53,35 @@ def pair(home: str, away: str) -> tuple[str, str]:
     return normalise(home), normalise(away)
 
 
+# What a browser writes when you pick the wrong "Save as" option. MHTML is a
+# MIME container, not HTML, so nothing here can read it.
+SAVED_WRONG = {
+    ".mhtml": 'saved as "Webpage, Single File" — re-save as "Webpage, '
+              'Complete" or "HTML Only"',
+    ".mht": 'saved as "Webpage, Single File" — re-save as "Webpage, '
+            'Complete" or "HTML Only"',
+    ".pdf": "printed to PDF rather than saved — use Ctrl+S, not Ctrl+P",
+    ".txt": "saved as plain text, which loses the links the importer needs",
+}
+
+
 def read_folder(folder: Path, season: str) -> tuple[list[dict], list[dict], list[str]]:
-    """(fixtures, cards, unrecognised file names) from every saved page."""
+    """(fixtures, cards, complaints) from every saved page.
+
+    A folder of files it cannot read must not look like an empty one: the
+    complaints name every file that was passed over and why, so "found
+    nothing" always comes with a reason.
+    """
     fixtures, cards, unknown = [], [], []
     for path in sorted(folder.iterdir()):
-        if path.suffix.lower() not in (".html", ".htm"):
+        if path.is_dir():
+            continue  # "Webpage, Complete" leaves a _files folder beside it
+        suffix = path.suffix.lower()
+        if suffix in SAVED_WRONG:
+            unknown.append(f"{path.name}: {SAVED_WRONG[suffix]}")
+            continue
+        if suffix not in (".html", ".htm"):
+            unknown.append(f"{path.name}: not an HTML file")
             continue
         html = path.read_text(errors="replace")
         card = parse_match_card(html)
@@ -167,7 +191,11 @@ def main() -> int:
         print(f"  ignored {name}")
     print(f"Read {len(fixtures)} played fixture(s) and {len(cards)} match card(s).")
     if not fixtures:
-        print("No fixtures pages in that folder — save those first.\n")
+        if not any(args.folder.iterdir()):
+            print(f"{args.folder} is empty — save the fixtures page into it "
+                  "first.\n")
+        else:
+            print("Nothing in that folder could be read as a fixtures page.\n")
         print_links(season, args.open, only)
         return 1
 

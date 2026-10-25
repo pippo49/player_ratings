@@ -16,6 +16,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 
 from cache import load_matches
+from parser_v2 import parse_fixtures, parse_match_card
 from elo import calculate_ratings
 from player_identity import identity, load_aliases
 
@@ -35,10 +36,10 @@ def tables(html: str) -> list[list[list[str]]]:
     return out
 
 
-def name_column(rows: list[list[str]], known: set[str], aliases) -> int | None:
-    """Which column holds player names, judged by how many we recognise."""
+def name_column(rows: list[list[str]], known: set[str], aliases) -> tuple[int, int]:
+    """(column holding player names, how many we recognise in it)."""
     width = max(len(r) for r in rows)
-    best, best_hits = None, 0
+    best, best_hits = 0, 0
     for col in range(width):
         hits = sum(
             1 for r in rows
@@ -46,8 +47,7 @@ def name_column(rows: list[list[str]], known: set[str], aliases) -> int | None:
         )
         if hits > best_hits:
             best, best_hits = col, hits
-    # A column of names should match most of the table, not a stray few.
-    return best if best_hits >= max(5, len(rows) // 4) else None
+    return best, best_hits
 
 
 def spearman(pairs: list[tuple[int, int]]) -> float:
@@ -80,27 +80,47 @@ def main(target: str) -> int:
     ours = sorted(ratings.values(), key=lambda p: -p.rating)
     our_rank = {pr.player_id: i + 1 for i, pr in enumerate(ours)}
 
+    # A match card is ten rows of player names and would pass any "does this
+    # look like a list of players" test, so the pages we can already identify
+    # are set aside before looking at all. Then the best candidate wins, not
+    # the first one found: a folder holds one ranking page and forty cards.
+    best = None
+    skipped = 0
     for page in pages:
-        for rows in tables(page.read_text(errors="replace")):
-            col = name_column(rows, known, aliases)
-            if col is None:
+        html = page.read_text(errors="replace")
+        if parse_match_card(html) is not None or parse_fixtures(html):
+            skipped += 1
+            continue
+        for rows in tables(html):
+            col, hits = name_column(rows, known, aliases)
+            # A ranking lists most of a league, not one team's line-up.
+            if hits < 20 or hits < len(rows) // 4:
                 continue
-            print(f"Found a ranking table in {page.name}: "
-                  f"{len(rows)} rows, names in column {col}")
-            print(f"  header: {rows[0]}")
-            print(f"  sample: {rows[1] if len(rows) > 1 else '-'}\n")
-            return report(rows, col, known, aliases, our_rank, ratings)
+            if best is None or hits > best[0]:
+                best = (hits, page, rows, col)
 
-    print("No table of recognisable player names found. What is there:\n")
-    for page in pages:
-        found = tables(page.read_text(errors="replace"))
-        if found:
-            print(f"{page.name}: {len(found)} table(s)")
+    if skipped:
+        print(f"Set aside {skipped} fixtures page(s) and match card(s).")
+    if best is None:
+        print("No ranking table found. What the other pages hold:\n")
+        for page in pages:
+            html = page.read_text(errors="replace")
+            if parse_match_card(html) is not None or parse_fixtures(html):
+                continue
+            found = tables(html)
+            print(f"{page.name}: {len(found)} table(s) over 3 rows")
             for rows in found[:3]:
-                print(f"  {len(rows)} rows, first: {rows[0][:6]}")
-                if len(rows) > 1:
-                    print(f"             then:  {rows[1][:6]}")
-    return 1
+                col, hits = name_column(rows, known, aliases)
+                print(f"  {len(rows)} rows, {hits} known players, "
+                      f"first: {rows[0][:6]}")
+        return 1
+
+    hits, page, rows, col = best
+    print(f"Ranking table in {page.name}:")
+    print(f"  {len(rows)} rows, {hits} known players, names in column {col}")
+    print(f"  header: {rows[0]}")
+    print(f"  sample: {rows[1] if len(rows) > 1 else '-'}\n")
+    return report(rows, col, known, aliases, our_rank, ratings)
 
 
 def report(rows, col, known, aliases, our_rank, ratings) -> int:
@@ -137,8 +157,11 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
                   f"  {'D' + str(pr.division)}")
         print()
 
-    show("Rated far higher by them than by us:", gaps[:8])
-    show("Rated far higher by us than by them:", list(reversed(gaps[-8:])))
+    take = min(8, len(gaps) // 2)
+    if take:
+        show("Rated far higher by them than by us:", gaps[:take])
+        show("Rated far higher by us than by them:",
+             list(reversed(gaps[-take:])))
     return 0
 
 

@@ -312,6 +312,25 @@ def main() -> int:
               "    https://www.tabletennis365.com/CentralLondon/Ranking\n"
               "    https://www.tabletennis365.com/CentralLondon/Ranking?p=2")
 
+    def publish_ratings_only(otherwise: int) -> int:
+        """Publish the ranking when no result came with it.
+
+        Ratings move between results — that is the point of taking them from
+        a published ranking — so a run that finds no new result still has
+        something to publish. Three separate places used to decide this
+        independently and two of them got it wrong, hence one helper.
+        """
+        if not ranking:
+            stamp("The app is already up to date.")
+            return otherwise
+        stamp("Publishing the ranking: ratings have moved even though no new "
+              "result has.")
+        if args.dry_run:
+            print("--dry-run: nothing written.")
+            return 0
+        export()
+        return commit_and_push("Update ratings from the league's ranking", 0)
+
     fixtures, cards, unknown = read_folder(args.folder, season)
     for name in unknown:
         print(f"  ignored {name}")
@@ -323,18 +342,7 @@ def main() -> int:
         else:
             print("Nothing in that folder could be read as a fixtures page.\n")
         print_links(season, args.open, only)
-        if not ranking:
-            return 1
-        # A ranking with no fixtures is still worth publishing: the ratings
-        # have moved even though no new result has. Storing it and stopping
-        # here would leave it read but never used.
-        print("\nPublishing the ranking anyway — ratings have changed even "
-              "though no new result has.")
-        if args.dry_run:
-            print("--dry-run: nothing written.")
-            return 0
-        export()
-        return commit_and_push("Update ratings from the league's ranking", 0)
+        return publish_ratings_only(1)
 
     new = {}
     for f in fixtures:
@@ -392,13 +400,13 @@ def main() -> int:
               "Ctrl+S,\n  save as \"Webpage, HTML Only\", Ctrl+W.")
 
     if not (built or missing):
-        stamp("Nothing new on those pages — the app is already up to date.")
-        return 0
+        stamp("No new results on those pages.")
+        return publish_ratings_only(0)
 
     matches, added = merge_matches(cached, built)
     if not added:
-        print("\nNothing to publish yet.")
-        return 1 if missing else 0
+        stamp("No new results to add.")
+        return publish_ratings_only(1 if missing else 0)
 
     stamp(f"{added} new result(s) ready:")
     stamp("\n".join(describe(built)))

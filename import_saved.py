@@ -323,7 +323,18 @@ def main() -> int:
         else:
             print("Nothing in that folder could be read as a fixtures page.\n")
         print_links(season, args.open, only)
-        return 1
+        if not ranking:
+            return 1
+        # A ranking with no fixtures is still worth publishing: the ratings
+        # have moved even though no new result has. Storing it and stopping
+        # here would leave it read but never used.
+        print("\nPublishing the ranking anyway — ratings have changed even "
+              "though no new result has.")
+        if args.dry_run:
+            print("--dry-run: nothing written.")
+            return 0
+        export()
+        return commit_and_push("Update ratings from the league's ranking", 0)
 
     new = {}
     for f in fixtures:

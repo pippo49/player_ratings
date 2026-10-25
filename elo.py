@@ -178,14 +178,23 @@ class PlayerRating:
 # implies. This is the constant for projections and win probabilities, and
 # using 400 there is what made them sit too close to even.
 #
-# Measured two ways and taken as the middle: predicting a player's wins from
-# three gives 95, predicting a whole scoreline gives 150, and the error curve
-# is flat between them (0.691 vs 0.699; 1.192 vs 1.172). The exact figure is
-# soft and should be re-fitted as results accumulate — `fit_scale.py` does
-# both measurements. That 400 is far too high for this league is not soft:
-# it costs 0.10 of a win per player and 0.57 of a singles per scoreline.
+# Fitted, not assumed. Bucket this season's results by the rating gap that
+# preceded them and the observed win rates track 250 across the whole range:
+# .10 against .11 at a 225-point deficit, .44/.44 at level, .90/.89 at a
+# 225-point lead. A Brier score agrees at 265.
+#
+# It was briefly set to 120, from minimising mean absolute error on wins out
+# of three. That is not a proper scoring rule: if the true chance is 0.7,
+# predicting certainty scores 0.30 and predicting 0.7 scores 0.42, so the
+# metric pays for overconfidence and the fit chased it. The error it reported
+# did fall; the probabilities it produced were far worse, giving a 6/6
+# Division 7 player a 1% chance against a median Division 4 one.
+#
+# A maximum-likelihood fit says 190, but it assumes a player's three singles
+# are independent and they are not — same player, same night — so it is
+# biased towards overconfidence too. The bucketed curve assumes nothing.
 SCALE = 400.0
-PREDICTION_SCALE = 120.0
+PREDICTION_SCALE = 250.0
 
 
 def win_probability(rating: float, opponent_rating: float) -> float:

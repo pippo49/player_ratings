@@ -246,6 +246,22 @@ These catch whole classes of error, and did:
 - A rating change must only ever touch players who played in the season
   being changed.
 
+## Fitting a probability needs a proper scoring rule
+
+The forecasting constant was briefly set to 120 by minimising mean absolute
+error on wins out of three. MAE is not a proper scoring rule: if the true
+chance is 0.7, predicting certainty scores 0.30 and predicting 0.7 scores
+0.42, so it pays for overconfidence and the fit chased it. Reported error
+fell; the probabilities got much worse — a 6/6 Division 7 player was given a
+1% chance against a median Division 4 one.
+
+Bucketing results by the rating gap that preceded them assumes nothing and
+settles it: the observed win rates track **250** across the whole range, and
+a Brier score agrees at 265. `fit_scale.py` now scores both ways and no
+longer offers MAE. Maximum likelihood says 190, but it assumes a player's
+three singles are independent — same player, same night — so it leans the
+same way; prefer the buckets.
+
 ## The ladder and the scale must agree
 
 `SCALE` (400) updates ratings; `PREDICTION_SCALE` (120) converts a rating gap
@@ -253,20 +269,21 @@ into a chance of winning. Splitting them fixed forecasts *within* a division —
 scoreline error 1.76 to 1.17 — and broke them *between* divisions, because the
 seed ladder is still 100 points per division.
 
-At 400 that ladder meant one division up was a 64% matchup; at 120 it means
-87%, and D7 to D4 reads as 99.7%. The model now gives a 6/6 Division 7 player
-a 1% chance against a median Division 4 player, which is absurd.
+Measured properly, the ladder is **about right and should be left alone**.
+Sweeping the spacing from 100 down to 10, prediction error is best at 100 and
+degrades all the way down; flattening it with a power curve halves the
+far-gap bias for almost no cost but does not change the headline numbers.
+Narrowing it, which looked obvious, would have wrecked the same-division and
+one-apart cases that are 93% of the evidence.
 
-The evidence that exists: 13 appearances in a higher division than the one
-registered, winning 0.77 singles of 3 against a predicted 0.50 — and for
-three divisions up, 1.00 actual against 0.03 predicted. Far too thin to fit a
-ladder from, but enough to say the current one is far too steep.
-
-**So cross-division numbers are not to be trusted, and call-up projections are
-the place that bites.** Fixing it means re-expressing the ladder in the new
-scale's units — roughly 30 points per division preserves the odds the old
-ladder implied — which changes every seed and so every rating, and wants
-measuring rather than assuming.
+What remains, at scale 250 and a 100-point ladder, is a residual bias that
+grows with distance: same division and one apart sit within 0.02 of
+unbiased; two apart is about 0.12; three apart about 0.22, on 13-19 pairings.
+So the ladder is slightly too steep across large gaps and **cross-division
+numbers stay the least trustworthy part of the model** — call-up projections
+being where that bites. Measured call-ups win about 0.77 singles of 3
+playing up, against a model that now says 0.3-0.5. `check_ladder.py` and the
+by-gap breakdown re-measure both as results accumulate.
 
 ## Open items
 

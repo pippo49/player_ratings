@@ -124,13 +124,18 @@ def main(target: str) -> int:
 
 
 def report(rows, col, known, aliases, our_rank, ratings) -> int:
-    theirs = []
-    for row in rows:
+    theirs, unmatched = [], 0
+    for row in rows[1:]:          # skip the header
         if len(row) <= col:
             continue
-        pid = identity(row[col], aliases)
+        cell = row[col].strip()
+        if not cell:
+            continue
+        pid = identity(cell, aliases)
         if pid in known:
             theirs.append(pid)
+        elif " " in cell:         # looks like a name, but not one we know
+            unmatched += 1
 
     seen, order = set(), []
     for pid in theirs:          # keep page order, drop repeats
@@ -139,9 +144,25 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
             order.append(pid)
 
     pairs = [(i + 1, our_rank[pid]) for i, pid in enumerate(order)]
-    rho = spearman(pairs)
-    print(f"{len(order)} ranked players matched to ours.")
-    print(f"Rank correlation (Spearman): {rho:.3f}\n")
+    print(f"{len(order)} ranked players matched to ours; "
+          f"{unmatched} of theirs not recognised.")
+    print(f"Rank correlation, all matched players: {spearman(pairs):.3f}")
+
+    # Where the two disagree, the question is whether it is substance or
+    # small samples: our seeding puts a new player at their division's level
+    # and holds them there until results say otherwise, which looks stubborn
+    # over three matches and sensible over thirty.
+    settled = [(i + 1, our_rank[pid]) for i, pid in enumerate(order)
+               if ratings[pid].singles_played >= 15]
+    thin = [(i + 1, our_rank[pid]) for i, pid in enumerate(order)
+            if ratings[pid].singles_played < 15]
+    if settled:
+        print(f"  ...15+ singles played ({len(settled)}): "
+              f"{spearman(settled):.3f}")
+    if thin:
+        print(f"  ...fewer than 15 ({len(thin)}):      "
+              f"{spearman(thin):.3f}")
+    print()
 
     gaps = sorted(
         ((their - our_rank[pid], their, our_rank[pid], pid)
@@ -162,6 +183,15 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
         show("Rated far higher by them than by us:", gaps[:take])
         show("Rated far higher by us than by them:",
              list(reversed(gaps[-take:])))
+
+    # The same, among players neither system is guessing about. These are
+    # the disagreements worth defending; the rest are sample size.
+    firm = [g for g in gaps if ratings[g[3]].singles_played >= 15]
+    take = min(6, len(firm) // 2)
+    if take:
+        print("Among players with 15+ singles — the real disagreements\n")
+        show("  Higher by them:", firm[:take])
+        show("  Higher by us:", list(reversed(firm[-take:])))
     return 0
 
 

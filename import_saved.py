@@ -293,12 +293,24 @@ def main() -> int:
     divisions = team_divisions(season)
 
     ranking = parse_ranking(args.folder, set(divisions) | set(cached_ids(cached)))
+    stored = Path(str(RANKING_FILE).format(season=season))
     if ranking:
-        path = Path(str(RANKING_FILE).format(season=season))
-        path.write_text(json.dumps(ranking, indent=1, sort_keys=True))
+        stored.write_text(json.dumps(ranking, indent=1, sort_keys=True))
         rated = sum(1 for v in ranking.values() if v.get("provisional"))
         print(f"Read the league's ranking: {len(ranking)} players, "
-              f"{rated} with a rating -> {path.name}")
+              f"{rated} with a rating -> {stored.name}")
+    else:
+        # Saying nothing would quietly publish last week's ratings as this
+        # week's, which is the failure this whole routine is built to avoid.
+        when = ""
+        if stored.exists():
+            age = date.today() - date.fromtimestamp(stored.stat().st_mtime)
+            when = f" The stored one is {age.days} day(s) old."
+        print("No ranking page in that folder, so player ratings will not "
+              f"move.{when}\n  Save these two as \"Webpage, HTML Only\" "
+              "into the same folder:\n"
+              "    https://www.tabletennis365.com/CentralLondon/Ranking\n"
+              "    https://www.tabletennis365.com/CentralLondon/Ranking?p=2")
 
     fixtures, cards, unknown = read_folder(args.folder, season)
     for name in unknown:

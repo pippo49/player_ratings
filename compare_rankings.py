@@ -166,6 +166,24 @@ def calibrate(scales: dict[str, dict[str, float]], aliases) -> None:
                 count += 1
         return total / count
 
+    def buckets(ratings: dict[str, float], width: int) -> list[tuple]:
+        """Observed win rate by rating gap — the shape of a scale itself.
+
+        A rating list claims, implicitly, that a gap of a given size means
+        the same thing everywhere along it. Counting how often the stronger
+        player actually won, grouped by gap, is how that claim is checked,
+        and it needs nobody to have published a probability.
+        """
+        got: dict[int, list] = {}
+        for me, opponents, won in cases:
+            for o in opponents:
+                gap = ratings[me] - ratings[o]
+                row = got.setdefault(int(gap // width) * width, [0.0, 0])
+                row[0] += won / len(opponents)
+                row[1] += 1
+        return [(lo, total / n, n) for lo, (total, n) in sorted(got.items())
+                if n >= 20]
+
     grid = list(range(60, 3001, 10))
     print(f"\nFitted on {len(cases)} player-matches rated by all of them,"
           f"\nscored by Brier (a proper rule; lower is better):")
@@ -178,6 +196,25 @@ def calibrate(scales: dict[str, dict[str, float]], aliases) -> None:
     print(f"  {'ignoring ratings entirely':<28} {'-':>10} "
           f"{error(None, 1):>7.4f}")
     print("  Elo's own constant is 400; fitted here, ours is 250.\n")
+
+    # The same table for each list, in its own units. This is the part worth
+    # showing the league: it says whether their own gaps behave consistently,
+    # and it stands without anyone having published a probability.
+    for label, ratings in scales.items():
+        spread = max(ratings.values()) - min(ratings.values())
+        width = max(10, int(round(spread / 30 / 10)) * 10)
+        rows = buckets(ratings, width)
+        if len(rows) < 3:
+            continue
+        fit = min(grid, key=lambda sc: error(ratings, float(sc)))
+        print(f"\n  {label} — observed win rate by gap "
+              f"(buckets of {width}):")
+        print(f"    {'gap':>16} {'pairings':>9} {'won':>6} {'fitted':>7}")
+        for lo, rate, n in rows:
+            fitted = 1 / (1 + 10 ** (-(lo + width / 2) / fit))
+            print(f"    {lo:>7} to {lo + width:<6} {n:>9} {rate:>5.0%} "
+                  f"{fitted:>7.0%}")
+    print()
 
 
 def describe_their_model(rows, name_col, pos_col, aliases, known) -> None:

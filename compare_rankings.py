@@ -88,6 +88,79 @@ def spearman(pairs: list[tuple[int, int]]) -> float:
     return cov / (va * vb) if va and vb else 0.0
 
 
+def rating_column(rows: list[list[str]], name_col: int, pos_col: int | None) -> int | None:
+    """A column of plain numbers big enough to be ratings, not counts."""
+    width = max(len(r) for r in rows)
+    for col in range(width):
+        if col in (name_col, pos_col):
+            continue
+        values = []
+        for row in rows[1:]:
+            if len(row) > col:
+                m = re.fullmatch(r"\s*(\d{3,5})\s*", row[col])
+                if m:
+                    values.append(int(m.group(1)))
+        if len(values) >= len(rows) * 0.8 and len(set(values)) > 10:
+            return col
+    return None
+
+
+def calibrate(their_rating: dict[str, float], aliases) -> None:
+    """Does their rating scale behave like Elo, and with what constant?
+
+    Projecting a team's points needs "rating difference -> chance of winning",
+    and their scale is undocumented. Fitting the constant against results
+    answers both whether the scale is usable that way and what it is. A fit
+    no better than ignoring the ratings altogether would mean the projections
+    cannot be rebuilt on them.
+    """
+    from models import real_singles
+
+    cases = []
+    for match in load_matches() or []:
+        if match.season != CURRENT_SEASON:
+            continue
+        singles = real_singles(match)
+        for side, other in ((match.home, match.away), (match.away, match.home)):
+            for player in side.players:
+                me = identity(player.name, aliases)
+                gaps = [their_rating[o] for o in
+                        (identity(p.name, aliases) for p in other.players)
+                        if o in their_rating]
+                if me not in their_rating or len(gaps) != len(other.players):
+                    continue
+                won, played = singles[player.player_id]
+                if played:
+                    cases.append((their_rating[me], gaps, won))
+
+    if len(cases) < 50:
+        print("\nToo few players on their page to calibrate the scale.")
+        return
+
+    def error(scale: float | None) -> float:
+        total = 0.0
+        for mine, gaps, won in cases:
+            if scale is None:
+                expected = len(gaps) / 2        # ratings ignored
+            else:
+                expected = sum(1 / (1 + 10 ** ((g - mine) / scale)) for g in gaps)
+            total += abs(expected - won)
+        return total / len(cases)
+
+    grid = list(range(20, 3001, 10))
+    best = min(grid, key=lambda s: error(float(s)))
+    print(f"\nTheir rating scale, fitted on {len(cases)} player-matches:")
+    print(f"  best fit at {best} points per 10x odds "
+          f"(Elo's own constant is 400)")
+    if best in (grid[0], grid[-1]):
+        print("  — that is the edge of the search, so the fit did not settle;"
+              "\n    treat the number as 'outside this range', not as a result")
+    print(f"  average error with it:        {error(float(best)):.3f} wins of 3")
+    print(f"  ignoring their ratings:       {error(None):.3f}")
+    print("  A clear gap means the projections can be rebuilt on their "
+          "numbers.\n")
+
+
 def predict(their_rank: dict[str, int], aliases) -> None:
     """Which ordering better calls the results, rather than merely agreeing.
 
@@ -356,6 +429,20 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
     # The same, among players neither system is guessing about. These are
     # the disagreements worth defending; the rest are sample size.
     predict({pid: i + 1 for i, pid in enumerate(order)}, aliases)
+
+    rat_col = rating_column(rows, col, position_column(rows, col))
+    if rat_col is not None:
+        their_rating = {}
+        for row in rows[1:]:
+            if len(row) <= max(col, rat_col):
+                continue
+            m = re.fullmatch(r"\s*(\d{3,5})\s*", row[rat_col])
+            pid = identity(row[col], aliases)
+            if m and pid in known:
+                their_rating.setdefault(pid, float(m.group(1)))
+        print(f"\nTheir rating column is #{rat_col} ({rows[0][rat_col]!r}), "
+              f"read for {len(their_rating)} players.")
+        calibrate(their_rating, aliases)
 
     firm = [g for g in gaps if ratings[g[3]].singles_played >= 15]
     take = min(6, len(firm) // 2)

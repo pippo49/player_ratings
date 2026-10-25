@@ -10,6 +10,7 @@ table. If it cannot, it prints what it did find so the parser can be fixed
 against the real thing rather than against an assumption.
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -50,6 +51,28 @@ def name_column(rows: list[list[str]], known: set[str], aliases) -> tuple[int, i
     return best, best_hits
 
 
+LEADING_INT = re.compile(r"^\s*(\d+)")
+
+
+def position_column(rows: list[list[str]], name_col: int) -> int | None:
+    """The column holding the ranking position, if there is one.
+
+    The ranking paginates, so pages have to be stitched together — and the
+    order files happen to be saved in is not the order of the ranking. The
+    position printed on each row is, whatever page it came from.
+    """
+    width = max(len(r) for r in rows)
+    for col in range(width):
+        if col == name_col:
+            continue
+        found = [LEADING_INT.match(r[col]) for r in rows[1:] if len(r) > col]
+        hits = [int(m.group(1)) for m in found if m]
+        # A position column counts: mostly numeric, and distinct values.
+        if len(hits) >= len(rows) * 0.8 and len(set(hits)) == len(hits):
+            return col
+    return None
+
+
 def spearman(pairs: list[tuple[int, int]]) -> float:
     """Rank correlation, computed on the two orderings directly."""
     n = len(pairs)
@@ -84,7 +107,7 @@ def main(target: str) -> int:
     # look like a list of players" test, so the pages we can already identify
     # are set aside before looking at all. Then the best candidate wins, not
     # the first one found: a folder holds one ranking page and forty cards.
-    best = None
+    found_tables = []
     skipped = 0
     for page in pages:
         html = page.read_text(errors="replace")
@@ -96,11 +119,11 @@ def main(target: str) -> int:
             # A ranking lists most of a league, not one team's line-up.
             if hits < 20 or hits < len(rows) // 4:
                 continue
-            if best is None or hits > best[0]:
-                best = (hits, page, rows, col)
+            found_tables.append((hits, page, rows, col))
 
     if skipped:
         print(f"Set aside {skipped} fixtures page(s) and match card(s).")
+    best = max(found_tables, default=None, key=lambda t: t[0])
     if best is None:
         print("No ranking table found. What the other pages hold:\n")
         for page in pages:
@@ -115,12 +138,28 @@ def main(target: str) -> int:
                       f"first: {rows[0][:6]}")
         return 1
 
-    hits, page, rows, col = best
-    print(f"Ranking table in {page.name}:")
-    print(f"  {len(rows)} rows, {hits} known players, names in column {col}")
-    print(f"  header: {rows[0]}")
-    print(f"  sample: {rows[1] if len(rows) > 1 else '-'}\n")
-    return report(rows, col, known, aliases, our_rank, ratings)
+    # Every ranking page found, stitched into one list by the position each
+    # row carries, so saving them in any order works.
+    header = best[2][0]
+    merged: dict[int, list[str]] = {}
+    unplaced: list[list[str]] = []
+    for hits, page, rows, col in found_tables:
+        pos_col = position_column(rows, col)
+        print(f"  {page.name}: {len(rows) - 1} rows, {hits} known players")
+        for row in rows[1:]:
+            match = (LEADING_INT.match(row[pos_col])
+                     if pos_col is not None and len(row) > pos_col else None)
+            if match:
+                merged.setdefault(int(match.group(1)), row)
+            else:
+                unplaced.append(row)
+
+    ordered = [merged[k] for k in sorted(merged)] + unplaced
+    name_col = best[3]
+    print(f"\n{len(found_tables)} ranking page(s) -> {len(ordered)} ranked rows")
+    print(f"  header: {header}")
+    print(f"  sample: {ordered[0] if ordered else '-'}\n")
+    return report([header] + ordered, name_col, known, aliases, our_rank, ratings)
 
 
 def report(rows, col, known, aliases, our_rank, ratings) -> int:

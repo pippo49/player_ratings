@@ -217,7 +217,7 @@ def main() -> int:
             continue
         card = cards_by_pair.get(key)
         if card is None:
-            missing.append(fixture)
+            missing.append((division, fixture))
             continue
         match = build_match(fixture, card, division=division, season=season)
         if match is None or not match.played:
@@ -231,10 +231,20 @@ def main() -> int:
         print(f"  skipped {skipped} result(s) outside --divisions {args.divisions}")
 
     if missing:
+        # Each link under its own fixture. Printed as two lists they were in
+        # different orders — the fixtures sorted by date, the links not — so
+        # line 12 of one was not line 12 of the other.
         print(f"\n{len(missing)} new result(s) still need their match card saved:")
-        for f in sorted(missing, key=lambda f: (f["date"] is None, f["date"])):
-            print(f"  {f['date']}  {f['home']} v {f['away']}")
-        show([_match_card_url(f["match_id"]) for f in missing], args.open)
+        missing.sort(key=lambda m: (m[1]["date"] is None, m[1]["date"]))
+        for division, f in missing:
+            label = "Prem" if division == 0 else f"D{division}"
+            print(f"\n  {f['date']}  {label:4s} {f['home']} v {f['away']}")
+            print(f"    {_match_card_url(f['match_id'])}")
+            if args.open:
+                webbrowser.open_new_tab(_match_card_url(f["match_id"]))
+        if args.open:
+            print(f"\n  ({len(missing)} tabs opened — Ctrl+S each into the "
+                  "same folder, then run again)")
 
     if not (built or missing):
         stamp("Nothing new on those pages — the app is already up to date.")

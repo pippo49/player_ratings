@@ -18,9 +18,12 @@ Two passes a week:
 2. Save those match cards into the same folder and run it again. Every new
    result with its card is merged and published; any still missing are listed.
 
-Save with Ctrl+S, either "Webpage, HTML only" or "Webpage, Complete". File
-names do not matter: each page is recognised by its contents, and a card is
-matched to its fixture by the two team names.
+Save with Ctrl+S as **"Webpage, HTML Only"**. Not "Complete": that keeps
+downloading resources in the background and closing the tab cancels it, which
+leaves a _files folder and no page. HTML Only writes one file immediately from
+what is already on screen, which is all this reads. File names do not matter —
+each page is recognised by its contents, and a card is matched to its fixture
+by the two team names.
 """
 
 import argparse
@@ -60,10 +63,10 @@ LINK_PAGE = "_cards_to_save.html"
 # What a browser writes when you pick the wrong "Save as" option. MHTML is a
 # MIME container, not HTML, so nothing here can read it.
 SAVED_WRONG = {
-    ".mhtml": 'saved as "Webpage, Single File" — re-save as "Webpage, '
-              'Complete" or "HTML Only"',
-    ".mht": 'saved as "Webpage, Single File" — re-save as "Webpage, '
-            'Complete" or "HTML Only"',
+    ".mhtml": 'saved as "Webpage, Single File" — re-save as '
+              '"Webpage, HTML Only"',
+    ".mht": 'saved as "Webpage, Single File" — re-save as '
+            '"Webpage, HTML Only"',
     ".pdf": "printed to PDF rather than saved — use Ctrl+S, not Ctrl+P",
     ".txt": "saved as plain text, which loses the links the importer needs",
 }
@@ -77,9 +80,19 @@ def read_folder(folder: Path, season: str) -> tuple[list[dict], list[dict], list
     nothing" always comes with a reason.
     """
     fixtures, cards, unknown = [], [], []
+    pages = {p.stem for p in folder.iterdir()
+             if p.suffix.lower() in (".html", ".htm")}
     for path in sorted(folder.iterdir()):
         if path.is_dir():
-            continue  # "Webpage, Complete" leaves a _files folder beside it
+            # "Webpage, Complete" writes a _files folder and then the page.
+            # A folder with no page beside it is a save that was cancelled
+            # part-way — which is what closing the tab too early does.
+            if path.name.endswith("_files") and path.name[:-6] not in pages:
+                unknown.append(
+                    f"{path.name[:-6]}: saved as \"Webpage, Complete\" but "
+                    "the page never finished writing — re-save it as "
+                    "\"Webpage, HTML Only\"")
+            continue
         suffix = path.suffix.lower()
         if suffix in SAVED_WRONG:
             unknown.append(f"{path.name}: {SAVED_WRONG[suffix]}")
@@ -243,6 +256,10 @@ def main() -> int:
     if args.links or args.folder is None:
         print_links(args.season, args.open, only)
         return 0
+    if str(args.folder) in ("", "."):
+        print("No folder given — an unset shell variable reads as the current "
+              "directory.\nPass the path to your saved pages in full.")
+        return 1
     if not args.folder.is_dir():
         print(f"{args.folder} is not a folder.")
         return 1

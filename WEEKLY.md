@@ -24,8 +24,12 @@ rm -rf "$D" && mkdir -p "$D"
 Wait for the results to appear on screen, then `Ctrl+S` into
 `C:\Users\ThroX\Downloads\tt365`.
 
-**Webpage, Complete** or **HTML Only** — *not* "Webpage, Single File", which
-writes `.mhtml` and cannot be read.
+Save as **Webpage, HTML Only**.
+
+Not "Complete" — it keeps downloading in the background, and closing the tab
+cancels it, leaving a `_files` folder and no page. Not "Single File" — that
+writes `.mhtml`, which cannot be read. HTML Only writes one file instantly
+from what is on screen, which is all the importer needs.
 
 ## 3. Save the match cards
 
@@ -36,7 +40,8 @@ uv run python import_saved.py "$D" --open
 It lists the cards it needs and writes them as clickable links to
 `C:\Users\ThroX\Downloads\tt365\_cards_to_save.html`. Open that in Windows and
 work down the list: click a link, let it load, then `Ctrl+S` → `Enter` →
-`Ctrl+W`. Chrome remembers the folder, so it is three keystrokes each.
+`Ctrl+W`. Chrome remembers the folder and the **HTML Only** setting, so it is
+three keystrokes each.
 
 Expect 35–40 of them in a normal week.
 
@@ -56,7 +61,8 @@ about a minute later: <https://pippo49.github.io/player_ratings/>
 | It says | What happened |
 |---|---|
 | `... is empty` | Nothing saved into that folder yet |
-| `saved as "Webpage, Single File"` | Wrong save option — re-save as Complete or HTML Only |
+| `saved as "Webpage, Single File"` | Wrong save option — re-save as HTML Only |
+| `the page never finished writing` | Saved as "Complete" and the tab closed before it finished. Re-save as HTML Only |
 | `saved while the browser check was still running` | Saved too early. Reload, wait for the results, save again |
 | `Read 5 played fixture(s)` (too few) | The fixtures page only rendered one division. Click through each division before saving, or use the per-division links from `--links` |
 | *N* results still need their card | Those few did not save. Save them and run step 4 again |

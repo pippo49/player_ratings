@@ -133,15 +133,23 @@ nothing breaks, and importing them later catches up.
 cd ~/player_ratings && git pull
 D=~/tt365 && rm -rf "$D" && mkdir -p "$D"
 
-# 1. the fixtures pages — Ctrl+S each into $D
-uv run python import_saved.py "$D" --divisions 3,4,7 --open
+# 1. save ONE page — every division's fixtures are on it:
+#    https://www.tabletennis365.com/CentralLondon/Fixtures?leagueName=Winter%202026-27
+uv run python import_saved.py "$D" --divisions 3,4,7 --dry-run
 
-# 2. it now lists the match cards it needs; --open puts them in tabs, save each
+# 2. it lists the match cards it needs; --open puts them in tabs, save each
 uv run python import_saved.py "$D" --divisions 3,4,7 --open
 
 # 3. publish
 uv run python import_saved.py "$D" --divisions 3,4,7
 ```
+
+The combined fixtures page carries every division in its own anchored
+section. A fixture's division is looked up from the team rather than the page
+it came from, so one save covers the league and `--divisions` still narrows
+which results get imported from it. `--links` prints that URL, with the
+per-division pages underneath in case the combined one turns out to fill in a
+division at a time.
 
 Use `--dry-run` on the first pass to see what it found without writing
 anything. `--divisions` takes numbers, with `0` or `prem` for the Premier;

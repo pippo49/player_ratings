@@ -35,7 +35,7 @@ from player_identity import normalise
 from publish import commit_and_push, describe, stamp
 from scraper import (
     CURRENT_SEASON, DIVISION_NAMES, PREMIER_SLUGS, _fixtures_url,
-    _match_card_url,
+    _match_card_url, all_fixtures_url,
 )
 from webapp.export import export
 
@@ -103,8 +103,21 @@ def fixtures_links(season: str, only: set[int] | None = None) -> list[str]:
 
 def print_links(season: str, open_them: bool = False,
                 only: set[int] | None = None) -> None:
-    print("Fixtures pages to save (the Premier slug may differ):")
-    show(fixtures_links(season, only), open_them)
+    """The one page worth saving, with the per-division pages as a fallback.
+
+    The combined page carries every division, and a fixture's division is
+    looked up from the team rather than the page it came from, so one save
+    covers the league — and --divisions still narrows which results are
+    imported from it. The per-division pages are listed underneath in case
+    the combined one turns out to need a click per division to fill in.
+    """
+    print("Save this one page — it carries every division:")
+    show([all_fixtures_url(season)], open_them)
+    print("\nIf that page comes up empty or only shows one division, save "
+          "these instead\n(the Premier slug is a guess; use the site's own "
+          "menu if it 404s):")
+    for url in fixtures_links(season, only):
+        print(f"  {url}")
 
 
 def show(urls: list[str], open_them: bool) -> None:

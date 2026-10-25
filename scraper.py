@@ -7,6 +7,7 @@ per-division bookkeeping around it.
 
 import time
 from collections.abc import Callable
+from urllib.parse import quote
 
 import requests
 
@@ -57,6 +58,18 @@ def _season_slug(season: str) -> str:
 
 def _fixtures_url(division: str, season: str) -> str:
     return f"{BASE_URL}/{LEAGUE}/Fixtures/{_season_slug(season)}/{division}"
+
+
+def all_fixtures_url(season: str) -> str:
+    """Every division's fixtures on one page.
+
+    The per-division URLs each carry one division; this one carries the lot,
+    with each division in its own anchored section. Nothing downstream cares
+    which page a row came from — a fixture's division is looked up from the
+    team, not the URL — so one save of this replaces eight.
+    """
+    return (f"{BASE_URL}/{LEAGUE}/Fixtures"
+            f"?leagueName={quote(f'Winter {season}')}")
 
 
 def _fetch_html(url: str) -> str:

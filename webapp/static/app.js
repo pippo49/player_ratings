@@ -39,9 +39,18 @@ const el = (tag, cls) => {
    Rating maths
    ════════════════════════════════════════════════════════ */
 
-/** Probability that a player rated `a` beats a player rated `b`. */
+/**
+ * Probability that a player rated `a` beats a player rated `b`.
+ *
+ * The divisor is not the 400 the ratings were built with. That constant is
+ * right for updating a rating and wrong for reading one: fitted against
+ * results, a hundred-point gap here is about a 92% chance of winning, where
+ * 400 would call it 64%. Using 400 to forecast is what made every projection
+ * sit too close to even.
+ */
 function expected(a, b) {
-  return 1 / (1 + Math.pow(10, (b - a) / 400));
+  const scale = (state.data && state.data.prediction_scale) || 95;
+  return 1 / (1 + Math.pow(10, (b - a) / scale));
 }
 
 /**

@@ -162,9 +162,40 @@ class PlayerRating:
         return self.singles_won / self.singles_played
 
 
+# Two constants, deliberately different, because they do two jobs.
+#
+# SCALE governs the rating update. Elo's own 400 is conservative: expected
+# scores sit near a half, so a result moves a player modestly and the order
+# that emerges is stable. Rating with a steeper constant was tried and is
+# worse — it makes a favourite's win worth nothing and an upset worth
+# everything, and the ratings get noisy. Walking it to the value that
+# reproduces itself converges on 110 and the predictions get worse at every
+# step: 0.691 average error at 400, 0.774 at the fixed point.
+#
+# PREDICTION_SCALE is what a rating gap means once the ordering exists. Fitted
+# by rating on one season and predicting the next, it comes out near 95: a
+# hundred-point gap is about a 92% chance of winning, not the 64% that 400
+# implies. This is the constant for projections and win probabilities, and
+# using 400 there is what made them sit too close to even.
+#
+# Measured two ways and taken as the middle: predicting a player's wins from
+# three gives 95, predicting a whole scoreline gives 150, and the error curve
+# is flat between them (0.691 vs 0.699; 1.192 vs 1.172). The exact figure is
+# soft and should be re-fitted as results accumulate — `fit_scale.py` does
+# both measurements. That 400 is far too high for this league is not soft:
+# it costs 0.10 of a win per player and 0.57 of a singles per scoreline.
+SCALE = 400.0
+PREDICTION_SCALE = 120.0
+
+
+def win_probability(rating: float, opponent_rating: float) -> float:
+    """Chance of beating an opponent, for forecasting rather than rating."""
+    return 1.0 / (1.0 + 10.0 ** ((opponent_rating - rating) / PREDICTION_SCALE))
+
+
 def _expected_score(rating: float, opponent_rating: float) -> float:
     """Standard ELO expected score in range [0, 1]."""
-    return 1.0 / (1.0 + 10.0 ** ((opponent_rating - rating) / 400.0))
+    return 1.0 / (1.0 + 10.0 ** ((opponent_rating - rating) / SCALE))
 
 
 def load_registered_divisions(season: str) -> dict[str, int]:

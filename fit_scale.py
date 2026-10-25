@@ -48,4 +48,39 @@ print(f"{'scale':>7} {'error':>7}")
 for s in (60, 90, 150, 200, 260, 300, 400, 600):
     print(f"{s:>7} {err(s):>7.3f}{'   <- what the engine uses' if s == 400 else ''}")
 best = min(range(20, 1001, 5), key=err)
-print(f"\nbest fit: {best}  (error {err(best):.3f})")
+print(f"\nbest fit, per player: {best}  (error {err(best):.3f})")
+
+
+# The same question asked of whole scorelines, which is what the team
+# projections are. It does not give quite the same answer, so both are shown
+# and PREDICTION_SCALE sits between them.
+def home_singles(match, scale):
+    hp = [identity(p.name) for p in match.home.players]
+    ap = [identity(p.name) for p in match.away.players]
+    if not all(x in before for x in hp + ap):
+        return None
+    return sum(1 / (1 + 10 ** ((before[b].rating - before[a].rating) / scale))
+               for a in hp for b in ap)
+
+
+def team_err(scale):
+    errs = []
+    for m in now:
+        pred = home_singles(m, scale)
+        if pred is None:
+            continue
+        s = real_singles(m)
+        errs.append(abs(pred - sum(s[p.player_id][0] for p in m.home.players)))
+    return sum(errs) / len(errs) if errs else None
+
+
+if team_err(400) is not None:
+    print(f"\n{'scale':>7} {'error (singles of 9)':>22}")
+    for sc in (60, 95, 120, 150, 200, 260, 400):
+        tag = "   <- what the engine rates with" if sc == 400 else ""
+        print(f"{sc:>7} {team_err(sc):>22.3f}{tag}")
+    best_team = min(range(20, 1001, 5), key=team_err)
+    print(f"\nbest fit, per scoreline: {best_team}  "
+          f"(error {team_err(best_team):.3f})")
+    print(f"\nelo.PREDICTION_SCALE is currently "
+          f"{__import__('elo').PREDICTION_SCALE:.0f}")

@@ -12,6 +12,7 @@ from pathlib import Path
 
 from elo import (
     MIN_MATCHES,
+    PREDICTION_SCALE,
     PlayerRating,
     calculate_ratings,
     canonical_ids,
@@ -493,6 +494,9 @@ def build_payload(matches: list[Match]) -> dict:
 
     last = _last_played(matches)
     return {
+        # What a rating gap means as a chance of winning. Not the constant
+        # the ratings were built with — see elo.PREDICTION_SCALE.
+        "prediction_scale": PREDICTION_SCALE,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "season": SEASON_LABEL,
         "season_id": CURRENT_SEASON,

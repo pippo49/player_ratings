@@ -175,6 +175,50 @@ def calibrate(scales: dict[str, dict[str, float]], aliases) -> None:
     print("  Lower is better. Elo's own constant is 400.\n")
 
 
+def describe_their_model(rows, name_col, pos_col, aliases, known) -> None:
+    """The shape of their scale: where it starts, ends, and how fast it moves.
+
+    Comparing two rating systems needs more than a correlation — what a point
+    is worth differs, so "started at 1200" means nothing without knowing the
+    range it sits in or how far a season can carry someone.
+    """
+    numeric = rating_columns(rows, name_col, pos_col)
+    movement = [c for c in range(max(len(r) for r in rows))
+                if c not in numeric + [name_col, pos_col]
+                and sum(1 for r in rows[1:]
+                        if len(r) > c and re.fullmatch(r"\s*[+-]?\d+\s*", r[c]))
+                >= len(rows) * 0.8]
+
+    def column(col):
+        out = []
+        for row in rows[1:]:
+            if len(row) > col:
+                m = re.fullmatch(r"\s*([+-]?\d+)\s*", row[col])
+                if m:
+                    out.append(int(m.group(1)))
+        return sorted(out)
+
+    def band(values):
+        n = len(values)
+        pick = lambda q: values[min(n - 1, int(q * n))]
+        return (f"{values[0]} to {values[-1]}, "
+                f"middle half {pick(0.25)}–{pick(0.75)}, median {pick(0.5)}")
+
+    print("\nThe shape of their scale:")
+    for col in numeric:
+        label = rows[0][col] if len(rows[0]) > col else str(col)
+        values = column(col)
+        if values:
+            print(f"  {label:<14} {band(values)}")
+    for col in movement:
+        label = rows[0][col] if len(rows[0]) > col else str(col)
+        values = column(col)
+        if values:
+            moved = [v for v in values if v]
+            print(f"  {label:<14} {band(values)}"
+                  f"  ({len(moved)} of {len(values)} moved at all)")
+
+
 def predict(their_rank: dict[str, int], aliases) -> None:
     """Which ordering better calls the results, rather than merely agreeing.
 
@@ -457,6 +501,8 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
                 their_rating.setdefault(pid, float(m.group(1)))
         label = rows[0][rat_col] if len(rows[0]) > rat_col else str(rat_col)
         scales[f"theirs, {label}"] = their_rating
+
+    describe_their_model(rows, col, position_column(rows, col), aliases, known)
 
     matches = load_matches() or []
     past = [m for m in matches if m.season != CURRENT_SEASON]

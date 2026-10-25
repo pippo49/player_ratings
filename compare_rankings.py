@@ -241,6 +241,37 @@ def report(rows, col, known, aliases, our_rank, ratings) -> int:
                   f"  {'D' + str(pr.division)}")
         print()
 
+    # If the two agree within each division but disagree between them, the
+    # difference is the seeding ladder — an assumption, not a measurement —
+    # rather than any judgement about individual players. That is a very
+    # different thing to tell someone, so it is worth measuring.
+    by_division: dict[int, list[tuple[int, int, str]]] = {}
+    for i, pid in enumerate(order):
+        pr = ratings[pid]
+        if pr.division is not None:
+            by_division.setdefault(pr.division, []).append(
+                (i + 1, our_rank[pid], pid))
+
+    n_theirs, n_ours = len(order), len(ratings)
+    print("Within each division, and where each division sits overall:\n")
+    print(f"  {'div':>5} {'players':>8} {'agreement':>10} "
+          f"{'their median':>13} {'our median':>11}  {'shift':>6}")
+    for div in sorted(by_division):
+        rows_ = by_division[div]
+        if len(rows_) < 5:
+            continue
+        rho = spearman([(a, b) for a, b, _ in rows_])
+        mid = len(rows_) // 2
+        their_pct = sorted(a / n_theirs for a, _, _ in rows_)[mid] * 100
+        our_pct = sorted(b / n_ours for _, b, _ in rows_)[mid] * 100
+        name = "Prem" if div == 0 else f"D{div}"
+        print(f"  {name:>5} {len(rows_):>8} {rho:>10.3f} "
+              f"{their_pct:>12.0f}% {our_pct:>10.0f}%  "
+              f"{our_pct - their_pct:>+5.0f}")
+    print("\n  A negative shift means we place that division higher than they do."
+          "\n  Agreement is the rank correlation among that division's players"
+          "\n  alone, which the seeding ladder cannot affect.\n")
+
     take = min(8, len(gaps) // 2)
     if take:
         show("Rated far higher by them than by us:", gaps[:take])

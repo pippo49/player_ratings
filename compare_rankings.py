@@ -149,30 +149,35 @@ def calibrate(scales: dict[str, dict[str, float]], aliases) -> None:
         return
 
     def error(ratings: dict[str, float] | None, scale: float) -> float:
-        total = 0.0
-        for me, opponents, won in cases:
-            if ratings is None:
-                expected = len(opponents) / 2
-            else:
-                mine = ratings[me]
-                expected = sum(
-                    1 / (1 + 10 ** ((ratings[o] - mine) / scale))
-                    for o in opponents
-                )
-            total += abs(expected - won)
-        return total / len(cases)
+        """Brier score over each pairing — a proper scoring rule.
 
-    grid = list(range(20, 3001, 10))
-    print(f"\nFitted on {len(cases)} player-matches rated by all of them:")
-    print(f"  {'ratings':<28} {'best scale':>10} {'error':>7}")
+        Not mean absolute error on wins out of three, which this used to be.
+        MAE pays for overconfidence: at a true chance of 0.7 it scores 0.30
+        for predicting certainty against 0.42 for predicting 0.7, so fitting
+        to it drives the scale far too low. It did exactly that here.
+        """
+        total = count = 0.0
+        for me, opponents, won in cases:
+            share = won / len(opponents)
+            for o in opponents:
+                p = (0.5 if ratings is None else
+                     1 / (1 + 10 ** ((ratings[o] - ratings[me]) / scale)))
+                total += (p - share) ** 2
+                count += 1
+        return total / count
+
+    grid = list(range(60, 3001, 10))
+    print(f"\nFitted on {len(cases)} player-matches rated by all of them,"
+          f"\nscored by Brier (a proper rule; lower is better):")
+    print(f"  {'ratings':<28} {'best scale':>10} {'Brier':>7}")
     for label, ratings in scales.items():
         best = min(grid, key=lambda sc: error(ratings, float(sc)))
         edge = " (edge of search)" if best in (grid[0], grid[-1]) else ""
-        print(f"  {label:<28} {best:>10} {error(ratings, float(best)):>7.3f}"
-              f"{edge}")
+        print(f"  {label:<28} {best:>10} "
+              f"{error(ratings, float(best)):>7.4f}{edge}")
     print(f"  {'ignoring ratings entirely':<28} {'-':>10} "
-          f"{error(None, 1):>7.3f}")
-    print("  Lower is better. Elo's own constant is 400.\n")
+          f"{error(None, 1):>7.4f}")
+    print("  Elo's own constant is 400; fitted here, ours is 250.\n")
 
 
 def describe_their_model(rows, name_col, pos_col, aliases, known) -> None:
@@ -226,6 +231,11 @@ def predict(their_rank: dict[str, int], aliases) -> None:
     player meets three opponents in a match, so a ranking predicts how many
     of them they beat: the ones it places below them. Comparing that with
     what happened scores both orderings on the same results.
+
+    Mean absolute error is the right measure here and the wrong one for
+    fitting a probability: both rankings predict a whole number of wins, so
+    neither can be rewarded for false confidence. `calibrate` scores
+    probabilities and uses Brier instead.
 
     Ours is rated on last season alone, so this season is genuinely unseen.
     Theirs is a current ranking that already includes these results. The

@@ -29,6 +29,7 @@ by the two team names.
 import argparse
 import json
 import os
+import subprocess
 import sys
 import webbrowser
 from pathlib import Path
@@ -180,14 +181,31 @@ def windows_path(path: Path) -> str | None:
     return None
 
 
-def open_in_browser(target: str) -> bool:
+def under_wsl() -> bool:
+    if os.environ.get("WSL_DISTRO_NAME"):
+        return True
+    try:
+        return "microsoft" in Path("/proc/version").read_text().lower()
+    except OSError:
+        return False
+
+
+def open_in_browser(target: str, windows: str | None = None) -> bool:
     """Open one thing in the user's browser, quietly reporting a failure.
 
     Under WSL `webbrowser` falls through to `gio`, which has no handler and
-    writes "Operation not supported" to stderr for every call. One target
-    rather than dozens keeps that to a single line, and the return value lets
-    the caller say what to do instead.
+    writes "Operation not supported" to stderr. Windows opens its own default
+    browser through cmd.exe, which needs nothing installed on the Linux side —
+    so a Windows path, where we have one, is tried first.
     """
+    if windows and under_wsl():
+        done = subprocess.run(
+            ["cmd.exe", "/c", "start", "", windows],
+            capture_output=True, text=True, check=False,
+        )
+        if done.returncode == 0:
+            return True
+
     with open(os.devnull, "w") as quiet:
         stderr, sys.stderr = sys.stderr, quiet
         try:
@@ -212,6 +230,27 @@ def write_link_page(folder: Path, missing: list[tuple[int, dict]]) -> Path:
         f'{f["home"]} v {f["away"]}</a></li>'
         for d, f in missing
     )
+    # Opening dozens of tabs at once is what the browser's popup blocker is
+    # for, so it is offered in tens: enough to work through in one pass, few
+    # enough that the first batch is what prompts for permission.
+    script = """
+ const links = [...document.querySelectorAll('ol a')];
+ let at = 0;
+ const button = document.getElementById('more');
+ function render() {
+   const left = links.length - at;
+   button.textContent = left ? `Open the next ${Math.min(10, left)}` : 'All opened';
+   button.disabled = !left;
+   document.getElementById('count').textContent =
+     at ? `${at} of ${links.length} opened` : '';
+ }
+ button.onclick = () => {
+   for (const a of links.slice(at, at + 10)) window.open(a.href, '_blank');
+   at = Math.min(at + 10, links.length);
+   render();
+ };
+ render();
+"""
     page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>Match cards to save</title>
@@ -222,9 +261,13 @@ def write_link_page(folder: Path, missing: list[tuple[int, dict]]) -> Path:
  p {{ color: #555; }}
 </style></head><body>
 <h1>{len(missing)} match cards to save</h1>
-<p>Open each, let it finish loading, then Ctrl+S into this same folder
-("Webpage, Complete" or "HTML Only"). Then run the importer again.</p>
+<p>Open each, let it finish loading, then <b>Ctrl+S</b> into this same folder
+as <b>Webpage, HTML Only</b>. Then run the importer again.</p>
+<p><button id="more"></button> <span id="count"></span></p>
+<p><small>The browser may block the first batch — allow pop-ups for this page
+and press it again.</small></p>
 <ol>{rows}</ol>
+<script>{script}</script>
 </body></html>"""
     path = folder / LINK_PAGE
     path.write_text(page)
@@ -329,7 +372,7 @@ def main() -> int:
         windows = windows_path(page)
         if windows:
             print(f"  From Windows: {windows}")
-        if args.open and not open_in_browser(page.as_uri()):
+        if args.open and not open_in_browser(page.as_uri(), windows):
             print("  (could not open it from here — open that file yourself)")
 
     if not (built or missing):

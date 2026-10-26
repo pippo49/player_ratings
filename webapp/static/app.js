@@ -342,9 +342,6 @@ function playerRow(p, rank) {
     flag.title = "Provisional — few matches played";
     name.append(flag);
   }
-  // A rating the league does not actually publish for this player: their
-  // division's median, standing in. It lands on a real player's number, so
-  // without saying so it cannot be told from a measured one.
   if (state.ratingSource === "tt365" && p.ranked_tt365 === false) {
     const flag = el("span", "estimated");
     flag.textContent = " ~";
@@ -522,6 +519,24 @@ function setRatingSource(which) {
   state.players = new Map(state.data.players.map((p) => [p.id, p]));
   renderMeta();
   renderAll();
+}
+
+/**
+ * A player's name with whatever warnings belong on it.
+ *
+ * `*` — too few matches for the rating to be reliable.
+ * `~` — on the league view, a player the league does not rank, shown at
+ *       their division's median. That median is a real player's number, so
+ *       without the mark the two cannot be told apart.
+ *
+ * One function because the flags were being appended separately in four
+ * render paths and the tilde reached only one of them.
+ */
+function playerLabel(p) {
+  let label = p.name;
+  if (!p.reliable) label += " *";
+  if (state.ratingSource === "tt365" && p.ranked_tt365 === false) label += " ~";
+  return label;
 }
 
 /** This player's record in one season, or null where they did not play. */
@@ -938,7 +953,7 @@ function seasonCard(team, squad) {
     const num = el("span", "num");
     num.textContent = i + 1;
     const nm = el("span", "nm nm-link");
-    nm.textContent = p.name + (p.reliable ? "" : " *");
+    nm.textContent = playerLabel(p);
     nm.onclick = () => openPlayerSheet(p);
     const rt = el("span", "rt");
     rt.textContent = fmtRating(p.rating);
@@ -1161,7 +1176,7 @@ function squadCard(team, pool) {
       renderLineup();
     };
     const nm = el("span", "nm nm-link");
-    nm.textContent = p.name + (p.reliable ? "" : " *");
+    nm.textContent = playerLabel(p);
     // Inside a <label>, a click on any child also toggles the checkbox
     // unless stopped — this should open the stats sheet instead.
     nm.onclick = (e) => {
@@ -1203,7 +1218,7 @@ function closeSheet() {
 function openPlayerSheet(p) {
   openSheet((body) => {
     const h = el("h2");
-    h.textContent = p.name;
+    h.textContent = playerLabel(p);
     const sub = el("p", "sub");
     sub.textContent = p.team
       ? `${p.team} · ${divisionName(p.division)}`

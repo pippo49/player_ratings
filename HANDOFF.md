@@ -397,10 +397,12 @@ same way; prefer the buckets.
 
 ### The ladder and the scale must agree
 
-`SCALE` (400) updates ratings; `PREDICTION_SCALE` (120) converts a rating gap
-into a chance of winning. Splitting them fixed forecasts *within* a division —
-scoreline error 1.76 to 1.17 — and broke them *between* divisions, because the
-seed ladder is still 100 points per division.
+`SCALE` (400) updates ratings; `PREDICTION_SCALE` (285) converts a rating gap
+into a chance of winning. Splitting them fixed forecasts *within* a division
+and broke them *between* divisions, because the seed ladder is still 100
+points per division. (The 120 first fitted here came from minimising mean
+absolute error, which is not a proper scoring rule — see below. The figure
+is now 285.)
 
 Measured properly, the ladder is **about right and should be left alone**.
 Sweeping the spacing from 100 down to 10, prediction error is best at 100 and
@@ -409,7 +411,7 @@ far-gap bias for almost no cost but does not change the headline numbers.
 Narrowing it, which looked obvious, would have wrecked the same-division and
 one-apart cases that are 93% of the evidence.
 
-What remains, at scale 250 and a 100-point ladder, is a residual bias that
+What remains, at scale 285 and a 100-point ladder, is a residual bias that
 grows with distance: same division and one apart sit within 0.02 of
 unbiased; two apart is about 0.12; three apart about 0.22, on 13-19 pairings.
 So the ladder is slightly too steep across large gaps and **cross-division

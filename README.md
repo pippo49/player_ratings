@@ -253,9 +253,14 @@ Each team match consists of 9 singles matches (3 players per side, round-robin).
 
 ### Initial seeding
 
-A player with no rating history is seeded from the division they have played
-the most matches in. Anyone who played a previous season carries their rating
-forward instead, so this only ever applies to genuine newcomers.
+A player with no rating history is seeded from the division of the team they
+**registered** with, falling back to the division they have played most in if
+the league lists no registration. The registered division is the one that
+matters: a call-up turning out for a higher team plays above their own level,
+so seeding them there would overrate them. Anyone who played a previous season
+carries their rating forward instead, so this only ever applies to genuine
+newcomers — a player whose team is promoted or relegated keeps their rating,
+and the ladder is never reapplied to them.
 
 The ladder is season-specific, because the league restructured for 2026/27 by
 adding a Premier division above Divisions One to Seven — a division number no
@@ -291,10 +296,14 @@ The system uses a standard ELO formula. For each team match, every player is com
 expected_score = 1 / (1 + 10^((opponent_rating - player_rating) / 400))
 ```
 
+The 400 here is `SCALE`, used *inside* the update. Turning a rating gap into
+a win probability for display uses a separate, narrower `PREDICTION_SCALE`
+of 285 — see `MODEL.md` for why the two differ.
+
 The expected scores from all 3 opponents are summed and normalised. The rating update is:
 
 ```
-rating_change = K * (actual_fraction - expected_fraction)
+rating_change = step * (actual_fraction - expected_fraction)
 ```
 
 Where `actual_fraction = singles_won / 3` and `expected_fraction = sum(expected per opponent) / 3`.
@@ -303,17 +312,23 @@ This means beating a higher-rated opponent gains more points than beating a lowe
 
 ### Iterative convergence
 
-Because early matches in the season are evaluated against division-seeded ratings (which may not reflect true skill), the algorithm runs multiple passes over the full season. Each pass replays all matches chronologically using the ratings from the previous pass. This repeats until ratings stabilise (max change < 0.5 per pass, up to 20 iterations).
+Because early matches in the season are evaluated against ratings that may not yet reflect true skill — a newcomer's division seed, or a rating carried from before — the algorithm runs multiple passes over the full season. Each pass replays all matches chronologically using the ratings from the previous pass. This repeats until ratings stabilise (max change < 0.5 per pass, up to 20 iterations).
 
 ### Parameters
 
-- **K-factor**: 48 while provisional, 32 once established (controls how much a
-  single team match can shift a rating)
-- **Provisional**: fewer than 15 career team matches, *or* fewer than 6 team
-  matches so far this season. A carried rating is a stale prior — a summer
-  passes and players improve or fall away — so everyone starts a season
-  provisional again whatever their career record. Sweeping 3/3 against equals
-  moves a provisional player about 22 points and an established one about 15.
+- **Step size**: `max(20, 160 / (1 + career_team_matches / 3))` — how far one
+  team match can shift a rating. 160 for a player's first-ever match,
+  53 by their seventh, 32 by their thirteenth, and the floor of 20 from about
+  their twenty-second. A newcomer's own
+  results overwhelm their seed within a handful of matches; once they have a
+  record the step is *below* the flat 32 it replaced, so settled ratings are
+  steadier than before rather than noisier. Sweeping 3/3 against equals moves
+  a brand-new player about 80 points and a settled one about 10.
+- **No start-of-season reset.** Match counts carry across seasons and the step
+  depends on the career total alone. A higher step for returning players was
+  tried on the reasoning that a summer makes a carried rating stale, and
+  measured *worse* — a carried rating is earned information that a summer
+  destroys little of. See `MODEL.md`; `walkforward.py` re-runs the test.
 - **Minimum matches**: 15 singles matches (players with fewer are flagged with `*` in the output)
 
 ## Project structure

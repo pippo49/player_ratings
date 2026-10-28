@@ -87,9 +87,10 @@ def seed_for(season: str, division: int) -> float:
 # Her own results never outweighed the assumption she started from.
 #
 # Halving every three matches fixes that without making anyone jumpy. A
-# first night moves a player 160 points; by their thirteenth the step is
-# below the 32 it used to be, so settled ratings are steadier than before,
-# not noisier. Measured out of sample on a proper scoring rule, this beats
+# first night can move a player by up to 160 points — 80 for a clean sweep
+# against equals, since the step bounds the move rather than being it. By
+# their thirteenth the step is back down to the 32 it replaced, and below it
+# from then on, so settled ratings are steadier than before, not noisier. Measured out of sample on a proper scoring rule, this beats
 # the flat step by more than anything else tried: Brier 0.0901 against
 # 0.0987, where guessing 50-50 scores 0.1435.
 #
@@ -210,11 +211,12 @@ class PlayerRating:
 # reproduces itself converges on 110 and the predictions get worse at every
 # step: 0.691 average error at 400, 0.774 at the fixed point.
 #
-# PREDICTION_SCALE is what a rating gap means once the ordering exists. Fitted
-# by rating on one season and predicting the next, it comes out near 95: a
-# hundred-point gap is about a 92% chance of winning, not the 64% that 400
-# implies. This is the constant for projections and win probabilities, and
-# using 400 there is what made them sit too close to even.
+# PREDICTION_SCALE is what a rating gap means once the ordering exists. At 285
+# a hundred-point gap is about a 69% chance of winning rather than the 64%
+# that 400 implies, and the difference widens with the gap: three divisions
+# apart is 92% against 400's 85%. This is the constant for projections and
+# win probabilities, and using 400 there is what made them sit too close to
+# even.
 #
 # Fitted, not assumed. Bucket this season's results by the rating gap that
 # preceded them and read off how often the stronger player actually won; the

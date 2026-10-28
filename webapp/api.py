@@ -444,10 +444,12 @@ def _apply_season_overrides(
 # "tt365" takes the league's own published ranking, which removes the need to
 # save a match card per fixture — forty a week against three pages.
 #
-# The two are a dead heat on accuracy. Scored by Brier on the same matches,
-# with ours rated on last season alone so it is genuinely predicting: theirs
-# 0.0964, ours 0.0980, against 0.1463 for ignoring ratings. The saving in
-# effort is the whole argument; there is no accuracy argument either way.
+# The two were a dead heat on accuracy when last compared. Scored by Brier on
+# the same matches, with ours rated on last season alone so it is genuinely
+# predicting: theirs 0.0964, ours 0.0980, against 0.1463 for ignoring ratings.
+# That comparison predates the change to the step size and has not been re-run
+# since, so it is the open question rather than a settled result. On the
+# numbers as they stood, the saving in effort was the whole argument.
 # "auto" uses the league's ranking when one has been imported and falls back
 # to our own engine when it has not, so the weekly routine decides this
 # rather than an environment variable nobody will remember to set. "elo" or
@@ -455,9 +457,13 @@ def _apply_season_overrides(
 RATING_SOURCE = os.environ.get("RATING_SOURCE", "auto")
 
 # Their scale is printed in larger units than ours: about 960 of their points
-# per factor of ten in odds, against 250 of ours. Both carry about the same
-# information — their middle half of players spans 1.6 factors of ten, ours
-# 1.5. Re-measure with compare_rankings.py as results accumulate.
+# per factor of ten in odds, against 285 of ours. They no longer carry quite
+# the same information. Measured over the 653 players the league genuinely
+# ranks, their middle half of players spans 1.59 factors of ten against our
+# 1.29 (1.49 against 1.24 restricting to the 454 with 15+ singles), so theirs
+# now discriminates more widely where the two were once level. Whether that
+# costs us anything in accuracy is unmeasured and bears on whether our engine
+# earns its weekly page saves. Re-measure with compare_rankings.py.
 TT365_PREDICTION_SCALE = 960.0
 
 

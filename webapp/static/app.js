@@ -45,15 +45,31 @@ const el = (tag, cls) => {
  *
  * The divisor is not the 400 the ratings were built with. That constant is
  * right for updating a rating and wrong for reading one: fitted against
- * results, a hundred-point gap here is about a 92% chance of winning, where
- * 400 would call it 64%. Using 400 to forecast is what made every projection
- * sit too close to even.
+ * results, a hundred-point gap here is about a 69% chance of winning where
+ * 400 would call it 64%, and the difference widens with the gap — three
+ * divisions apart is 92% against 400's 85%. Using 400 to forecast is what
+ * made every projection sit too close to even.
  */
 function expected(a, b) {
-  const scale = (state.data
-    && (state.data.active_scale || state.data.prediction_scale)) || 250;
-  return 1 / (1 + Math.pow(10, (b - a) / scale));
+  return 1 / (1 + Math.pow(10, (b - a) / currentScale()));
 }
+
+/**
+ * The scale the ratings currently on screen are expressed in: ours, or the
+ * league's when their numbers are showing. applyRatingSource() sets it on
+ * every load, so the fallback is only for a render before that has run.
+ */
+function currentScale() {
+  return (state.data
+    && (state.data.active_scale || state.data.prediction_scale)) || 285;
+}
+
+/**
+ * The scale the squad-shortfall constants in expectedTrio() were fitted at.
+ * They are rating-point quantities, so they have to be restated whenever the
+ * ratings are shown on a different scale.
+ */
+const SHORTFALL_FIT_SCALE = 250;
 
 /**
  * Evaluate the 9 singles as a round robin between the two trios.
@@ -96,10 +112,12 @@ function expectedTrio(squad) {
     // as equally likely over-dilutes a squad whose best three are clearly its
     // first choice, so shift the best three down by the shortfall a squad
     // that size typically shows: 36 points, plus about 5 per extra player.
-    // Fitted in our rating points, so it has to be converted when the
-    // league's scale is on screen: 36 of our points is a quarter of theirs.
-    const scale = (state.data && state.data.active_scale) || 250;
-    const units = scale / 250;
+    //
+    // Those were fitted in our rating points back when our scale was 250, so
+    // they are held relative to that and restated in whatever scale is on
+    // screen — ours, now 285, or the league's 960. Refit them if the step
+    // changes again, since changing the step is what moved the scale.
+    const units = currentScale() / SHORTFALL_FIT_SCALE;
     const shortfall = (36.1 + 5.3 * (ranked.length - 3)) * units;
     return ranked.slice(0, 3).map((p) => ({ ...p, rating: p.rating - shortfall }));
   }

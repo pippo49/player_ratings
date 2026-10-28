@@ -23,11 +23,12 @@ rating each player finished the previous season on. Replaying every season from
 division seeds — the old behaviour — gave old results permanent weight and let
 a promotion retroactively rewrite a player's history by changing the division
 they were seeded from. Match counts accumulate across seasons, so a player
-keeps their career record — but no longer the low K-factor that used to come
-with it. Everyone is provisional again for their first six team matches of a
-season, because a carried rating knows nothing about the months since it was
-earned. Verified: single-season output is unchanged to a tenth of a point, and
-the change moves only players who have played in the new season.
+keeps their career record *and* the small step that comes with it. Giving
+returning players a higher step for their first six matches — on the
+reasoning that a carried rating knows nothing about the months since it was
+earned — was tried and measured worse, and removed. Verified: single-season
+output is unchanged to a tenth of a point, and the change moves only players
+who have played in the new season.
 
 **The bridge disables itself.** `_apply_season_overrides` runs only while the
 current season has no matches of its own. The moment real 2026/27 results are

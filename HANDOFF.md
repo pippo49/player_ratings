@@ -22,6 +22,7 @@ Tools worth knowing, all re-runnable:
 | `fit_scale.py` | refits `PREDICTION_SCALE`; run after any step change |
 | `check_ladder.py` | whether the division ladder matches what call-ups do |
 | `walkforward.py` | predicts each match of this season from only what came before it; the only test that can see a start-of-season rule |
+| `check_drift.py` | whether playing above your own division pays rating points |
 | `diagnose.py` | what the league's pages hold, via the workflow |
 
 ## What this is
@@ -60,6 +61,15 @@ league's, switched in the app, remembered per device. They were a dead heat
 when measured (Brier 0.0964 theirs, 0.0980 ours), but that was before the
 step-size fix below, and ours has not been re-measured against theirs since.
 Doing that is the open question worth settling.
+
+One hint that it matters: over the 653 players the league genuinely ranks,
+their middle half spans 1.59 factors of ten in odds against our 1.29 (1.49
+against 1.24 over the 454 with 15+ singles). The two used to be level, so
+ours has become the narrower — it discriminates less between players than
+theirs does. That is not the same as being less accurate, and a narrower
+spread that is well calibrated can predict perfectly well, but it is a
+reason to re-run `compare_rankings.py` rather than assume the dead heat
+held.
 
 ## How it fits together
 
@@ -389,8 +399,10 @@ fell; the probabilities got much worse — a 6/6 Division 7 player was given a
 1% chance against a median Division 4 one.
 
 Bucketing results by the rating gap that preceded them assumes nothing and
-settles it: the observed win rates track **250** across the whole range, and
-a Brier score agrees at 265. `fit_scale.py` now scores both ways and no
+settles it: under the flat step the observed win rates tracked **250** across
+the whole range, with a Brier score agreeing at 265. (Those two figures are
+of that era; the decaying step spreads the ratings differently and the
+constant refitted to **285**.) `fit_scale.py` now scores both ways and no
 longer offers MAE. Maximum likelihood says 190, but it assumes a player's
 three singles are independent — same player, same night — so it leans the
 same way; prefer the buckets.

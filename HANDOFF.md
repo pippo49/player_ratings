@@ -414,11 +414,34 @@ one-apart cases that are 93% of the evidence.
 What remains, at scale 285 and a 100-point ladder, is a residual bias that
 grows with distance: same division and one apart sit within 0.02 of
 unbiased; two apart is about 0.12; three apart about 0.22, on 13-19 pairings.
-So the ladder is slightly too steep across large gaps and **cross-division
-numbers stay the least trustworthy part of the model** — call-up projections
-being where that bites. Measured call-ups win about 0.77 singles of 3
-playing up, against a model that now says 0.3-0.5. `check_ladder.py` and the
-by-gap breakdown re-measure both as results accumulate.
+So the ladder is slightly too steep across large gaps, and cross-division
+numbers remain the thinnest-evidenced part of the model.
+
+**The call-up gap has closed.** This section long carried the figure that
+call-ups win 0.77 singles of 3 playing up against a model saying 0.3-0.5 —
+a serious under-rating. That is now out of date: after the scale refit to
+285 and the seed change, the model predicts **0.83 of 3** against the same
+measured **0.77**. `check_drift.py` splits every singles pairing by whether
+a player is appearing above, at, or below the division they registered in:
+
+| | pairings | actual | predicted | gap |
+|---|---|---|---|---|
+| playing up | 39 | 0.256 | 0.277 | **-0.021** |
+| own division | 1842 | 0.498 | 0.502 | -0.003 |
+| playing down | 6 | 0.500 | 0.621 | -0.121 |
+
+So there is **no sign that moving up a division pays rating points**. The
+ELO mechanics predict that: a bigger payout for beating a stronger player
+is offset by a smaller penalty for losing, and the expected change is zero
+whoever you face *provided the probability is right*. The measured gap of
+-0.021 says it is about right, worth -0.4 points per match at the settled
+step of 20.
+
+Two caveats keep this from being settled. It is in-sample — convergence
+drives expected towards actual by construction, which flatters any bucket
+split of it — and 39 pairings is far too thin to resolve a bias of this
+size either way. Re-run `check_drift.py` as call-ups accumulate; a
+walk-forward version would be the honest test once there are enough.
 
 ## Open items
 

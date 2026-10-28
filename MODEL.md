@@ -67,11 +67,18 @@ A newcomer's own results overwhelm the seed within a handful of matches;
 once they have a record the step is *below* the flat 32 it replaced, so
 settled ratings are steadier than before, not noisier.
 
-Returning players get a floor of **40** for their first 6 matches of a season
-(`K_SEASON_SETTLE`), on the grounds that a summer passes and a carried
-rating is a stale prior. **This one is unmeasured** — with a single complete
-season a player's career record *is* their season record, so the floor never
-binds and the data cannot judge it.
+There is **no start-of-season bump**. Returning players once got a floor of
+40 for their first 6 matches, on the grounds that a summer passes and a
+carried rating is a stale prior. Measuring it reversed the decision.
+
+Walking forward through 2026-27 — predicting each match from only what came
+before it, the one test where a player's career and season records differ —
+every floor tried came out worse than none, in proportion to its size: 40
+cost 0.00032 Brier, a full restart at 160 cost 0.00257, worse in 100% and
+99% of paired bootstrap resamples. A carried rating turns out to be *earned*
+information that a summer destroys little of; re-opening it discards
+evidence to chase a change that mostly has not happened. `walkforward.py`
+runs the test; `HANDOFF.md` has the full table and caveats.
 
 ### 4. The season is replayed until it settles
 

@@ -21,6 +21,7 @@ Tools worth knowing, all re-runnable:
 | `compare_rankings.py` | ours against the league's, scored properly |
 | `fit_scale.py` | refits `PREDICTION_SCALE`; run after any step change |
 | `check_ladder.py` | whether the division ladder matches what call-ups do |
+| `walkforward.py` | predicts each match of this season from only what came before it; the only test that can see a start-of-season rule |
 | `diagnose.py` | what the league's pages hold, via the workflow |
 
 ## What this is
@@ -142,12 +143,11 @@ engine replays everything to a fixed point, so **order carries no weight**
 
 K-factor is the step size — how far one team match can move you:
 
-- **48** while provisional, **32** once established
-- Provisional means fewer than 15 **career** team matches, *or* fewer than
-  **6 this season** (`K_SEASON_SETTLE`). A carried rating is a stale prior —
-  a summer passes — so everyone starts a season provisional again.
-- Sweeping 3/3 against equals moves a provisional player ~22 points, an
-  established one ~15.
+- `step = max(20, 160 / (1 + career/3))`, decaying with how much a player
+  has ever played: **160** for a first-ever match, 53 by a seventh, 20 from
+  about a twenty-first. See *How our rating is produced* in `MODEL.md`.
+- Career means **career** team matches, carried across seasons. There is no
+  start-of-season bump — that was tried and measured worse (below).
 
 Seeds come from the division ladder (`SEASON_SEEDS`), per season because the
 league restructured for 2026/27 by adding a Premier tier. A player's seed uses
@@ -341,9 +341,43 @@ Three parameters fitted against 543 pairings of one season predicting the
 next, so re-check with a second complete season. Every decaying shape tried
 beat the flat one, which is not the shape of a fluke.
 
-`K_SEASON_SETTLE` survives unmeasured and honestly so: with one completed
-season, a player's career record *is* their season record, so the floor
-never binds and the data cannot judge it.
+### A start-of-season bump makes it worse
+
+A carried rating looks like a stale prior — a summer passes, players improve
+or fall away — so returning players were given a step floor of 40 for their
+first 6 matches of a season (`K_SEASON_SETTLE`, `K_SETTLE_FLOOR`). It was
+documented as unmeasurable, because with one completed season a player's
+career record *is* their season record and the floor never binds.
+
+With 114 matches of 2026-27 it **is** measurable, by walking forward:
+predict each match from only what came before it, which is what the system
+does in use and the only test where career and season records differ. That
+test is in `walkforward.py`.
+
+| start-of-season floor | Brier |
+|---|---|
+| none (step stays at 20) | **0.0801** |
+| 40 for 6 matches (what was in place) | 0.0805 |
+| 60 for 6 | 0.0807 |
+| 80 for 6 | 0.0810 |
+| 120 for 6 | 0.0818 |
+| 160 for 6 (full restart) | 0.0827 |
+
+Every floor is worse than none, monotonically in its size. A paired
+bootstrap over the same 300 pairings puts the penalty at +0.00032 (95%
+interval +0.00011 to +0.00055) for the floor of 40 and +0.00257 for a full
+restart, worse in 100% and 99% of resamples respectively. The floor was
+removed; `step_for` now takes career alone.
+
+The premise was wrong, not the arithmetic. A carried rating is *earned*
+information and a summer destroys little of it — club standard is stable
+enough year to year that last season's record predicts September better
+than a fresh look does. Re-opening it discards evidence to chase a change
+that mostly has not happened.
+
+Caveats: 300 pairings is thin, and this is one season's opening. Re-check
+with a second complete season. If a bump ever does earn its place it will
+be small, because 160 was the worst option tested, not the best.
 
 ### Fitting a probability needs a proper scoring rule
 

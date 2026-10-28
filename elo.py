@@ -100,31 +100,34 @@ K_START = 160.0      # step for a player with no record at all
 K_HALF_LIFE = 3.0    # career team matches over which the step halves
 K_FLOOR = 20.0       # the step never falls below this
 
-# A carried rating is a stale prior. Months pass over the summer, players
-# improve or fall away, and nothing in last season's results knows about it —
-# so the start of a season is treated as provisional again, whatever a
-# player's career record says. For their first few team matches of a season
-# they move on the high K, then settle onto the low one.
+# A carried rating looks like a stale prior. Months pass over the summer,
+# players improve or fall away, and nothing in last season's results knows
+# about it — so the obvious move is to treat the start of a season as
+# provisional again and let a returning player move on the high step for
+# their first few matches.
 #
-# Six is about the first quarter of a twenty-match season: long enough for a
-# real change in standard to show, short enough that one freak night cannot
-# define someone's year. Raising it buys responsiveness and pays in noise.
+# Measured, that is wrong, and wrong in proportion: predicting each match of
+# 2026-27 from only what came before it, a settle floor of 40 costs 0.00032
+# Brier against no floor at all, and a full restart at 160 costs 0.00257.
+# Every floor tried came out worse than none, in that order, and a paired
+# bootstrap over the same 300 pairings put the penalty above zero in 100% of
+# resamples. So there is no bump: a player's step depends only on how much
+# they have ever played.
 #
-# This one is unmeasured, and honestly so: with a single completed season to
-# rate from, every player's career record *is* their season record, so the
-# floor never binds and the data cannot say whether it helps. It is kept
-# because the reasoning stands and it costs nothing measurable. Test it once
-# two seasons are complete.
-K_SEASON_SETTLE = 6
-K_SETTLE_FLOOR = 40.0   # the step a returning player gets, whatever their career
+# The reason is that the premise was wrong rather than the arithmetic. A
+# carried rating is earned information, and a summer does not destroy much
+# of it — club standard is stable enough year to year that a season's record
+# predicts September better than a fresh look does. Re-opening it throws
+# away evidence to chase a change that mostly has not happened.
+#
+# 300 pairings is thin and this is one season's start. Re-check it when a
+# second one exists; if a bump ever does earn its place it will be small,
+# because 160 was the worst option tested, not the best.
 
 
-def step_for(career: int, this_season: int) -> float:
+def step_for(career: int) -> float:
     """How far one team match may move this player."""
-    decayed = max(K_FLOOR, K_START / (1 + career / K_HALF_LIFE))
-    if this_season < K_SEASON_SETTLE:
-        return max(decayed, K_SETTLE_FLOOR)
-    return decayed
+    return max(K_FLOOR, K_START / (1 + career / K_HALF_LIFE))
 CONVERGENCE_THRESHOLD = 0.5  # max rating change per iteration to declare convergence
 MAX_ITERATIONS = 20
 MIN_MATCHES = 15  # minimum singles matches before a rating is considered reliable
@@ -384,10 +387,8 @@ def _run_single_pass(
             expected_frac = total_expected / n_opponents
             # matches_played is reset each pass, so it counts this season's
             # matches already processed — the ones before this one.
-            this_season = pr.matches_played
-            career = experience.get(player.player_id, 0) + this_season
-            pr.rating += (step_for(career, this_season)
-                          * (actual_frac - expected_frac))
+            career = experience.get(player.player_id, 0) + pr.matches_played
+            pr.rating += step_for(career) * (actual_frac - expected_frac)
 
             pr.matches_played += 1
             pr.singles_won += real_wins
@@ -525,9 +526,6 @@ def calculate_ratings(matches: list[Match]) -> dict[str, PlayerRating]:
     Within a season the algorithm is:
       1. Seed each player from their carried-over rating, or their
          division's starting rating if they are new.
-      1a. Treat everyone as provisional for their first K_SEASON_SETTLE team
-         matches of the season, so a summer's change in standard shows up
-         rather than being held back by a rating built before it.
       2. Repeatedly replay the season's matches, updating ratings each pass.
       3. Stop when the maximum rating change between passes falls below
          CONVERGENCE_THRESHOLD, or after MAX_ITERATIONS.

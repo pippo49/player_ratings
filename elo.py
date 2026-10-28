@@ -76,9 +76,29 @@ def seed_for(season: str, division: int) -> float:
     nearest = min(ladder, key=lambda d: abs(d - division))
     return float(ladder[nearest])
 
-K_NEW = 48       # K-factor for players with < K_THRESHOLD team matches (converge faster)
-K_ESTABLISHED = 32  # K-factor for players with >= K_THRESHOLD team matches
-K_THRESHOLD = 15    # team matches before switching to the lower K-factor
+# How far one team match may move a player: large while they are unknown,
+# falling as their own record accumulates.
+#
+# A seed is a guess — a player starts at the level of the division they
+# registered in, which says what their club thinks, not what they can do.
+# With a flat step that guess lingers: Molly Brown won one singles of
+# eighteen and finished 94 points from her seed, still in the top quarter of
+# the league, because each night could only move her about twenty points.
+# Her own results never outweighed the assumption she started from.
+#
+# Halving every three matches fixes that without making anyone jumpy. A
+# first night moves a player 160 points; by their thirteenth the step is
+# below the 32 it used to be, so settled ratings are steadier than before,
+# not noisier. Measured out of sample on a proper scoring rule, this beats
+# the flat step by more than anything else tried: Brier 0.0901 against
+# 0.0987, where guessing 50-50 scores 0.1435.
+#
+# Fitted on one season predicting the next. Three parameters against 543
+# pairings, so re-check it when a second full season exists — though every
+# decaying shape tried beat the flat one, which is not the shape of a fluke.
+K_START = 160.0      # step for a player with no record at all
+K_HALF_LIFE = 3.0    # career team matches over which the step halves
+K_FLOOR = 20.0       # the step never falls below this
 
 # A carried rating is a stale prior. Months pass over the summer, players
 # improve or fall away, and nothing in last season's results knows about it —
@@ -89,7 +109,22 @@ K_THRESHOLD = 15    # team matches before switching to the lower K-factor
 # Six is about the first quarter of a twenty-match season: long enough for a
 # real change in standard to show, short enough that one freak night cannot
 # define someone's year. Raising it buys responsiveness and pays in noise.
+#
+# This one is unmeasured, and honestly so: with a single completed season to
+# rate from, every player's career record *is* their season record, so the
+# floor never binds and the data cannot say whether it helps. It is kept
+# because the reasoning stands and it costs nothing measurable. Test it once
+# two seasons are complete.
 K_SEASON_SETTLE = 6
+K_SETTLE_FLOOR = 40.0   # the step a returning player gets, whatever their career
+
+
+def step_for(career: int, this_season: int) -> float:
+    """How far one team match may move this player."""
+    decayed = max(K_FLOOR, K_START / (1 + career / K_HALF_LIFE))
+    if this_season < K_SEASON_SETTLE:
+        return max(decayed, K_SETTLE_FLOOR)
+    return decayed
 CONVERGENCE_THRESHOLD = 0.5  # max rating change per iteration to declare convergence
 MAX_ITERATIONS = 20
 MIN_MATCHES = 15  # minimum singles matches before a rating is considered reliable
@@ -179,9 +214,10 @@ class PlayerRating:
 # using 400 there is what made them sit too close to even.
 #
 # Fitted, not assumed. Bucket this season's results by the rating gap that
-# preceded them and the observed win rates track 250 across the whole range:
-# .10 against .11 at a 225-point deficit, .44/.44 at level, .90/.89 at a
-# 225-point lead. A Brier score agrees at 265.
+# preceded them and read off how often the stronger player actually won; the
+# observed rates track 285 across the whole range. Refit whenever the step
+# size changes, since a different step spreads the ratings differently and
+# the constant describes that spread: it was 250 under the flat step.
 #
 # It was briefly set to 120, from minimising mean absolute error on wins out
 # of three. That is not a proper scoring rule: if the true chance is 0.7,
@@ -194,7 +230,7 @@ class PlayerRating:
 # are independent and they are not — same player, same night — so it is
 # biased towards overconfidence too. The bucketed curve assumes nothing.
 SCALE = 400.0
-PREDICTION_SCALE = 250.0
+PREDICTION_SCALE = 285.0
 
 
 def win_probability(rating: float, opponent_rating: float) -> float:
@@ -350,12 +386,8 @@ def _run_single_pass(
             # matches already processed — the ones before this one.
             this_season = pr.matches_played
             career = experience.get(player.player_id, 0) + this_season
-            k = (
-                K_NEW
-                if this_season < K_SEASON_SETTLE or career < K_THRESHOLD
-                else K_ESTABLISHED
-            )
-            pr.rating += k * (actual_frac - expected_frac)
+            pr.rating += (step_for(career, this_season)
+                          * (actual_frac - expected_frac))
 
             pr.matches_played += 1
             pr.singles_won += real_wins

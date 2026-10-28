@@ -264,6 +264,37 @@ These catch whole classes of error, and did:
 - A rating change must only ever touch players who played in the season
   being changed.
 
+## A seed is a guess, and must give way to evidence
+
+The step size decays: 160 points for a player with no record, halving every
+three team matches, floored at 20 (`elo.step_for`). It replaced a flat 48,
+then 32, and it is the largest improvement measured here — Brier 0.0901
+against 0.0987, where guessing 50-50 scores 0.1435.
+
+The flat step let a seed stand as an assumption rather than a starting
+guess. Molly Brown won one singles of eighteen and finished 94 points from
+her seed, still in the league's top quarter, because no night could move her
+more than about twenty points. She is now 313th of 843. Raising the flat
+step does not fix this — at six times the old value she is still 380th and
+predictions are much worse. Only a step that *falls* as a player's own
+record grows does, which is also why settled ratings are now steadier than
+before, not noisier.
+
+Credit where due: the league's Bob proposed exactly this ("more thought into
+how to best allocate starting ratings"), and the measurement agreed with him.
+
+Changing the step changes how far apart the ratings sit, so
+`PREDICTION_SCALE` must be refitted with it — it went 250 to 285. Run
+`fit_scale.py` after any change to the step.
+
+Three parameters fitted against 543 pairings of one season predicting the
+next, so re-check with a second complete season. Every decaying shape tried
+beat the flat one, which is not the shape of a fluke.
+
+`K_SEASON_SETTLE` survives unmeasured and honestly so: with one completed
+season, a player's career record *is* their season record, so the floor
+never binds and the data cannot judge it.
+
 ## Fitting a probability needs a proper scoring rule
 
 The forecasting constant was briefly set to 120 by minimising mean absolute

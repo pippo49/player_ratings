@@ -4,6 +4,24 @@ State of the project as of 10 October 2026, written so a new session can pick
 it up without replaying the conversation that built it. `README.md` covers how
 to run things; this covers what is true and what to watch out for.
 
+## Where things are
+
+| | |
+|---|---|
+| `WEEKLY.md` | the weekly routine — three saved pages, one command |
+| `README.md` | how to run everything |
+| this file | what is true, and what has already gone wrong |
+
+Tools worth knowing, all re-runnable:
+
+| | |
+|---|---|
+| `import_saved.py` | reads saved pages, publishes — the weekly command |
+| `compare_rankings.py` | ours against the league's, scored properly |
+| `fit_scale.py` | refits `PREDICTION_SCALE`; run after any step change |
+| `check_ladder.py` | whether the division ladder matches what call-ups do |
+| `diagnose.py` | what the league's pages hold, via the workflow |
+
 ## What this is
 
 An ELO rating system for the Central London Table Tennis League, and a phone
@@ -17,18 +35,29 @@ only verifies the 9+1 format still holds.
 
 ## Current state
 
+As of 28 October 2026.
+
 | | |
 |---|---|
-| Matches | 961 — 937 from 2025/26, 24 from 2026/27 |
-| Rated players | 828 |
-| Registered squads | 615 players across 87 of 94 teams |
+| Matches | 1051 — 937 from 2025/26, 114 from 2026/27 (to 23 Oct) |
+| Rated players | 843, of whom 653 also carry the league's own rating |
+| Registered squads | 87 teams |
 | Confirmed aliases | 19, plus 14 recorded non-matches |
+| Scales | ours 285 points per 10:1 odds, the league's 960 |
+| Payload | 393 KB |
 | Live at | https://pippo49.github.io/player_ratings/ |
 
-Division 4 projection: St Katharines Trust 5 6.83, **Flick TTC 5 6.08 (the
-top-two bar)**, Apex 4 eighth on 4.64 — a gap of **+1.44 points per match**.
-On current squads, promotion is a stretch rather than a near miss. Apex 3
-(Division 3, 5.11 against a 5.57 bar) is the better prospect, and opened 10–0.
+Division 4: St Katharines Trust 5 7.71, **Flick TTC 5 6.93 (the top-two
+bar)**, Apex 4 ninth on 4.81 — a gap of **+2.12 points a match**. Promotion
+is out of reach on current squads; the live question is the other end, where
+safety sits at 4.66 and Apex 4 is 0.15 above it. Two played, both lost 1–9,
+both against sides above them.
+
+**Two sets of ratings are carried and either can be shown** — ours and the
+league's, switched in the app, remembered per device. They were a dead heat
+when measured (Brier 0.0964 theirs, 0.0980 ours), but that was before the
+step-size fix below, and ours has not been re-measured against theirs since.
+Doing that is the open question worth settling.
 
 ## How it fits together
 
@@ -247,6 +276,24 @@ only tell you which division a team played in *last* season.
 19 of 20 at home, so Apex 4 travel for both legs against each and the home/away
 split is 8/12, not 10/10. This is real scheduling, not a parse error.
 
+## How to judge a change to the ratings
+
+Three separate mistakes this project has made came from measuring wrongly,
+so the method matters as much as the idea:
+
+1. **Rate on one season, predict the next.** Anything fitted on the matches
+   it is scored against will flatter itself; `ours, all results` scores
+   0.0716 against `ours, last season only` at 0.0980 for exactly that
+   reason.
+2. **Score with a Brier score**, never mean absolute error on wins. MAE pays
+   for overconfidence and drove `PREDICTION_SCALE` to less than half its
+   real value before anyone noticed.
+3. **Look at the bucketed win rates too**, not just the summary number. They
+   assume nothing, and they are what caught the error the summary hid.
+
+Reference points on the current data: guessing 50-50 scores 0.1435, the
+flat step scored 0.0987, the decaying step scores 0.0901.
+
 ## Invariants worth asserting
 
 These catch whole classes of error, and did:
@@ -264,7 +311,9 @@ These catch whole classes of error, and did:
 - A rating change must only ever touch players who played in the season
   being changed.
 
-## A seed is a guess, and must give way to evidence
+## The rating model, and the three things that were wrong with it
+
+### A seed is a guess, and must give way to evidence
 
 The step size decays: 160 points for a player with no record, halving every
 three team matches, floored at 20 (`elo.step_for`). It replaced a flat 48,
@@ -295,7 +344,7 @@ beat the flat one, which is not the shape of a fluke.
 season, a player's career record *is* their season record, so the floor
 never binds and the data cannot judge it.
 
-## Fitting a probability needs a proper scoring rule
+### Fitting a probability needs a proper scoring rule
 
 The forecasting constant was briefly set to 120 by minimising mean absolute
 error on wins out of three. MAE is not a proper scoring rule: if the true
@@ -311,7 +360,7 @@ longer offers MAE. Maximum likelihood says 190, but it assumes a player's
 three singles are independent — same player, same night — so it leans the
 same way; prefer the buckets.
 
-## The ladder and the scale must agree
+### The ladder and the scale must agree
 
 `SCALE` (400) updates ratings; `PREDICTION_SCALE` (120) converts a rating gap
 into a chance of winning. Splitting them fixed forecasts *within* a division —
@@ -336,14 +385,28 @@ by-gap breakdown re-measure both as results accumulate.
 
 ## Open items
 
+- **Is our engine now better than the league's ranking?** They were level
+  before the decaying step size went in, which improved ours by more than
+  anything else measured. `compare_rankings.py` re-runs the comparison on a
+  folder of saved pages and answers it. If ours wins clearly, the weekly
+  routine needs match cards again — forty pages rather than three — and the
+  allowlist request to the league stops being a convenience.
+- **An unranked player sits at their division's median**, which is some real
+  player's rating, so a stand-in and a measured number can look identical.
+  The payload marks them (`ranked_tt365`) and the app shows a `~`. But the
+  line-up optimiser still prefers an unknown player at the median over a
+  measured weak one — 15 such players in Division 4. Seeding them at the
+  division's lower quartile instead was proposed and not done; it is a guess
+  about people we have no data on, so it was left to the user.
 - **Apex 4 v Highbury 3, 6 October, cancelled by Highbury 3.** Under Rule
   43(b) the Divisional Secretary must hear the circumstances within 7 days or
   *neither* side gets the 3-point bonus. Two emails are drafted in the
   conversation but unsent — they need the time their notice arrived and the
   reason given. The user asked not to be reminded again.
-- **Arturas Rybakas — settled, do not reopen.** 44/45 (98%) last season,
-  rated 1827 and registered for St Katharines Trust 5 in Division 4, above
-  everyone in that club's Division 1 and Division 2 sides. A Rule 28(a)
+- **Arturas Rybakas — settled, do not reopen.** 47/48 across two seasons,
+  rated 1887 (31st of 843) and registered for St Katharines Trust 5 in
+  Division 4, above everyone in that club's Division 1 and Division 2 sides.
+  Worth about 1.1 points a match to that side on his own. A Rule 28(a)
   rank-order query was drafted; it was never sent, and should not be. The
   league's "players restricted from playing up" list stars him, which *is*
   the declaration Rule 28(b) requires, so the registration is in order. The
@@ -362,7 +425,11 @@ by-gap breakdown re-measure both as results accumulate.
   per-season *ratings* and a full trend line are not. `PlayerRating.history`
   holds the whole trajectory in memory; only the last three matches are
   exported, as `form_detail`. Exporting all of it would roughly double the
-  payload, which is already 332 KB.
+  payload, which is already 393 KB.
+- `MIN_MATCHES = 15` marks a rating "reliable" after 15 singles — only five
+  team matches, arriving in correlated threes against the same opponents.
+  Molly Brown and Umair Obaid both cleared it on records that plainly are
+  not reliable. The information unit is the team match, not the singles.
 
 ## Working style the user expects
 

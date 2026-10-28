@@ -241,6 +241,12 @@ Players with fewer than 15 singles matches are flagged with `*` to indicate a le
 
 ## How the ratings work
 
+**[MODEL.md](MODEL.md) is the current description** — the constants in use,
+what each one does, what is known to be wrong with it, and what to do next.
+The sections below explain the shape of the thing and are less often
+updated.
+
+
 ### Data source
 
 Each team match consists of 9 singles matches (3 players per side, round-robin). Each singles match is best of 5 sets, each set to 11 points (win by 2). The scraped data gives each player's singles wins (0-3) per team match.

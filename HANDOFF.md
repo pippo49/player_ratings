@@ -9,6 +9,7 @@ to run things; this covers what is true and what to watch out for.
 | | |
 |---|---|
 | `WEEKLY.md` | the weekly routine — three saved pages, one command |
+| `MODEL.md` | the rating model as it stands, and the next steps on it |
 | `README.md` | how to run everything |
 | this file | what is true, and what has already gone wrong |
 

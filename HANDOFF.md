@@ -24,6 +24,7 @@ Tools worth knowing, all re-runnable:
 | `walkforward.py` | predicts each match of this season from only what came before it; the only test that can see a start-of-season rule |
 | `check_drift.py` | whether playing above your own division pays rating points |
 | `check_vs_league.py` | ours against the league's ranking, from the cache, no saved pages |
+| `import_card.py` | imports cards transcribed from the league's downloadable card images |
 | `diagnose.py` | what the league's pages hold, via the workflow |
 
 ## What this is

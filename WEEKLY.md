@@ -19,6 +19,39 @@ next, and an empty one used to read as "the current directory".
 
 ---
 
+## When pages cannot be saved: card images instead
+
+If saving HTML is not possible, every match card has a **download image**
+button, and that image can be read directly — no saving of pages, no
+scraping. Tested against a card already in the cache, the reading reproduced
+it exactly, all six players.
+
+Send the images. They are transcribed into a JSON file and imported with:
+
+```bash
+uv run python import_card.py cards.json            # check only
+uv run python import_card.py cards.json --commit   # check, then write
+```
+
+Nothing is written unless every check passes. Three things are checked, and
+all three have been shown to catch a real mistake: the nine singles must be
+nine, every player name must be one already seen in a result (a dropped
+letter in a name would otherwise invent a player rather than update one), and
+the lines transcribed must add up to the score the card itself prints. A
+misread winner changes that total and is rejected.
+
+**A division at a time is enough.** The whole league plays 30-40 team matches
+a week, but Division 4 plays only two or three, and a division's ratings come
+almost entirely from its own matches. Division 4 keeps the relegation picture
+current; add Division 7 for the Apex 5 call-ups. Four to six images a week
+rather than forty pages.
+
+What that leaves out: the other divisions go stale, so cross-division numbers
+and the all-league ranking drift until cards resume. For the question that
+matters now — who goes down in Division 4 — it does not bite.
+
+---
+
 ## 1. Start clean
 
 ```bash

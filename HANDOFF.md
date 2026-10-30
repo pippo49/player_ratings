@@ -340,8 +340,9 @@ predictions are much worse. Only a step that *falls* as a player's own
 record grows does, which is also why settled ratings are now steadier than
 before, not noisier.
 
-Credit where due: the league's Bob proposed exactly this ("more thought into
-how to best allocate starting ratings"), and the measurement agreed with him.
+Credit where due: this came from a suggestion by the league's ranking
+contact, that it was worth more thought on how starting ratings are
+allocated. The measurement agreed.
 
 Changing the step changes how far apart the ratings sit, so
 `PREDICTION_SCALE` must be refitted with it — it went 250 to 285. Run

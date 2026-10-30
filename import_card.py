@@ -122,8 +122,14 @@ def _build(card, known: set[str]) -> Match:
         players = []
         for name in _side_players(card, side):
             w, _played = tally[(side, name)]
+            # normalise(), not identity(): the scraper stores the plain
+            # normalised name and the rating engine folds aliases in later.
+            # Applying them here instead splits anyone who has one -- Henry
+            # Adam went in under "henry adams" and sat apart from his own
+            # earlier matches, showing 2 of 3 for the season rather than 2
+            # of 6.
             players.append(PlayerResult(name=name,
-                                        player_id=identity(name),
+                                        player_id=normalise(name),
                                         games_won=w))
         sides[side] = TeamResult(name=card[side], players=players,
                                  total_score=final[side])

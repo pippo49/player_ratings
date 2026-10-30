@@ -21,10 +21,19 @@ The app carries both and switches between them in the header.
 | Coverage | all 843 players | 653; the rest get a stand-in |
 | Needs | ~40 saved pages a week | 2 saved pages a week |
 
-They were a **dead heat** when last measured — Brier 0.0964 theirs against
-0.0980 ours, where guessing 50-50 scores 0.1435. **That was before the step
-size changed**, which improved ours to 0.0901 against a comparable baseline.
-Re-measuring is the first item under Next steps.
+They were a **dead heat** when first measured — Brier 0.0964 theirs against
+0.0980 ours. **That is no longer so.** Re-measured after the step size
+changed, with ours rated on 2025-26 alone and both asked about 2026-27:
+**ours 0.0850, theirs 0.1023**, over the 700 pairings where 534 players
+carry both ratings, against 0.1413 for guessing. Paired, ours is ahead in
+100% of 4000 resamples.
+
+The comparison is tilted their way — their published numbers already include
+the matches being scored and ours do not — so the gap understates us.
+`check_vs_league.py` re-runs it from the cache without saved pages.
+
+The practical upshot: the ~40 cards a week buy real accuracy over the
+2-page route, so the effort is not merely a preference.
 
 A player the league does not rank is shown at their division's median,
 marked `~` in the app and `ranked_tt365: false` in the payload. That median
@@ -142,22 +151,30 @@ a fluke, but a clean test needs data nobody has looked at yet.
 
 ## Next steps, in order
 
-1. **Re-run `compare_rankings.py` on a folder of saved pages.** Ours against
-   the league's, now that the step size has changed. This decides everything
-   below it.
-2. **If ours wins clearly:** the weekly routine needs match cards again —
-   about forty pages rather than three — so the allowlist request to the
-   league stops being a convenience and becomes the thing that makes it
-   viable. If it is still a tie, stay on the league's ratings and three
-   pages.
-3. **Re-fit with a second complete season**, when there is one. `fit_scale.py`
-   for the scale, the variants sweep for the step. Both are re-runnable.
+The first two items are now answered and kept here as the reason for the
+third.
+
+1. ~~Re-measure ours against the league's ranking.~~ **Done.** Ours wins
+   clearly out of sample — 0.0850 against 0.1023, ahead in 100% of paired
+   resamples. `check_vs_league.py` re-runs it from the cache any week.
+2. ~~Decide the weekly routine on that result.~~ **Match cards win.** The
+   three-page route would cost real accuracy, so importing cards is worth
+   the effort rather than a preference.
+3. **Keep the cards coming.** Whatever makes that sustainable is the most
+   valuable thing to improve, because everything in the model depends on
+   results arriving. A division's own cards are what keep its players
+   current, so a partial week — one division rather than all eight — is
+   worth far more than nothing.
 4. **Decide on unranked players** — leave them at the median and read past
    the `~`, or drop them to the lower quartile so unknowns stop outranking
    known-weak players.
 5. **Raise `MIN_MATCHES`**, or express it in team matches.
-6. **Re-measure the ladder** once more call-ups accumulate
-   (`check_ladder.py`). 15 cases cannot settle it; a season might.
+6. **Re-fit with a second complete season**, when there is one.
+   `fit_scale.py` for the scale, the variants sweep for the step, and
+   `walkforward.py` for anything conditioned on the start of a season.
+   All are re-runnable.
+7. **Re-measure the ladder** once more call-ups accumulate
+   (`check_ladder.py`). 39 pairings cannot settle it; a season might.
 
 ---
 

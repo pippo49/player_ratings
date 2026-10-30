@@ -23,6 +23,7 @@ Tools worth knowing, all re-runnable:
 | `check_ladder.py` | whether the division ladder matches what call-ups do |
 | `walkforward.py` | predicts each match of this season from only what came before it; the only test that can see a start-of-season rule |
 | `check_drift.py` | whether playing above your own division pays rating points |
+| `check_vs_league.py` | ours against the league's ranking, from the cache, no saved pages |
 | `diagnose.py` | what the league's pages hold, via the workflow |
 
 ## What this is
@@ -58,9 +59,22 @@ both against sides above them.
 
 **Two sets of ratings are carried and either can be shown** — ours and the
 league's, switched in the app, remembered per device. They were a dead heat
-when measured (Brier 0.0964 theirs, 0.0980 ours), but that was before the
-step-size fix below, and ours has not been re-measured against theirs since.
-Doing that is the open question worth settling.
+when first measured (Brier 0.0964 theirs, 0.0980 ours). **That is no longer
+true: ours is now clearly ahead**, and the question is settled.
+
+Rating ours on 2025-26 alone and asking both about 2026-27, over the 700
+pairings where 534 players carry both ratings: **ours 0.0850, theirs
+0.1023**, against 0.1413 for guessing. Paired over the same pairings ours is
+ahead by 0.0173 (95% interval +0.0088 to +0.0263), in 100% of 4000
+resamples. `check_vs_league.py` re-runs it from the cache, needing no saved
+pages.
+
+The gap is a floor rather than a ceiling, because the comparison is tilted
+their way: their numbers in the payload already include the 2026-27 matches
+being scored, and ours deliberately do not.
+
+**So the match cards earn their keep.** Switching to the three-page routine
+would cost real accuracy, not merely some theoretical purity.
 
 One hint that it matters: over the 653 players the league genuinely ranks,
 their middle half spans 1.59 factors of ten in odds against our 1.29 (1.49

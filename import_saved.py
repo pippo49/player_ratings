@@ -289,7 +289,14 @@ def main() -> int:
 
     season = args.season
     cached = load_matches() or []
-    known = {m.match_id for m in cached if m.season == season and m.match_id}
+    # A result already held as a stub still wants its card, so "known" means
+    # held *with a line-up*, not merely present. Keying on presence alone
+    # made the easy path a trap: import the fixtures page first and every
+    # result becomes a stub, after which nothing would ever report its card
+    # as missing again.
+    known = {m.match_id for m in cached
+             if m.season == season and m.match_id
+             and (m.home.players or m.away.players)}
     divisions = team_divisions(season)
 
     ranking = parse_ranking(args.folder, set(divisions) | set(cached_ids(cached)))

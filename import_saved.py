@@ -88,6 +88,41 @@ def pair(home: str, away: str) -> tuple[str, str]:
 # The page of links this writes, which lands in the folder it also reads.
 LINK_PAGE = "_cards_to_save.html"
 
+# Match ids minted locally for a card read from a picture.
+IMAGE_ID_PREFIX = "img-"
+
+def adopt_real_ids(cached, fixtures, season: str) -> int:
+    """Give a match read from an image the league's own id once it appears.
+
+    A card transcribed from a picture has no match id -- the picture shows a
+    truncated URL -- so it is stored under a synthetic one. Dedup is by id,
+    so when the league later publishes that result the fixtures page brings
+    the real id and the same match would be added a second time, counted
+    twice in every player's record.
+
+    Matching instead on the season, date and both team names, which a
+    fixture and its own card always agree on, lets the stored match adopt
+    the real id before any of that happens.
+    """
+    by_key = {}
+    for m in cached:
+        if m.season == season and m.match_id.startswith(IMAGE_ID_PREFIX):
+            by_key[(m.date, pair(m.home.name, m.away.name))] = m
+
+    adopted = 0
+    for f in fixtures:
+        if not f["match_id"]:
+            continue
+        m = by_key.get((f["date"], pair(f["home"], f["away"])))
+        if m is not None:
+            print(f"  {m.home.name} v {m.away.name} on {m.date} was read from "
+                  f"an image; adopting the league's id {f['match_id']}")
+            m.match_id = f["match_id"]
+            adopted += 1
+    return adopted
+
+
+
 # What a browser writes when you pick the wrong "Save as" option. MHTML is a
 # MIME container, not HTML, so nothing here can read it.
 SAVED_WRONG = {
@@ -341,6 +376,15 @@ def main() -> int:
     fixtures, cards, unknown = read_folder(args.folder, season)
     for name in unknown:
         print(f"  ignored {name}")
+
+    # Before anything is compared by id, let results read from pictures take
+    # the league's own id, or they would be imported again alongside
+    # themselves.
+    if adopt_real_ids(cached, fixtures, season) and not args.dry_run:
+        save_matches(cached)
+        known = {m.match_id for m in cached
+                 if m.season == season and m.match_id
+                 and (m.home.players or m.away.players)}
     print(f"Read {len(fixtures)} played fixture(s) and {len(cards)} match card(s).")
     if not fixtures:
         if not any(args.folder.iterdir()):

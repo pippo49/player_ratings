@@ -220,7 +220,7 @@ class PlayerRating:
 #
 # Fitted, not assumed. Bucket this season's results by the rating gap that
 # preceded them and read off how often the stronger player actually won; the
-# observed rates track 285 across the whole range. Refit whenever the step
+# observed rates track 320 across the whole range. Refit whenever the step
 # size changes, since a different step spreads the ratings differently and
 # the constant describes that spread: it was 250 under the flat step.
 #
@@ -235,7 +235,7 @@ class PlayerRating:
 # are independent and they are not — same player, same night — so it is
 # biased towards overconfidence too. The bucketed curve assumes nothing.
 SCALE = 400.0
-PREDICTION_SCALE = 285.0
+PREDICTION_SCALE = 320.0
 
 
 def win_probability(rating: float, opponent_rating: float) -> float:

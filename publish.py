@@ -106,13 +106,14 @@ def main() -> int:
                   "where the request comes from. Nothing was changed.")
         return 1
 
-    matches, added = merge_matches(cached, scraped)
-    if not added:
+    matches, added, upgraded = merge_matches(cached, scraped)
+    if not (added or upgraded):
         stamp("Nothing new — the app is already up to date.")
         return 0
 
     new_ones = matches[len(cached):]
-    stamp(f"{added} new result(s):")
+    stamp(f"{added} new result(s)"
+          + (f", {upgraded} line-up(s) filled in:" if upgraded else ":"))
     stamp("\n".join(describe(new_ones)))
 
     save_matches(matches)

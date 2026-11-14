@@ -60,7 +60,8 @@ def load_matches() -> list[Match] | None:
     return [_dict_to_match(d) for d in data]
 
 
-def merge_matches(existing: list[Match], new: list[Match]) -> tuple[list[Match], int]:
+def merge_matches(existing: list[Match], new: list[Match]
+                  ) -> tuple[list[Match], int, int]:
     """Merge new matches into existing, deduplicating by (season, match_id).
 
     The season is part of the key because match IDs are only known to be
@@ -72,7 +73,13 @@ def merge_matches(existing: list[Match], new: list[Match]) -> tuple[list[Match],
     its match card is saved. A full card replaces a stub; a stub never
     replaces anything.
 
-    Returns (merged list, count of newly added matches).
+    Returns (merged list, newly added, stubs filled in).
+
+    The two counts are separate because they are separately interesting and
+    separately *missable*: filling a stub in changes the cache without adding
+    anything to it, so a caller that saves only when something was added
+    writes nothing and reports nothing, and the line-ups it just read are
+    lost. That is exactly what happened to 115 match cards.
     """
     def detailed(m: Match) -> bool:
         return bool(m.home.players or m.away.players)
@@ -80,7 +87,7 @@ def merge_matches(existing: list[Match], new: list[Match]) -> tuple[list[Match],
     index = {(m.season, m.match_id): i
              for i, m in enumerate(existing) if m.match_id}
     merged = list(existing)
-    added = 0
+    added = upgraded = 0
     for m in new:
         key = (m.season, m.match_id)
         if not m.match_id:
@@ -91,4 +98,5 @@ def merge_matches(existing: list[Match], new: list[Match]) -> tuple[list[Match],
             added += 1
         elif detailed(m) and not detailed(merged[index[key]]):
             merged[index[key]] = m      # the card has arrived for a stub
-    return merged, added
+            upgraded += 1
+    return merged, added, upgraded

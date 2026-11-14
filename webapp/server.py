@@ -123,7 +123,7 @@ class UpdateJob:
             else:
                 held = {(m.season, m.match_id) for m in existing if m.match_id}
                 arrived = [m for m in scraped if (m.season, m.match_id) not in held]
-                matches, added = merge_matches(existing, scraped)
+                matches, added, _upgraded = merge_matches(existing, scraped)
 
             # Say what came in, not just how many. A count tells you something
             # happened; the scores tell you whether it was your match.

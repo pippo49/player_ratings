@@ -454,12 +454,21 @@ def main() -> int:
         stamp("No new results on those pages.")
         return publish_ratings_only(0)
 
-    matches, added = merge_matches(cached, built)
-    if not added:
+    # A card arriving for a result already held as a stub changes the cache
+    # without adding to it. Treating "nothing added" as "nothing to do"
+    # returned before save_matches and silently discarded every line-up that
+    # had just been read -- 115 of them, on the run that found this.
+    matches, added, upgraded = merge_matches(cached, built)
+    if not (added or upgraded):
         stamp("No new results to add.")
         return publish_ratings_only(1 if missing else 0)
 
-    stamp(f"{added} new result(s) ready:")
+    done = []
+    if added:
+        done.append(f"{added} new result(s)")
+    if upgraded:
+        done.append(f"{upgraded} line-up(s) filled in")
+    stamp(" and ".join(done) + " ready:")
     stamp("\n".join(describe(built)))
 
     if args.dry_run:
@@ -468,7 +477,10 @@ def main() -> int:
 
     save_matches(matches)
     export()
-    status = commit_and_push(f"Add {added} new result(s) from saved pages", added)
+    status = commit_and_push(
+        f"Add {added} new result(s) and {upgraded} line-up(s) from saved pages"
+        if upgraded else f"Add {added} new result(s) from saved pages",
+        added + upgraded)
     if missing:
         print(f"\nSave the {len(missing)} card(s) above and run again for the rest.")
     return status

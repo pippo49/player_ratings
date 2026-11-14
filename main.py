@@ -45,8 +45,9 @@ def _load_or_scrape(args) -> list:
         known = {(m.season, m.match_id) for m in (cached or []) if m.match_id}
         scraped = scrape_all_divisions(verbose=True, known=known)
         if cached:
-            matches, added = merge_matches(cached, scraped)
-            print(f"\n{added} new match(es) added.")
+            matches, added, upgraded = merge_matches(cached, scraped)
+            print(f"\n{added} new match(es) added"
+                  + (f", {upgraded} line-up(s) filled in." if upgraded else "."))
         else:
             matches = scraped
         save_matches(matches)

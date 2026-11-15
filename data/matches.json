@@ -55807,12 +55807,44 @@
     "date": "2026-11-09",
     "home": {
       "name": "Morpeth 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Richard Thorne",
+          "player_id": "richard thorne",
+          "games_won": 1
+        },
+        {
+          "name": "Matthew Stephens",
+          "player_id": "matthew stephens",
+          "games_won": 1
+        },
+        {
+          "name": "Edward Baker",
+          "player_id": "edward baker",
+          "games_won": 2
+        }
+      ],
       "total_score": 4
     },
     "away": {
       "name": "Flick TTC 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Vitali Levytski",
+          "player_id": "vitali levytski",
+          "games_won": 3
+        },
+        {
+          "name": "Jasper Fung",
+          "player_id": "jasper fung",
+          "games_won": 0
+        },
+        {
+          "name": "Laurent Putz",
+          "player_id": "laurent putz",
+          "games_won": 2
+        }
+      ],
       "total_score": 6
     }
   },
@@ -55823,12 +55855,44 @@
     "date": "2026-11-10",
     "home": {
       "name": "Highbury 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Amiran Melua",
+          "player_id": "amiran melua",
+          "games_won": 2
+        },
+        {
+          "name": "Tom Cannon",
+          "player_id": "tom cannon",
+          "games_won": 2
+        },
+        {
+          "name": "John Wu",
+          "player_id": "john wu",
+          "games_won": 1
+        }
+      ],
       "total_score": 6
     },
     "away": {
       "name": "Fulham Brunswick 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Jean-Philippe Wilsch",
+          "player_id": "jean philippe wilsch",
+          "games_won": 3
+        },
+        {
+          "name": "Luigi Bianchi",
+          "player_id": "luigi bianchi",
+          "games_won": 1
+        },
+        {
+          "name": "Faris Maniem",
+          "player_id": "faris maniem",
+          "games_won": 0
+        }
+      ],
       "total_score": 4
     }
   }

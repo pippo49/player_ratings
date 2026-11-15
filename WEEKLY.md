@@ -1,56 +1,84 @@
 # The weekly update
 
-About five minutes. Everything runs in WSL from
-`~/python_projects/player_ratings`.
+Run it in **WSL**, not on the Pi: the browser saves into Windows Downloads
+and WSL reads that same disk at `/mnt/c/...`, so nothing has to be copied.
 
 Results are saved by hand because Cloudflare challenges scripted requests to
-tabletennis365 — from GitHub and from home alike. `import_saved.py` never
-contacts the league; it only reads what the browser saved.
-
-**Three pages, then one command.** One fixtures page and two ranking pages;
-the command reads the folder and publishes.
-
-```bash
-uv run python import_saved.py /mnt/c/Users/ThroX/Downloads/tt365
-```
+tabletennis365 — from GitHub, from this sandbox and from home alike, so it
+is not about where the request comes from. `import_saved.py` never contacts
+the league; it only reads what the browser saved.
 
 Paths in full on purpose: a shell variable set in one terminal is gone in the
 next, and an empty one used to read as "the current directory".
 
 ---
 
-## When pages cannot be saved: card images instead
-
-If saving HTML is not possible, every match card has a **download image**
-button, and that image can be read directly — no saving of pages, no
-scraping. Tested against a card already in the cache, the reading reproduced
-it exactly, all six players.
-
-Send the images. They are transcribed into a JSON file and imported with:
+## The whole routine
 
 ```bash
-uv run python import_card.py cards.json            # check only
-uv run python import_card.py cards.json --commit   # check, then write
+# 1. fetch
+cd ~/python_projects/player_ratings && git pull
+rm -rf /mnt/c/Users/ThroX/Downloads/tt365
+mkdir -p /mnt/c/Users/ThroX/Downloads/tt365
 ```
 
-Nothing is written unless every check passes. Three things are checked, and
-all three have been shown to catch a real mistake: the nine singles must be
-nine, every player name must be one already seen in a result (a dropped
-letter in a name would otherwise invent a player rather than update one), and
-the lines transcribed must add up to the score the card itself prints. A
-misread winner changes that total and is rejected.
+**2. Save three pages** into that folder, as **Webpage, HTML Only**:
 
-**A division at a time is enough.** The whole league plays 30-40 team matches
-a week, but Division 4 plays only two or three, and a division's ratings come
-almost entirely from its own matches. Division 4 keeps the relegation picture
-current; add Division 7 for the Apex 5 call-ups. Four to six images a week
-rather than forty pages.
+```
+https://www.tabletennis365.com/CentralLondon/Fixtures?leagueName=Winter%202026-27
+https://www.tabletennis365.com/CentralLondon/Ranking
+https://www.tabletennis365.com/CentralLondon/Ranking?p=2
+```
 
-What that leaves out: the other divisions go stale, so cross-division numbers
-and the all-league ranking drift until cards resume. For the question that
-matters now — who goes down in Division 4 — it does not bite.
+```bash
+# 3. update — publishes straight away
+uv run python import_saved.py /mnt/c/Users/ThroX/Downloads/tt365
+```
+
+Every result, the division table and the league's own ratings are now
+current. Takes about two minutes.
+
+```bash
+# 4. find the match cards still wanted
+uv run python import_saved.py /mnt/c/Users/ThroX/Downloads/tt365 --with-cards
+```
+
+This lists each result still missing its line-up and writes a page of
+clickable links, telling you where it landed. Work down it: click, let it
+load, **Ctrl+S**, Enter, **Ctrl+W** — about four seconds each.
+
+```bash
+# 5. import the cards — publishes again
+uv run python import_saved.py /mnt/c/Users/ThroX/Downloads/tt365 --with-cards
+```
+
+Expect it to say **N line-up(s) filled in**. A result already held as a stub
+stays on the missing-cards list until its card arrives, so nothing is lost
+by doing step 5 days later, or a division at a time.
+
+**Too many cards?** Add `--divisions 4,7`. The rest keep their correct team
+scores as stubs and stay on the list for later.
 
 ---
+
+## Results the league has not published yet
+
+Your own match often is not on the site for days. Nothing above can pick
+those up, so send Claude the **card image** (the download button on a match
+card) or a **photo of the paper result sheet**, and it goes in through
+`import_card.py`.
+
+A paper sheet is the better of the two: the captains write a per-player set
+count in the header, which checks the reading of the grid independently.
+
+Reading an image is not as safe as saving the page. A rotated or shadowed
+photo has had two players' results swapped, and none of the checks caught
+it — the team total still added up and both names were real. Prefer saved
+HTML whenever the result is actually on the site.
+
+---
+
+# In more detail
 
 ## 1. Start clean
 
@@ -106,15 +134,15 @@ notes the date their record runs to.
 
 **Both sets of ratings are kept.** The payload carries ours and the league's,
 and a **Mine / League** switch under the header moves between them — no
-rebuild, and the choice is remembered. Which is better is still open: they
-were a dead heat when measured and our calibration has since been corrected.
-Saving match cards again (`--with-cards`) is what would settle it, since a
-card saved later fills in a result already stored.
+rebuild, and the choice is remembered. Which is better is **settled**: ours predicts
+better, 0.0851 against 0.1028 on 1426 pairings, ahead in 100% of paired
+resamples — and that is a floor, since their numbers have already seen the
+matches being scored and ours have not. `check_vs_league.py` re-runs it from
+the cache.
 
-To bring records up to date as well, add `--with-cards` and it will list a
-match card per result to save — about forty a week. Worth doing occasionally
-rather than weekly; a card saved later fills in a result already stored,
-without duplicating it.
+Because ours predicts better, the match cards earn their keep: skipping
+them means running on the weaker of the two sets of ratings. About forty a
+week, which is roughly ten minutes with the links page.
 
 ---
 
@@ -131,6 +159,7 @@ without duplicating it.
 | `ignored cache.py`, `ignored README.md` … | It is reading the repo, not your saves — the path was wrong |
 | `Nothing new on those pages` | Everything on them is already published |
 | `On branch X, not master` | `git checkout master`, then run it again |
+| `No new results to add` after saving cards | Was a bug: cards filling in stubs were discarded. Fixed — `git pull` and re-run |
 
 ## Useful flags
 
@@ -138,7 +167,21 @@ without duplicating it.
 |---|---|
 | `--dry-run` | Report what it found, write and push nothing |
 | `--links` | Just print the fixtures page URL and stop |
-| `--divisions 3,4,7` | Only import those divisions (currently importing all) |
+| `--divisions 3,4,7` | Only import those divisions; the rest stay as stubs |
+| `--with-cards` | Expect a card per result: lists the ones still wanted and writes the links page |
+
+## Checking the model after a big import
+
+More results means the thin measurements can be re-run. None of these
+contact the league; they all read the cache.
+
+| | |
+|---|---|
+| `check_vs_league.py` | ours against the league's ranking |
+| `fit_scale.py` | refits `PREDICTION_SCALE` |
+| `walkforward.py` | anything conditioned on the start of a season |
+| `check_drift.py`, `check_drift_oos.py` | whether playing up is rated correctly |
+| `check_ladder.py` | whether the division ladder matches what call-ups do |
 
 ## If the league ever answers requests again
 

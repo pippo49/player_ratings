@@ -102,8 +102,76 @@ def _rosters(matches: list[Match]) -> dict[str, dict[str, int]]:
     for match in matches:
         for side in (match.home, match.away):
             for player in side.players:
-                rosters[side.name][player.player_id] += 1
+                # identity(), not player_id: ratings are keyed that way, and
+                # the stored ids do not agree with it. Last season's matches
+                # carry the league's numeric ids, which it reissues each
+                # year, and a player with a confirmed alias is stored under
+                # the name on the card rather than the one they are rated
+                # under. Counting by the raw id put Henry Adam's four
+                # appearances under a key nothing reads, so he showed as
+                # never having played and was dropped from the line-up the
+                # model expected Apex 4 to field.
+                rosters[side.name][identity(player.name)] += 1
     return {team: dict(players) for team, players in rosters.items()}
+
+
+# How much a player's attendance last season is worth, measured in matches
+# of this season. Weighting a side's likely line-up by this season's
+# turnouts alone over-fits a four-match sample: Tony Lee played 16 of
+# Irving 4's 20 matches last season and one of Irving 3's first four, which
+# left the model unable to select him at all.
+#
+# Walking forward through 2026-27 and comparing the predicted trio's mean
+# rating with the one actually fielded, blending the prior in cuts the error
+# from 36.3 points to 31.2, better in 100% of 4000 paired resamples. The
+# gain is largest early (37.9 to 31.2 over a side's first three matches) and
+# survives later (32.8 to 31.2). Higher weights measure a shade better still,
+# but only because the sample is mostly early-season: at 20 the prior never
+# fades within a season, which is wrong once a side has a real record.
+ATTENDANCE_PRIOR_MATCHES = 6.0
+
+
+def _team_matches_now(matches: list[Match]) -> dict[str, int]:
+    """{team: matches played this season}. The prior is weighed against this.
+
+    Not the highest appearance count on the roster: that is only the same
+    number when somebody has played every match, and understates a side
+    whose line-up rotates -- exactly the side whose turnout is hardest to
+    predict.
+    """
+    counts: Counter = Counter()
+    for match in matches:
+        if match.season != CURRENT_SEASON:
+            continue
+        for side in (match.home, match.away):
+            counts[side.name] += 1
+    return dict(counts)
+
+
+def _attendance_prior(matches: list[Match]) -> dict[str, float]:
+    """{player_id: how often they turned out, in seasons before this one}.
+
+    Measured against the team they appeared for most, since team names change
+    between seasons and a player cannot be judged against a side they were
+    never part of.
+    """
+    appearances: Counter = Counter()
+    team_games: Counter = Counter()
+    played_for: dict[str, Counter] = defaultdict(Counter)
+    for match in matches:
+        if match.season == CURRENT_SEASON:
+            continue
+        for side in (match.home, match.away):
+            team_games[side.name] += 1
+            for player in side.players:
+                key = identity(player.name)
+                appearances[key] += 1
+                played_for[key][side.name] += 1
+    out = {}
+    for pid, count in appearances.items():
+        home_team = played_for[pid].most_common(1)[0][0]
+        out[pid] = min(1.0, count / max(team_games[home_team], 1))
+    return out
 
 
 def _team_divisions(matches: list[Match]) -> dict[str, int]:
@@ -543,6 +611,8 @@ def build_payload(matches: list[Match]) -> dict:
 
     projected = not any(m.season == CURRENT_SEASON for m in matches)
     rosters = _by_team_now(matches, _rosters)
+    prior = _attendance_prior(matches)
+    team_played = _team_matches_now(matches)
 
     # Divisions inferred from results describe the season those results came
     # from, so last season's promotions and relegations would all be undone.
@@ -606,9 +676,15 @@ def build_payload(matches: list[Match]) -> dict:
             # when it is last season's roster standing in until they register.
             "registered": team in registered,
             "players": [
-                {"id": pid, "appearances": roster[pid]}
+                {"id": pid, "appearances": roster[pid],
+                 # Their turnout rate before this season, so a regular who
+                 # has missed a couple of early fixtures is not written off.
+                 "prior": round(prior.get(pid, 0.5), 3)}
                 for pid in member_ids
             ],
+            # Matches this side has played this season, which is what the
+            # prior is weighed against.
+            "played": team_played.get(team, 0),
         })
 
     last = _last_played(matches)
@@ -616,6 +692,9 @@ def build_payload(matches: list[Match]) -> dict:
         # What a rating gap means as a chance of winning. Not the constant
         # the ratings were built with — see elo.PREDICTION_SCALE.
         "prediction_scale": PREDICTION_SCALE,
+        # How many matches a player's attendance before this season is worth
+        # when working out who a side is likely to field.
+        "attendance_prior_matches": ATTENDANCE_PRIOR_MATCHES,
         "prediction_scale_tt365": TT365_PREDICTION_SCALE,
         # Which source the app opens on. Both sets of ratings travel in the
         # payload, so switching between them is a toggle, not a rebuild.

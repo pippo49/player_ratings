@@ -106,8 +106,8 @@ function expectedTrio(squad) {
   const ranked = squad.slice().sort((a, b) => b.rating - a.rating);
   if (ranked.length <= 3) return ranked;
 
-  const total = ranked.reduce((sum, p) => sum + (p.appearances || 0), 0);
-  if (total <= 0) {
+  const anyPlayed = ranked.reduce((sum, p) => sum + (p.appearances || 0), 0);
+  if (anyPlayed <= 0) {
     // A hand-entered roster carries no appearance history. Treating everyone
     // as equally likely over-dilutes a squad whose best three are clearly its
     // first choice, so shift the best three down by the shortfall a squad
@@ -121,8 +121,17 @@ function expectedTrio(squad) {
     const shortfall = (36.1 + 5.3 * (ranked.length - 3)) * units;
     return ranked.slice(0, 3).map((p) => ({ ...p, rating: p.rating - shortfall }));
   }
-  const weight = (p) => p.appearances || 0;
+  // How often each player turns out, taking their record before this season
+  // as a prior worth a few matches. Weighting on this season alone over-fits
+  // a four-match sample: a regular who missed two early fixtures could not be
+  // selected at all, however long their history of playing every week.
+  const prior = (state.data && state.data.attendance_prior_matches) || 0;
+  const played = squad.played || 0;
+  const weight = (p) =>
+    ((p.appearances || 0) + prior * (p.prior == null ? 0.5 : p.prior))
+    / (played + prior || 1);
 
+  const total = ranked.reduce((sum, p) => sum + weight(p), 0);
   return [1 / 6, 3 / 6, 5 / 6].map((q) => {
     const target = q * total;
     let cumulative = 0;
@@ -690,10 +699,22 @@ function resolveTeam(query) {
 }
 
 function squadFor(team) {
-  return team.players
-    .map((m) => ({ ...state.players.get(m.id), appearances: m.appearances, from: team.name }))
+  const members = team.players
+    .map((m) => ({
+      ...state.players.get(m.id),
+      appearances: m.appearances,
+      // How often they turned out before this season, which expectedTrio
+      // leans on while this season is still a handful of matches.
+      prior: m.prior,
+      from: team.name,
+    }))
     .filter((p) => p.id)
     .sort((a, b) => b.rating - a.rating);
+  // Carried on the list itself so every existing caller keeps working:
+  // expectedTrio needs the side's match count to weigh the prior against,
+  // and every one of them already passes squadFor(team) straight in.
+  members.played = team.played || 0;
+  return members;
 }
 
 /**

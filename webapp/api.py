@@ -416,6 +416,19 @@ def _apply_registered_squads(
             # already turned out would understate the side.
             roster[pid] = played_for.get(pid, 0)
 
+        # Someone registered with another side who keeps turning out for this
+        # one is part of who it fields, whatever the registration says.
+        # Replacing the roster outright dropped them: Miguel Angel Garcia
+        # Ochagavia is registered with Irving 4 in Division 6 and has played
+        # three of Irving 3's five matches in Division 4, and the model could
+        # not expect him because he was not in the squad at all.
+        #
+        # They are added to the roster but keep their own team, so they
+        # appear where they actually play without being re-homed.
+        for pid, count in played_for.items():
+            if count and pid not in roster:
+                roster[pid] = count
+
         rosters[team] = roster
         real.add(team)
 

@@ -1,6 +1,7 @@
 /* ── Design tokens ─────────────────────────────────────── */
 :root {
   --bg: #f6f7f9;
+  --chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 7'><path d='M1 1l4.5 4.5L10 1' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
   --surface: #ffffff;
   --surface-2: #eef0f4;
   --line: #dfe3ea;
@@ -103,6 +104,29 @@ main { padding: 12px 14px 24px; }
 }
 .search:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 
+/* A dropdown wearing .search. appearance:none above strips the native
+   arrow, which would leave it looking like a text box that does nothing,
+   so one is drawn back with room made for it. The chevron is a mask rather
+   than a background image so it takes currentColor and stays legible when
+   the theme flips, which a colour baked into a data URI would not. */
+select.search {
+  padding-right: 38px;
+  cursor: pointer;
+}
+.field:has(select.search)::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 17px;
+  width: 11px;
+  height: 7px;
+  pointer-events: none;
+  color: var(--text-dim);
+  background-color: currentColor;
+  -webkit-mask: var(--chevron) no-repeat center / contain;
+  mask: var(--chevron) no-repeat center / contain;
+}
+
 /* Clearing a search box. type=search draws its own cross in some browsers
    and not in others, and never on a text input, so it is suppressed and one
    of ours is drawn instead — same button in every browser and on every box. */
@@ -129,7 +153,7 @@ main { padding: 12px 14px 24px; }
 /* Shown only when there is something to clear, set from script. */
 .search-wrap.has-value .btn-clear { display: flex; }
 
-.field { display: flex; flex-direction: column; gap: 5px; }
+.field { display: flex; flex-direction: column; gap: 5px; position: relative; }
 .field label { font-size: 12px; font-weight: 600; color: var(--text-dim); padding-left: 3px; }
 
 .chips {

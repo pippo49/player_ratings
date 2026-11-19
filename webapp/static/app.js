@@ -1070,30 +1070,48 @@ function fixtureCard(us, squad) {
   hint.textContent = "Pick an opponent to see the match broken down.";
   card.append(h, hint);
 
+  // A dropdown rather than a text box. A division holds about ten
+  // opponents, so there is nothing to search, and typing into a box here
+  // was unusable: this card is rebuilt by renderLineup(), so each keystroke
+  // destroyed the very input being typed into and took the focus and cursor
+  // with it. A select fires once, on a choice, and on a phone it opens the
+  // native picker instead of the keyboard.
   const field = el("div", "field");
-  const input = el("input", "search");
-  input.setAttribute("list", "opponent-options");
-  input.placeholder = "Opponent…";
-  input.value = state.them;
-  input.autocomplete = "off";
-  input.oninput = debounce(() => {
-    state.them = input.value;
-    renderLineup();
-  }, 150);
-  field.append(input);
-  card.append(field);
+  const label = el("label");
+  label.textContent = "Opponent";
+  label.htmlFor = "pick-them";
+  const select = el("select", "search");
+  select.id = "pick-them";
 
-  // Only teams from the same division are real opponents.
-  const oppOptions = $("#opponent-options");
-  oppOptions.textContent = "";
-  state.data.teams
+  const rivals = state.data.teams
     .filter((t) => t.division === us.division && t.name !== us.name)
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .forEach((t) => {
-      const opt = el("option");
-      opt.value = t.name;
-      oppOptions.append(opt);
-    });
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const blank = el("option");
+  blank.value = "";
+  blank.textContent = rivals.length ? "Pick an opponent…" : "No other team in this division";
+  select.append(blank);
+  for (const t of rivals) {
+    const opt = el("option");
+    opt.value = t.name;
+    opt.textContent = t.name;
+    select.append(opt);
+  }
+  // A team remembered from another division is not on this list, so it is
+  // added rather than silently reselecting the blank and losing the pick.
+  if (state.them && !rivals.some((t) => t.name === state.them)) {
+    const stale = el("option");
+    stale.value = state.them;
+    stale.textContent = `${state.them} (not in this division)`;
+    select.append(stale);
+  }
+  select.value = state.them || "";
+  select.onchange = () => {
+    state.them = select.value;
+    renderLineup();
+  };
+  field.append(label, select);
+  card.append(field);
 
   const them = resolveTeam(state.them);
   if (!them) return card;

@@ -55895,5 +55895,53 @@
       ],
       "total_score": 4
     }
+  },
+  {
+    "match_id": "img-2026-11-18-apex 4",
+    "season": "2026-27",
+    "division": 4,
+    "date": "2026-11-18",
+    "home": {
+      "name": "Apex 4",
+      "players": [
+        {
+          "name": "Philip Parsons",
+          "player_id": "philip parsons",
+          "games_won": 3
+        },
+        {
+          "name": "Henry Adam",
+          "player_id": "henry adam",
+          "games_won": 3
+        },
+        {
+          "name": "Debbie O'Neill",
+          "player_id": "debbie o neill",
+          "games_won": 2
+        }
+      ],
+      "total_score": 9
+    },
+    "away": {
+      "name": "Irving 3",
+      "players": [
+        {
+          "name": "Benneth Emeh",
+          "player_id": "benneth emeh",
+          "games_won": 0
+        },
+        {
+          "name": "Viktor Varga",
+          "player_id": "viktor varga",
+          "games_won": 0
+        },
+        {
+          "name": "Miguel Angel Garcia Ochagavia",
+          "player_id": "miguel angel garcia ochagavia",
+          "games_won": 1
+        }
+      ],
+      "total_score": 1
+    }
   }
 ]

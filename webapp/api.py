@@ -261,6 +261,14 @@ def _player_dict(
         # inside a bad run reads as a fall until you see the three rows.
         # Compact on purpose — [date, opponent, won, played, change] for
         # every player is a third of the payload again if it is keyed.
+        # The highest and lowest this rating has ever been, and when. Taken
+        # from where it stood after each team match, not before the first:
+        # a player who has only ever fallen would otherwise show their
+        # division seed as a career high, which is a guess rather than
+        # anything they did. [rating, date] or null where they have no
+        # rated matches at all.
+        "peak": _extreme(pr, max),
+        "trough": _extreme(pr, min),
         "form_detail": [
             [
                 c.date.isoformat() if c.date else None,
@@ -272,6 +280,23 @@ def _player_dict(
             for c in pr.recent()
         ],
     }
+
+
+def _extreme(pr: PlayerRating, pick) -> list | None:
+    """[rating, date] of this player's highest or lowest point, or None.
+
+    Ties go to the earliest, so a rating sitting at its peak now reports when
+    it first got there rather than today.
+    """
+    history = [c for c in pr.history if c.after is not None]
+    if not history:
+        return None
+    best = pick(history, key=lambda c: c.after)
+    for c in history:
+        if c.after == best.after:
+            best = c
+            break
+    return [round(best.after, 1), best.date.isoformat() if best.date else None]
 
 
 def _recent_results(matches: list[Match], season: str, limit: int = 30) -> list[dict]:

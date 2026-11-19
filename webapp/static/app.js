@@ -192,6 +192,14 @@ function formatDate(iso) {
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
+/** "10 Oct 2025" — a career high can be seasons back, so the year matters. */
+function formatDateFull(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,
+    { day: "numeric", month: "short", year: "numeric" });
+}
+
 function relativeTime(iso) {
   if (!iso) return "never";
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -1265,9 +1273,10 @@ function openPlayerSheet(p) {
     body.append(h, sub);
 
     const overall = state.data.players.findIndex((x) => x.id === p.id) + 1;
-    const inDiv = state.data.players
-      .filter((x) => x.division === p.division)
-      .findIndex((x) => x.id === p.id) + 1;
+    // Kept as a list rather than a count, so the rank and the total it is
+    // out of are always drawn from the same set.
+    const divPlayers = state.data.players.filter((x) => x.division === p.division);
+    const inDiv = divPlayers.findIndex((x) => x.id === p.id) + 1;
 
     const stats = el("div", "stats");
     const add = (value, label) => {
@@ -1314,8 +1323,21 @@ function openPlayerSheet(p) {
         + "ratings are the league's own and stay current.";
       body.append(note);
     }
-    add(ordinal(overall), "Overall rank");
-    add(ordinal(inDiv), `Rank in ${divisionName(p.division)}`);
+    add(`${ordinal(overall)} of ${state.data.players.length}`, "Overall rank");
+    add(`${ordinal(inDiv)} of ${divPlayers.length}`,
+        `Rank in ${divisionName(p.division)}`);
+    // Only on our own ratings: the highs and lows are points on our scale,
+    // tracked match by match. The league publishes a number each month and
+    // no history, so showing ours beside theirs would put two scales in one
+    // card and invite reading a 1480 peak against a 3285 rating.
+    if (state.ratingSource !== "tt365") {
+      if (p.peak) {
+        add(fmtRating(p.peak[0]), `Career high · ${formatDateFull(p.peak[1])}`);
+      }
+      if (p.trough) {
+        add(fmtRating(p.trough[0]), `Career low · ${formatDateFull(p.trough[1])}`);
+      }
+    }
     if (!p.reliable) {
       add(`${state.data.min_matches - p.played}`, "More matches to be rated");
     }

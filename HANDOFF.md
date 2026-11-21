@@ -63,11 +63,17 @@ league's, switched in the app, remembered per device. They were a dead heat
 when first measured (Brier 0.0964 theirs, 0.0980 ours). **That is no longer
 true: ours is now clearly ahead**, and the question is settled.
 
-Rating ours on 2025-26 alone and asking both about 2026-27, over the 700
-pairings where 534 players carry both ratings: **ours 0.0850, theirs
-0.1023**, against 0.1413 for guessing. Paired over the same pairings ours is
-ahead by 0.0173 (95% interval +0.0088 to +0.0263), in 100% of 4000
-resamples. `check_vs_league.py` re-runs it from the cache, needing no saved
+Rating ours on 2025-26 alone and asking both about 2026-27, over the 1594
+pairings where 512 players carry both ratings: **ours 0.0909, theirs
+0.1045**, against 0.1364 for guessing. Paired over the same pairings ours is
+ahead by 0.0136 (95% interval +0.0083 to +0.0190), in 100% of 4000
+resamples.
+
+Re-measured three times as the season has filled out (700 pairings, then
+1426, now 1594). Ours has won every time and the interval has never touched
+zero, but the gap is narrowing -- 0.0173, 0.0177, 0.0136 -- and both sides
+have got absolutely worse as the sample has grown. Worth watching rather
+than treating as banked. `check_vs_league.py` re-runs it from the cache, needing no saved
 pages.
 
 The gap is a floor rather than a ceiling, because the comparison is tilted

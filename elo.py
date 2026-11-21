@@ -220,7 +220,15 @@ class PlayerRating:
 #
 # Fitted, not assumed. Bucket this season's results by the rating gap that
 # preceded them and read off how often the stronger player actually won; the
-# observed rates track 320 across the whole range. Refit whenever the step
+# observed rates track 340 across the whole range.
+#
+# This constant has drifted upward every time it has been refitted on more
+# data: 285 at 119 matches of 2026-27, 320 at 234, 340 at 275. Each move is
+# worth very little on its own -- 320 to 340 is 0.0002 Brier -- so the value
+# is taken because it is what the data says, not because it is an
+# improvement worth claiming. The drift is the thing to watch: if it is
+# still climbing at the end of the season, the shape being fitted is
+# probably wrong rather than the number. Refit whenever the step
 # size changes, since a different step spreads the ratings differently and
 # the constant describes that spread: it was 250 under the flat step.
 #
@@ -235,7 +243,7 @@ class PlayerRating:
 # are independent and they are not — same player, same night — so it is
 # biased towards overconfidence too. The bucketed curve assumes nothing.
 SCALE = 400.0
-PREDICTION_SCALE = 320.0
+PREDICTION_SCALE = 340.0
 
 
 def win_probability(rating: float, opponent_rating: float) -> float:

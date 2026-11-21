@@ -550,16 +550,22 @@ def _apply_season_overrides(
 # "tt365" takes the league's own published ranking, which removes the need to
 # save a match card per fixture — forty a week against three pages.
 #
-# The two were a dead heat on accuracy when last compared. Scored by Brier on
-# the same matches, with ours rated on last season alone so it is genuinely
-# predicting: theirs 0.0964, ours 0.0980, against 0.1463 for ignoring ratings.
-# That comparison predates the change to the step size and has not been re-run
-# since, so it is the open question rather than a settled result. On the
-# numbers as they stood, the saving in effort was the whole argument.
-# "auto" uses the league's ranking when one has been imported and falls back
-# to our own engine when it has not, so the weekly routine decides this
-# rather than an environment variable nobody will remember to set. "elo" or
-# "tt365" force it either way.
+# The two were a dead heat when first compared, which is why the app used to
+# open on theirs: same accuracy for a fraction of the saving effort. They are
+# not a dead heat any more. Rating ours on last season alone so it is
+# genuinely predicting, over 1594 pairings: ours 0.0909, theirs 0.1045,
+# against 0.1364 for ignoring ratings, and ours ahead in 100% of 4000 paired
+# resamples. That gap is a floor, since their published numbers have already
+# seen the matches being scored and ours have not. check_vs_league.py re-runs
+# it from the cache.
+#
+# So "auto" now opens on ours. Opening on the weaker of the two was right
+# only while they were level, and it had a second cost: anything we track and
+# they do not -- a career high, a rating history -- is missing from the view
+# most people never switch away from.
+#
+# Both sets still travel in the payload and the toggle still switches between
+# them with no rebuild. "elo" or "tt365" force it either way.
 RATING_SOURCE = os.environ.get("RATING_SOURCE", "auto")
 
 # Their scale is printed in larger units than ours: about 960 of their points
@@ -736,7 +742,7 @@ def build_payload(matches: list[Match]) -> dict:
         "prediction_scale_tt365": TT365_PREDICTION_SCALE,
         # Which source the app opens on. Both sets of ratings travel in the
         # payload, so switching between them is a toggle, not a rebuild.
-        "rating_source": ("tt365" if tt365_used and RATING_SOURCE != "elo"
+        "rating_source": ("tt365" if tt365_used and RATING_SOURCE == "tt365"
                           else "elo"),
         # Per-player records come from match cards. On the three-page routine
         # those stop arriving, so the app can say what the records cover

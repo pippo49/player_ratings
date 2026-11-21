@@ -1348,18 +1348,28 @@ function openPlayerSheet(p) {
     // tracked match by match. The league publishes a number each month and
     // no history, so showing ours beside theirs would put two scales in one
     // card and invite reading a 1480 peak against a 3285 rating.
-    if (state.ratingSource !== "tt365") {
-      if (p.peak) {
-        add(fmtRating(p.peak[0]), `Career high · ${formatDateFull(p.peak[1])}`);
-      }
-      if (p.trough) {
-        add(fmtRating(p.trough[0]), `Career low · ${formatDateFull(p.trough[1])}`);
-      }
+    //
+    // Hiding them silently was worse than the problem: the app opens on the
+    // league's ratings, so the rows simply were not there and nothing said
+    // why. The league view now says where they live.
+    const ours = state.ratingSource !== "tt365";
+    if (ours && p.peak) {
+      add(fmtRating(p.peak[0]), `Career high · ${formatDateFull(p.peak[1])}`);
+    }
+    if (ours && p.trough) {
+      add(fmtRating(p.trough[0]), `Career low · ${formatDateFull(p.trough[1])}`);
     }
     if (!p.reliable) {
       add(`${state.data.min_matches - p.played}`, "More matches to be rated");
     }
     body.append(stats);
+
+    if (!ours && (p.peak || p.trough)) {
+      const note = el("p", "sub");
+      note.textContent =
+        "Career high and low are tracked on our own ratings — tap Mine to see them.";
+      body.append(note);
+    }
 
     const form = formDetailBlock(p);
     if (form) body.append(form);

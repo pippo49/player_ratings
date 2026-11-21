@@ -55951,12 +55951,44 @@
     "date": "2026-11-11",
     "home": {
       "name": "Fusion 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Josh Bruce",
+          "player_id": "josh bruce",
+          "games_won": 2
+        },
+        {
+          "name": "Frederic Wilke",
+          "player_id": "frederic wilke",
+          "games_won": 2
+        },
+        {
+          "name": "Jesse Bath",
+          "player_id": "jesse bath",
+          "games_won": 1
+        }
+      ],
       "total_score": 5
     },
     "away": {
       "name": "Apex 1",
-      "players": [],
+      "players": [
+        {
+          "name": "George Downing",
+          "player_id": "george downing",
+          "games_won": 0
+        },
+        {
+          "name": "Bryan Kwan",
+          "player_id": "bryan kwan",
+          "games_won": 3
+        },
+        {
+          "name": "Adam Alibhai",
+          "player_id": "adam alibhai",
+          "games_won": 1
+        }
+      ],
       "total_score": 5
     }
   },
@@ -55967,12 +55999,44 @@
     "date": "2026-11-13",
     "home": {
       "name": "Apex 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Larry Trumpauskas",
+          "player_id": "larry trumpauskas",
+          "games_won": 3
+        },
+        {
+          "name": "Aarav Parihar",
+          "player_id": "aarav parihar",
+          "games_won": 2
+        },
+        {
+          "name": "Bryan Kwan",
+          "player_id": "bryan kwan",
+          "games_won": 3
+        }
+      ],
       "total_score": 9
     },
     "away": {
       "name": "Morpeth 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Hassan el Kaakour",
+          "player_id": "hassan el kaakour",
+          "games_won": 0
+        },
+        {
+          "name": "Klodian Shaqiri",
+          "player_id": "klodian shaqiri",
+          "games_won": 0
+        },
+        {
+          "name": "Abdullah Ubaidullah",
+          "player_id": "abdullah ubaidullah",
+          "games_won": 1
+        }
+      ],
       "total_score": 1
     }
   },
@@ -55983,12 +56047,44 @@
     "date": "2026-11-13",
     "home": {
       "name": "Table Tennis Fight Club 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Borui Chen",
+          "player_id": "borui chen",
+          "games_won": 0
+        },
+        {
+          "name": "Ugur Saglik",
+          "player_id": "ugur saglik",
+          "games_won": 0
+        },
+        {
+          "name": "George Long",
+          "player_id": "george long",
+          "games_won": 1
+        }
+      ],
       "total_score": 1
     },
     "away": {
       "name": "Flick TTC 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Ka Hei Liu",
+          "player_id": "ka hei liu",
+          "games_won": 2
+        },
+        {
+          "name": "Kieran Walker",
+          "player_id": "kieran walker",
+          "games_won": 3
+        },
+        {
+          "name": "Bingu Zhao",
+          "player_id": "bingu zhao",
+          "games_won": 3
+        }
+      ],
       "total_score": 9
     }
   },
@@ -55999,12 +56095,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "Morpeth 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Abdul Raqueeb",
+          "player_id": "abdul raqueeb",
+          "games_won": 3
+        },
+        {
+          "name": "Klodian Shaqiri",
+          "player_id": "klodian shaqiri",
+          "games_won": 1
+        },
+        {
+          "name": "Abdullah Ubaidullah",
+          "player_id": "abdullah ubaidullah",
+          "games_won": 3
+        }
+      ],
       "total_score": 7
     },
     "away": {
       "name": "AA Academy 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Alexandru Anghel",
+          "player_id": "alexandru anghel",
+          "games_won": 1
+        },
+        {
+          "name": "Doniyor Makhkamov",
+          "player_id": "doniyor makhkamov",
+          "games_won": 1
+        },
+        {
+          "name": "Mohamed Imran Dawood Basha",
+          "player_id": "mohamed imran dawood basha",
+          "games_won": 0
+        }
+      ],
       "total_score": 3
     }
   },
@@ -56031,12 +56159,44 @@
     "date": "2026-11-11",
     "home": {
       "name": "Moberly 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Paul Anvari",
+          "player_id": "paul anvari",
+          "games_won": 0
+        },
+        {
+          "name": "David Kayo Ogunnusi",
+          "player_id": "david kayo ogunnusi",
+          "games_won": 1
+        },
+        {
+          "name": "Gabriel Concepcion",
+          "player_id": "gabriel concepcion",
+          "games_won": 2
+        }
+      ],
       "total_score": 3
     },
     "away": {
       "name": "Morpeth 6",
-      "players": [],
+      "players": [
+        {
+          "name": "Yuze Wang",
+          "player_id": "yuze wang",
+          "games_won": 3
+        },
+        {
+          "name": "Sanjiv Malhotra",
+          "player_id": "sanjiv malhotra",
+          "games_won": 2
+        },
+        {
+          "name": "Simon Holohan",
+          "player_id": "simon holohan",
+          "games_won": 1
+        }
+      ],
       "total_score": 7
     }
   },
@@ -56047,12 +56207,44 @@
     "date": "2026-11-11",
     "home": {
       "name": "Morpeth 5",
-      "players": [],
+      "players": [
+        {
+          "name": "James Mullineaux",
+          "player_id": "james mullineaux",
+          "games_won": 0
+        },
+        {
+          "name": "Vadym Krevs",
+          "player_id": "vadym krevs",
+          "games_won": 1
+        },
+        {
+          "name": "Kimmy Pui Lin Lai-Brown",
+          "player_id": "kimmy pui lin lai brown",
+          "games_won": 2
+        }
+      ],
       "total_score": 3
     },
     "away": {
       "name": "Apex 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Sai Ki Lee",
+          "player_id": "sai ki lee",
+          "games_won": 3
+        },
+        {
+          "name": "Adam Toumi",
+          "player_id": "adam toumi",
+          "games_won": 1
+        },
+        {
+          "name": "Shaon Chapman",
+          "player_id": "shaon chapman",
+          "games_won": 2
+        }
+      ],
       "total_score": 7
     }
   },
@@ -56063,12 +56255,44 @@
     "date": "2026-11-12",
     "home": {
       "name": "Morpeth 7",
-      "players": [],
+      "players": [
+        {
+          "name": "Peter Hau",
+          "player_id": "peter hau",
+          "games_won": 0
+        },
+        {
+          "name": "Medht Mohamed",
+          "player_id": "medht mohamed",
+          "games_won": 2
+        },
+        {
+          "name": "Jewels Uddin",
+          "player_id": "jewels uddin",
+          "games_won": 0
+        }
+      ],
       "total_score": 2
     },
     "away": {
       "name": "Fusion 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Vitalie Stratan",
+          "player_id": "vitalie stratan",
+          "games_won": 3
+        },
+        {
+          "name": "Valeri Semeciuc",
+          "player_id": "valeri semeciuc",
+          "games_won": 2
+        },
+        {
+          "name": "Oleksii Remnov",
+          "player_id": "oleksii remnov",
+          "games_won": 2
+        }
+      ],
       "total_score": 8
     }
   },
@@ -56079,12 +56303,44 @@
     "date": "2026-11-13",
     "home": {
       "name": "Greenhouse 2 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Zaid Aldilimi",
+          "player_id": "zaid aldilimi",
+          "games_won": 3
+        },
+        {
+          "name": "Nour Alamine",
+          "player_id": "nour alamine",
+          "games_won": 1
+        },
+        {
+          "name": "Luca Archard",
+          "player_id": "luca archard",
+          "games_won": 2
+        }
+      ],
       "total_score": 6
     },
     "away": {
       "name": "Greenhouse 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Luna Archard",
+          "player_id": "luna archard",
+          "games_won": 2
+        },
+        {
+          "name": "Timur Hashimi",
+          "player_id": "timur hashimi",
+          "games_won": 1
+        },
+        {
+          "name": "Kingsley Arthur",
+          "player_id": "kingsley arthur",
+          "games_won": 0
+        }
+      ],
       "total_score": 4
     }
   },
@@ -56095,12 +56351,44 @@
     "date": "2026-11-16",
     "home": {
       "name": "St Katharines Trust 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Alexi Petkov",
+          "player_id": "alexi petkov",
+          "games_won": 3
+        },
+        {
+          "name": "Malik Diop",
+          "player_id": "malik diop",
+          "games_won": 2
+        },
+        {
+          "name": "Femi Olokun",
+          "player_id": "femi olokun",
+          "games_won": 3
+        }
+      ],
       "total_score": 9
     },
     "away": {
       "name": "Exiles 2",
-      "players": [],
+      "players": [
+        {
+          "name": "John Crawford",
+          "player_id": "john crawford",
+          "games_won": 0
+        },
+        {
+          "name": "Leslie Samuels",
+          "player_id": "leslie samuels",
+          "games_won": 1
+        },
+        {
+          "name": "Christopher Herbert",
+          "player_id": "christopher herbert",
+          "games_won": 0
+        }
+      ],
       "total_score": 1
     }
   },
@@ -56127,12 +56415,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "AA Academy 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Gabriel Petito",
+          "player_id": "gabriel petito",
+          "games_won": 2
+        },
+        {
+          "name": "Pierre Bouche",
+          "player_id": "pierre bouche",
+          "games_won": 2
+        },
+        {
+          "name": "Gouda Abdelrazek",
+          "player_id": "gouda abdelrazek",
+          "games_won": 2
+        }
+      ],
       "total_score": 6
     },
     "away": {
       "name": "Walworth Gainsford",
-      "players": [],
+      "players": [
+        {
+          "name": "Omri Mukamel",
+          "player_id": "omri mukamel",
+          "games_won": 2
+        },
+        {
+          "name": "Nabil Chair",
+          "player_id": "nabil chair",
+          "games_won": 0
+        },
+        {
+          "name": "Winston Wong",
+          "player_id": "winston wong",
+          "games_won": 1
+        }
+      ],
       "total_score": 4
     }
   },
@@ -56143,12 +56463,39 @@
     "date": "2026-11-18",
     "home": {
       "name": "Clissold 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Chris Beckley",
+          "player_id": "chris beckley",
+          "games_won": 2
+        },
+        {
+          "name": "Luke Smyth",
+          "player_id": "luke smyth",
+          "games_won": 0
+        },
+        {
+          "name": "Alexander Beerjeraz",
+          "player_id": "alexander beerjeraz",
+          "games_won": 0
+        }
+      ],
       "total_score": 5
     },
     "away": {
       "name": "Exiles 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Michael Loveder",
+          "player_id": "michael loveder",
+          "games_won": 2
+        },
+        {
+          "name": "Peter Schmidt",
+          "player_id": "peter schmidt",
+          "games_won": 2
+        }
+      ],
       "total_score": 5
     }
   },
@@ -56159,12 +56506,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Morpeth 8",
-      "players": [],
+      "players": [
+        {
+          "name": "PHONG LUONG",
+          "player_id": "phong luong",
+          "games_won": 1
+        },
+        {
+          "name": "Christopher Alexander",
+          "player_id": "christopher alexander",
+          "games_won": 1
+        },
+        {
+          "name": "Grzegorz Paluch",
+          "player_id": "grzegorz paluch",
+          "games_won": 0
+        }
+      ],
       "total_score": 3
     },
     "away": {
       "name": "Fulham Brunswick 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Silvia Trenti",
+          "player_id": "silvia trenti",
+          "games_won": 2
+        },
+        {
+          "name": "Agnieszka Mazurek",
+          "player_id": "agnieszka mazurek",
+          "games_won": 2
+        },
+        {
+          "name": "Nima Taghviyat",
+          "player_id": "nima taghviyat",
+          "games_won": 3
+        }
+      ],
       "total_score": 7
     }
   },
@@ -56175,12 +56554,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Greenhouse 2 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Zaid Aldilimi",
+          "player_id": "zaid aldilimi",
+          "games_won": 3
+        },
+        {
+          "name": "Zeina Negam",
+          "player_id": "zeina negam",
+          "games_won": 0
+        },
+        {
+          "name": "Nour Alamine",
+          "player_id": "nour alamine",
+          "games_won": 0
+        }
+      ],
       "total_score": 3
     },
     "away": {
       "name": "Flick TTC 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Brandon Alcalde",
+          "player_id": "brandon alcalde",
+          "games_won": 2
+        },
+        {
+          "name": "Massimiliano D'Angelo",
+          "player_id": "massimiliano d angelo",
+          "games_won": 2
+        },
+        {
+          "name": "Umberto Nico Giamundo",
+          "player_id": "umberto nico giamundo",
+          "games_won": 2
+        }
+      ],
       "total_score": 7
     }
   },
@@ -56191,12 +56602,44 @@
     "date": "2026-11-13",
     "home": {
       "name": "Fusion 6 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Harper Cole",
+          "player_id": "harper cole",
+          "games_won": 2
+        },
+        {
+          "name": "Nicolas Da Costa",
+          "player_id": "nicolas da costa",
+          "games_won": 3
+        },
+        {
+          "name": "Calvin Yin",
+          "player_id": "calvin yin",
+          "games_won": 0
+        }
+      ],
       "total_score": 6
     },
     "away": {
       "name": "Apex 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Michael Miller",
+          "player_id": "michael miller",
+          "games_won": 2
+        },
+        {
+          "name": "Chandra Prakash Sahu",
+          "player_id": "chandra prakash sahu",
+          "games_won": 1
+        },
+        {
+          "name": "Anson Soo",
+          "player_id": "anson soo",
+          "games_won": 1
+        }
+      ],
       "total_score": 4
     }
   },
@@ -56207,12 +56650,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "Walworth Enigma",
-      "players": [],
+      "players": [
+        {
+          "name": "James Lennard",
+          "player_id": "james lennard",
+          "games_won": 1
+        },
+        {
+          "name": "Bob Coull",
+          "player_id": "bob coull",
+          "games_won": 1
+        },
+        {
+          "name": "Petko Guimichev",
+          "player_id": "petko guimichev",
+          "games_won": 1
+        }
+      ],
       "total_score": 4
     },
     "away": {
       "name": "Flick TTC 4",
-      "players": [],
+      "players": [
+        {
+          "name": "David Chiu",
+          "player_id": "david chiu",
+          "games_won": 3
+        },
+        {
+          "name": "Maxime Courmont",
+          "player_id": "maxime courmont",
+          "games_won": 1
+        },
+        {
+          "name": "Chloe Ireland",
+          "player_id": "chloe ireland",
+          "games_won": 2
+        }
+      ],
       "total_score": 6
     }
   },
@@ -56223,12 +56698,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "Irving 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Philip Rolling",
+          "player_id": "philip rolling",
+          "games_won": 0
+        },
+        {
+          "name": "Miguel Angel Garcia Ochagavia",
+          "player_id": "miguel angel garcia ochagavia",
+          "games_won": 0
+        },
+        {
+          "name": "Nick Carter",
+          "player_id": "nick carter",
+          "games_won": 0
+        }
+      ],
       "total_score": 0
     },
     "away": {
       "name": "AA Academy 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Petrica Alistar",
+          "player_id": "petrica alistar",
+          "games_won": 3
+        },
+        {
+          "name": "Viktor-Patrick Soki",
+          "player_id": "viktor patrick soki",
+          "games_won": 3
+        },
+        {
+          "name": "Costel Chiriac",
+          "player_id": "costel chiriac",
+          "games_won": 3
+        }
+      ],
       "total_score": 10
     }
   },
@@ -56239,12 +56746,44 @@
     "date": "2026-11-18",
     "home": {
       "name": "Moberly 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Meysam Samanpour",
+          "player_id": "meysam samanpour",
+          "games_won": 3
+        },
+        {
+          "name": "Supriya Saketharam",
+          "player_id": "supriya saketharam",
+          "games_won": 3
+        },
+        {
+          "name": "Shiromi Aponso",
+          "player_id": "shiromi aponso",
+          "games_won": 3
+        }
+      ],
       "total_score": 10
     },
     "away": {
       "name": "Walworth Tigers",
-      "players": [],
+      "players": [
+        {
+          "name": "Andrew MacAlister",
+          "player_id": "andrew macalister",
+          "games_won": 0
+        },
+        {
+          "name": "Bing Siah",
+          "player_id": "bing siah",
+          "games_won": 0
+        },
+        {
+          "name": "Derrick Donegan",
+          "player_id": "derrick donegan",
+          "games_won": 0
+        }
+      ],
       "total_score": 0
     }
   },
@@ -56255,12 +56794,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Fusion 6 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Harper Cole",
+          "player_id": "harper cole",
+          "games_won": 2
+        },
+        {
+          "name": "Estelle Domingo",
+          "player_id": "estelle domingo",
+          "games_won": 1
+        },
+        {
+          "name": "Calvin Yin",
+          "player_id": "calvin yin",
+          "games_won": 2
+        }
+      ],
       "total_score": 6
     },
     "away": {
       "name": "Highbury 2",
-      "players": [],
+      "players": [
+        {
+          "name": "John Cung",
+          "player_id": "john cung",
+          "games_won": 0
+        },
+        {
+          "name": "Richie Zhang",
+          "player_id": "richie zhang",
+          "games_won": 2
+        },
+        {
+          "name": "Julian Morgan",
+          "player_id": "julian morgan",
+          "games_won": 2
+        }
+      ],
       "total_score": 4
     }
   },
@@ -56271,12 +56842,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Table Tennis Fight Club 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Stefano Varisco",
+          "player_id": "stefano varisco",
+          "games_won": 3
+        },
+        {
+          "name": "Romil Goyal",
+          "player_id": "romil goyal",
+          "games_won": 0
+        },
+        {
+          "name": "Laurent ZERIRGUI",
+          "player_id": "laurent zerirgui",
+          "games_won": 1
+        }
+      ],
       "total_score": 4
     },
     "away": {
       "name": "Fusion 5",
-      "players": [],
+      "players": [
+        {
+          "name": "Shan Jiang",
+          "player_id": "shan jiang",
+          "games_won": 2
+        },
+        {
+          "name": "Andy Grimes",
+          "player_id": "andy grimes",
+          "games_won": 2
+        },
+        {
+          "name": "Yufeng Qiu",
+          "player_id": "yufeng qiu",
+          "games_won": 1
+        }
+      ],
       "total_score": 6
     }
   },
@@ -56287,12 +56890,44 @@
     "date": "2026-11-13",
     "home": {
       "name": "Fusion 8 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Calen Dawson",
+          "player_id": "calen dawson",
+          "games_won": 1
+        },
+        {
+          "name": "Haruki Bohl",
+          "player_id": "haruki bohl",
+          "games_won": 2
+        },
+        {
+          "name": "Tejasri Narula",
+          "player_id": "tejasri narula",
+          "games_won": 1
+        }
+      ],
       "total_score": 4
     },
     "away": {
       "name": "Morpeth 11 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Kenzo Boulton",
+          "player_id": "kenzo boulton",
+          "games_won": 3
+        },
+        {
+          "name": "Ziqi Cai",
+          "player_id": "ziqi cai",
+          "games_won": 2
+        },
+        {
+          "name": "Yuchen Zheng",
+          "player_id": "yuchen zheng",
+          "games_won": 0
+        }
+      ],
       "total_score": 6
     }
   },
@@ -56303,12 +56938,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "Fusion 7",
-      "players": [],
+      "players": [
+        {
+          "name": "Jorge Urrutia",
+          "player_id": "jorge urrutia",
+          "games_won": 2
+        },
+        {
+          "name": "Makanjuola Akinyemi",
+          "player_id": "makanjuola akinyemi",
+          "games_won": 3
+        },
+        {
+          "name": "Denis Mann",
+          "player_id": "denis mann",
+          "games_won": 2
+        }
+      ],
       "total_score": 8
     },
     "away": {
       "name": "St Katharines Trust 6",
-      "players": [],
+      "players": [
+        {
+          "name": "Anna Rao",
+          "player_id": "anna rao",
+          "games_won": 0
+        },
+        {
+          "name": "Senthoran Perananthan",
+          "player_id": "senthoran perananthan",
+          "games_won": 2
+        },
+        {
+          "name": "Natalia Czarkowska",
+          "player_id": "natalia czarkowska",
+          "games_won": 0
+        }
+      ],
       "total_score": 2
     }
   },
@@ -56319,12 +56986,44 @@
     "date": "2026-11-18",
     "home": {
       "name": "St Katharines Trust 5",
-      "players": [],
+      "players": [
+        {
+          "name": "Igors Ivenkovs",
+          "player_id": "igors ivenkovs",
+          "games_won": 2
+        },
+        {
+          "name": "Nikolay Karlov",
+          "player_id": "nikolay karlov",
+          "games_won": 2
+        },
+        {
+          "name": "ejaz Mohiuddin",
+          "player_id": "ejaz mohiuddin",
+          "games_won": 1
+        }
+      ],
       "total_score": 6
     },
     "away": {
       "name": "Flick TTC 5",
-      "players": [],
+      "players": [
+        {
+          "name": "Luis Maceira",
+          "player_id": "luis maceira",
+          "games_won": 1
+        },
+        {
+          "name": "Dmitrii Kvasov",
+          "player_id": "dmitrii kvasov",
+          "games_won": 0
+        },
+        {
+          "name": "Leena Aldukali",
+          "player_id": "leena aldukali",
+          "games_won": 3
+        }
+      ],
       "total_score": 4
     }
   },
@@ -56335,12 +57034,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Morpeth 11 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Ziqi Cai",
+          "player_id": "ziqi cai",
+          "games_won": 0
+        },
+        {
+          "name": "Kenzo Boulton",
+          "player_id": "kenzo boulton",
+          "games_won": 3
+        },
+        {
+          "name": "Archie Matsuura-Heaton",
+          "player_id": "archie matsuura heaton",
+          "games_won": 0
+        }
+      ],
       "total_score": 3
     },
     "away": {
       "name": "Highbury 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Al Brown",
+          "player_id": "al brown",
+          "games_won": 2
+        },
+        {
+          "name": "Paul Puget",
+          "player_id": "paul puget",
+          "games_won": 2
+        },
+        {
+          "name": "Julian Warowioff",
+          "player_id": "julian warowioff",
+          "games_won": 2
+        }
+      ],
       "total_score": 7
     }
   },
@@ -56351,12 +57082,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "TJ TTC 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Henry Ulzen-Plange",
+          "player_id": "henry ulzen plange",
+          "games_won": 2
+        },
+        {
+          "name": "Stephen Harrison",
+          "player_id": "stephen harrison",
+          "games_won": 3
+        },
+        {
+          "name": "Fatiu Isiaku",
+          "player_id": "fatiu isiaku",
+          "games_won": 2
+        }
+      ],
       "total_score": 8
     },
     "away": {
       "name": "Morpeth 12",
-      "players": [],
+      "players": [
+        {
+          "name": "Mike Brady",
+          "player_id": "mike brady",
+          "games_won": 1
+        },
+        {
+          "name": "Tunde Alabi",
+          "player_id": "tunde alabi",
+          "games_won": 0
+        },
+        {
+          "name": "Kate Ha",
+          "player_id": "kate ha",
+          "games_won": 1
+        }
+      ],
       "total_score": 2
     }
   },
@@ -56367,12 +57130,44 @@
     "date": "2026-11-19",
     "home": {
       "name": "Fulham Brunswick 4 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Evie Samuels",
+          "player_id": "evie samuels",
+          "games_won": 3
+        },
+        {
+          "name": "Ray Nieminen",
+          "player_id": "ray nieminen",
+          "games_won": 2
+        },
+        {
+          "name": "Jacques Ma",
+          "player_id": "jacques ma",
+          "games_won": 3
+        }
+      ],
       "total_score": 9
     },
     "away": {
       "name": "Highbury 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Amiran Melua",
+          "player_id": "amiran melua",
+          "games_won": 0
+        },
+        {
+          "name": "Raphael Sobotka",
+          "player_id": "raphael sobotka",
+          "games_won": 1
+        },
+        {
+          "name": "Adam Mohzani",
+          "player_id": "adam mohzani",
+          "games_won": 0
+        }
+      ],
       "total_score": 1
     }
   },
@@ -56383,12 +57178,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Fusion 9 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Alfred Morley",
+          "player_id": "alfred morley",
+          "games_won": 1
+        },
+        {
+          "name": "Gabriel Balcerek",
+          "player_id": "gabriel balcerek",
+          "games_won": 3
+        },
+        {
+          "name": "Oliver Huang",
+          "player_id": "oliver huang",
+          "games_won": 1
+        }
+      ],
       "total_score": 5
     },
     "away": {
       "name": "AA Academy 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Tom Edge",
+          "player_id": "tom edge",
+          "games_won": 0
+        },
+        {
+          "name": "Petros Apostolou",
+          "player_id": "petros apostolou",
+          "games_won": 2
+        },
+        {
+          "name": "Giulio Furlan",
+          "player_id": "giulio furlan",
+          "games_won": 2
+        }
+      ],
       "total_score": 5
     }
   },
@@ -56399,12 +57226,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "TJ TTC 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Olupelumi Osibona",
+          "player_id": "olupelumi osibona",
+          "games_won": 1
+        },
+        {
+          "name": "Kin Wai Hui",
+          "player_id": "kin wai hui",
+          "games_won": 1
+        },
+        {
+          "name": "Matt Jones",
+          "player_id": "matt jones",
+          "games_won": 2
+        }
+      ],
       "total_score": 5
     },
     "away": {
       "name": "Flick TTC 7",
-      "players": [],
+      "players": [
+        {
+          "name": "Frank Wang",
+          "player_id": "frank wang",
+          "games_won": 2
+        },
+        {
+          "name": "Uwakmfon Utuk",
+          "player_id": "uwakmfon utuk",
+          "games_won": 3
+        },
+        {
+          "name": "Tiffany Chan",
+          "player_id": "tiffany chan",
+          "games_won": 0
+        }
+      ],
       "total_score": 5
     }
   },
@@ -56415,12 +57274,44 @@
     "date": "2026-11-18",
     "home": {
       "name": "Flick TTC 6",
-      "players": [],
+      "players": [
+        {
+          "name": "Agshin Nabiyev",
+          "player_id": "agshin nabiyev",
+          "games_won": 3
+        },
+        {
+          "name": "Kin Chau",
+          "player_id": "kin chau",
+          "games_won": 2
+        },
+        {
+          "name": "Thomas Muellners",
+          "player_id": "thomas muellners",
+          "games_won": 3
+        }
+      ],
       "total_score": 9
     },
     "away": {
       "name": "Highbury 6",
-      "players": [],
+      "players": [
+        {
+          "name": "Tarun Abraham",
+          "player_id": "tarun abraham",
+          "games_won": 0
+        },
+        {
+          "name": "Sylvan Sterling",
+          "player_id": "sylvan sterling",
+          "games_won": 1
+        },
+        {
+          "name": "Rishabh Chaterjee",
+          "player_id": "rishabh chaterjee",
+          "games_won": 0
+        }
+      ],
       "total_score": 1
     }
   },
@@ -56431,12 +57322,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Morpeth 13 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Yuchen Zheng",
+          "player_id": "yuchen zheng",
+          "games_won": 2
+        },
+        {
+          "name": "Nathaniel Woodley",
+          "player_id": "nathaniel woodley",
+          "games_won": 1
+        },
+        {
+          "name": "Faizaan Owadally",
+          "player_id": "faizaan owadally",
+          "games_won": 0
+        }
+      ],
       "total_score": 4
     },
     "away": {
       "name": "Irving 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Gaurav Lakhotia",
+          "player_id": "gaurav lakhotia",
+          "games_won": 2
+        },
+        {
+          "name": "Ken Brady",
+          "player_id": "ken brady",
+          "games_won": 3
+        },
+        {
+          "name": "Jeremy Wootten",
+          "player_id": "jeremy wootten",
+          "games_won": 1
+        }
+      ],
       "total_score": 6
     }
   },
@@ -56447,12 +57370,44 @@
     "date": "2026-11-20",
     "home": {
       "name": "Table Tennis Fight Club 4",
-      "players": [],
+      "players": [
+        {
+          "name": "Federico Castiglione",
+          "player_id": "federico castiglione",
+          "games_won": 2
+        },
+        {
+          "name": "Yasin Shafi",
+          "player_id": "yasin shafi",
+          "games_won": 2
+        },
+        {
+          "name": "Louise Van Damme",
+          "player_id": "louise van damme",
+          "games_won": 2
+        }
+      ],
       "total_score": 6
     },
     "away": {
       "name": "Clissold 5",
-      "players": [],
+      "players": [
+        {
+          "name": "Harry Edwards",
+          "player_id": "harry edwards",
+          "games_won": 0
+        },
+        {
+          "name": "Janusz Carmello",
+          "player_id": "janusz carmello",
+          "games_won": 0
+        },
+        {
+          "name": "Alexander Beerjeraz",
+          "player_id": "alexander beerjeraz",
+          "games_won": 3
+        }
+      ],
       "total_score": 4
     }
   },
@@ -56479,12 +57434,44 @@
     "date": "2026-11-17",
     "home": {
       "name": "Walworth Wonderers",
-      "players": [],
+      "players": [
+        {
+          "name": "Trent Sumner",
+          "player_id": "trent sumner",
+          "games_won": 2
+        },
+        {
+          "name": "Bea Hancock",
+          "player_id": "bea hancock",
+          "games_won": 0
+        },
+        {
+          "name": "Jeremy Carpenter",
+          "player_id": "jeremy carpenter",
+          "games_won": 0
+        }
+      ],
       "total_score": 2
     },
     "away": {
       "name": "Flick TTC 8",
-      "players": [],
+      "players": [
+        {
+          "name": "Bassam El Hayek",
+          "player_id": "bassam el hayek",
+          "games_won": 3
+        },
+        {
+          "name": "Aayush Choudhury",
+          "player_id": "aayush choudhury",
+          "games_won": 2
+        },
+        {
+          "name": "Patrick Cairnes",
+          "player_id": "patrick cairnes",
+          "games_won": 2
+        }
+      ],
       "total_score": 8
     }
   },
@@ -56495,12 +57482,44 @@
     "date": "2026-11-19",
     "home": {
       "name": "Fulham Brunswick 6 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Simon Gauer",
+          "player_id": "simon gauer",
+          "games_won": 3
+        },
+        {
+          "name": "Fernando Mora Gomez",
+          "player_id": "fernando mora gomez",
+          "games_won": 2
+        },
+        {
+          "name": "Arthur Mara",
+          "player_id": "arthur mara",
+          "games_won": 3
+        }
+      ],
       "total_score": 9
     },
     "away": {
       "name": "Fusion 10",
-      "players": [],
+      "players": [
+        {
+          "name": "Sun-Sik IM",
+          "player_id": "sun sik im",
+          "games_won": 0
+        },
+        {
+          "name": "Clive Gregory",
+          "player_id": "clive gregory",
+          "games_won": 1
+        },
+        {
+          "name": "Dragoslav Ivovic",
+          "player_id": "dragoslav ivovic",
+          "games_won": 0
+        }
+      ],
       "total_score": 1
     }
   },
@@ -56511,12 +57530,44 @@
     "date": "2026-11-19",
     "home": {
       "name": "Fulham Brunswick 7 Jr",
-      "players": [],
+      "players": [
+        {
+          "name": "Alexander Vougiouklis",
+          "player_id": "alexander vougiouklis",
+          "games_won": 3
+        },
+        {
+          "name": "Ferhan Sezgin",
+          "player_id": "ferhan sezgin",
+          "games_won": 1
+        },
+        {
+          "name": "Sacha Lelong",
+          "player_id": "sacha lelong",
+          "games_won": 3
+        }
+      ],
       "total_score": 7
     },
     "away": {
       "name": "Wapping 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Bob Pedersen",
+          "player_id": "bob pedersen",
+          "games_won": 0
+        },
+        {
+          "name": "Michael Fahy",
+          "player_id": "michael fahy",
+          "games_won": 1
+        },
+        {
+          "name": "Bruno Cernecca",
+          "player_id": "bruno cernecca",
+          "games_won": 1
+        }
+      ],
       "total_score": 3
     }
   },

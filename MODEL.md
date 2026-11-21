@@ -72,6 +72,16 @@ step = max(20, 160 / (1 + career_team_matches / 3))
 | 13th | 32 |
 | 21st+ | 20 |
 
+The step bounds a move rather than being it. A match moves a player by
+`step × (share of singles won − share expected)`, so a first-timer sweeping
+3-0 against equals gains 80, not 160; the full 160 needs a result nobody
+expected at all. For an even match the realistic swing is about ±80 at the
+start and ±10 once settled.
+
+Note the curve is harmonic, not exponential: the step halves after 3 team
+matches, again at 9, and again at 21. It is not "halving every three", and
+reading it that way overstates how quickly a player stops moving.
+
 A newcomer's own results overwhelm the seed within a handful of matches;
 once they have a record the step is *below* the flat 32 it replaced, so
 settled ratings are steadier than before, not noisier.

@@ -347,8 +347,11 @@ These catch whole classes of error, and did:
 
 ### A seed is a guess, and must give way to evidence
 
-The step size decays: 160 points for a player with no record, halving every
-three team matches, floored at 20 (`elo.step_for`). It replaced a flat 48,
+The step size decays: 160 points for a player with no record, falling to 80
+by their fourth team match, 40 by their tenth and a floor of 20 by about
+their twenty-second (`elo.step_for`). Not "halving every three" — the curve
+is harmonic, so the span between halvings keeps growing, and reading it as a
+half-life overstates how quickly an established player stops moving. It replaced a flat 48,
 then 32, and it is the largest improvement measured here — Brier 0.0901
 against 0.0987, where guessing 50-50 scores 0.1435.
 

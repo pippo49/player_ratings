@@ -86,19 +86,34 @@ def seed_for(season: str, division: int) -> float:
 # the league, because each night could only move her about twenty points.
 # Her own results never outweighed the assumption she started from.
 #
-# Halving every three matches fixes that without making anyone jumpy. A
-# first night can move a player by up to 160 points — 80 for a clean sweep
-# against equals, since the step bounds the move rather than being it. By
-# their thirteenth the step is back down to the 32 it replaced, and below it
-# from then on, so settled ratings are steadier than before, not noisier. Measured out of sample on a proper scoring rule, this beats
-# the flat step by more than anything else tried: Brier 0.0901 against
-# 0.0987, where guessing 50-50 scores 0.1435.
+# Letting the step fall away as a record builds fixes that without making
+# anyone jumpy. The step bounds a move rather than being it: the move is
+# step * (share of singles won - share expected), so a first night is worth
+# up to 160 points but only 80 for a clean sweep against equals, and the
+# full 160 needs a result nobody expected at all. By a player's thirteenth
+# team match the step is back down to the 32 it replaced, and below it from
+# then on, so settled ratings are steadier than before, not noisier.
+#
+# Measured out of sample on a proper scoring rule, this beats the flat step
+# by more than anything else tried: Brier 0.0901 against 0.0987, where
+# guessing 50-50 scores 0.1435.
 #
 # Fitted on one season predicting the next. Three parameters against 543
 # pairings, so re-check it when a second full season exists — though every
 # decaying shape tried beat the flat one, which is not the shape of a fluke.
+# step = max(K_FLOOR, K_START / (1 + career_team_matches / K_HALF_LIFE)),
+# counting team matches, not singles: a night against three opponents is one.
+#
+# K_HALF_LIFE is NOT a half-life, despite the name. The curve is harmonic,
+# not exponential, so the span between halvings keeps growing: the step
+# halves after 3 team matches, halves again at 9, and again at 21, where it
+# meets the floor. Reading it as "halves every three" overstates how quickly
+# an established player stops moving by a factor of about seven.
+#
+#   team matches   0    1    2    3    6    9   12   15   21+
+#   step         160  120   96   80   53   40   32   27    20
 K_START = 160.0      # step for a player with no record at all
-K_HALF_LIFE = 3.0    # career team matches over which the step halves
+K_HALF_LIFE = 3.0    # team matches to the FIRST halving; see above
 K_FLOOR = 20.0       # the step never falls below this
 
 # A carried rating looks like a stale prior. Months pass over the summer,

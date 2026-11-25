@@ -57714,5 +57714,53 @@
       ],
       "total_score": 2
     }
+  },
+  {
+    "match_id": "img-2026-11-25-st katharines trust 6",
+    "season": "2026-27",
+    "division": 4,
+    "date": "2026-11-25",
+    "home": {
+      "name": "St Katharines Trust 6",
+      "players": [
+        {
+          "name": "Jia Liu",
+          "player_id": "jia liu",
+          "games_won": 0
+        },
+        {
+          "name": "Jacey Jin",
+          "player_id": "jacey jin",
+          "games_won": 1
+        },
+        {
+          "name": "Grace Stair",
+          "player_id": "grace stair",
+          "games_won": 1
+        }
+      ],
+      "total_score": 3
+    },
+    "away": {
+      "name": "Apex 4",
+      "players": [
+        {
+          "name": "Philip Parsons",
+          "player_id": "philip parsons",
+          "games_won": 3
+        },
+        {
+          "name": "Srinbas Bhamidipati",
+          "player_id": "srinbas bhamidipati",
+          "games_won": 2
+        },
+        {
+          "name": "Henry Adam",
+          "player_id": "henry adam",
+          "games_won": 2
+        }
+      ],
+      "total_score": 7
+    }
   }
 ]

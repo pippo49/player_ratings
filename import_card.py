@@ -45,6 +45,7 @@ from pathlib import Path
 from cache import load_matches, merge_matches, save_matches
 from models import Match, PlayerResult, TeamResult
 from player_identity import identity, normalise
+from scraper import CURRENT_SEASON
 
 SINGLES_PER_MATCH = 9
 
@@ -186,6 +187,18 @@ def main(argv=None) -> int:
     cached = load_matches() or []
     known = {identity(p.name) for m in cached
              for side in (m.home, m.away) for p in side.players}
+    # Also everyone the league has registered this season, not only those who
+    # have already appeared in a result. A player's debut is the one case
+    # where a correctly spelled name is not yet in any match, and refusing it
+    # forces --allow-new, which switches the check off for every other name
+    # on the card -- exactly when a misreading is least likely to be caught.
+    try:
+        from webapp.api import load_registered_squads
+        for info in load_registered_squads(CURRENT_SEASON).values():
+            for member in info.get("players", []):
+                known.add(identity(member["name"]))
+    except Exception as exc:                      # no squad file, or unreadable
+        print(f"  (could not read this season's registered squads: {exc})")
     if args.allow_new:
         known = None
 

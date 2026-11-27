@@ -102,9 +102,9 @@ function evaluateLineup(ours, theirs) {
  * real fielded average to within about 9 points while keeping a realistic
  * spread between a team's strongest and weakest selection.
  */
-function expectedTrio(squad) {
+function expectedTrio(squad, picks = 3) {
   const ranked = squad.slice().sort((a, b) => b.rating - a.rating);
-  if (ranked.length <= 3) return ranked;
+  if (ranked.length <= picks) return ranked;
 
   const anyPlayed = ranked.reduce((sum, p) => sum + (p.appearances || 0), 0);
   if (anyPlayed <= 0) {
@@ -119,7 +119,7 @@ function expectedTrio(squad) {
     // changes again, since changing the step is what moved the scale.
     const units = currentScale() / SHORTFALL_FIT_SCALE;
     const shortfall = (36.1 + 5.3 * (ranked.length - 3)) * units;
-    return ranked.slice(0, 3).map((p) => ({ ...p, rating: p.rating - shortfall }));
+    return ranked.slice(0, picks).map((p) => ({ ...p, rating: p.rating - shortfall }));
   }
   // How often each player turns out, taking their record before this season
   // as a prior worth a few matches. Weighting on this season alone over-fits
@@ -132,7 +132,9 @@ function expectedTrio(squad) {
     / (played + prior || 1);
 
   const total = ranked.reduce((sum, p) => sum + weight(p), 0);
-  return [1 / 6, 3 / 6, 5 / 6].map((q) => {
+  // The midpoints of `picks` equal slices — [1/6, 1/2, 5/6] for the usual three.
+  const quantiles = Array.from({ length: picks }, (_, i) => (i + 0.5) / picks);
+  return quantiles.map((q) => {
     const target = q * total;
     let cumulative = 0;
     for (const p of ranked) {
@@ -869,19 +871,19 @@ function callUpCard(team) {
 /**
  * The three a side would most likely field, out of who is available.
  *
- * Our own squad is read off attendance the same way the opponents' are, so
- * this number sits on the same footing as the division bars below it. Using
- * our strongest available three instead is a different question: we rotate
- * over a season like everybody else, and scoring our best against bars built
- * from who each side actually fields flattered us by about a point a match.
+ * The side's own squad is read off attendance the same way its opponents are,
+ * so this number sits on the same footing as the division bars below it.
+ * Using the strongest available three instead is a different question: every
+ * side rotates over a season, and scoring our best against bars built from
+ * who each side actually fields flattered us by about a point a match.
  *
- * Call-ups are different in kind, though, and cannot go through the same
- * weighting. A player from a lower club side is not someone who turns up by
- * habit — they are someone a captain deliberately brings in, and brings in to
- * strengthen. Pooling them with the regulars and taking the attendance median
- * of the lot projected Apex 4 on Apex 5's middle order: 2.9 singles against
- * the 4.0 their own squad gives. So the call-ups are offered to the usual
- * three and take only a place they improve.
+ * Call-ups cannot go through that weighting, because they are not part of the
+ * attendance record being weighted — but they are not an upgrade either. A
+ * captain rings the lower side when they are short of bodies, not to improve
+ * on a regular who is free to play. So a call-up takes no place while three
+ * of our own are available; they only fill the ones nobody else can, and are
+ * drawn from their own side's attendance in turn, since who answers is
+ * whoever turns out there.
  *
  * Unticking a player still removes them, from either group.
  */
@@ -889,8 +891,11 @@ function likelyTrio(team, available) {
   const own = new Set(squadFor(team).map((p) => p.id));
   const regulars = available.filter((p) => own.has(p.id));
   regulars.played = available.played || 0;
+  if (regulars.length >= 3) return expectedTrio(regulars);
+
   const guests = available.filter((p) => !own.has(p.id));
-  return bestTrio(expectedTrio(regulars).concat(guests));
+  guests.played = available.played || 0;
+  return regulars.concat(expectedTrio(guests, 3 - regulars.length));
 }
 
 /** Expected points against every other team in the division, and the average. */
@@ -968,9 +973,9 @@ function seasonCard(team, squad) {
   h.textContent = "Season outlook";
   const hint = el("p", "hint");
   hint.textContent =
-    "The three you'd usually field, plus any call-up who improves on them, " +
-    `against every other side in ${divisionName(team.division)} on the ` +
-    "three they usually field.";
+    "The three you'd usually field, from those available — call-ups fill " +
+    `only the places you are short of — against every other side in ` +
+    `${divisionName(team.division)} on the three they usually field.`;
   card.append(h, hint);
 
   if (!rivals.length) {

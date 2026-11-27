@@ -135,10 +135,12 @@ league by a full match point (+1.01 mean error across the 91 sides with four
 or more matches played; scoring both ends alike leaves +0.03, and cuts mean
 absolute error from 1.15 to 0.78).
 
-A captain's own card is the one exception, and only for call-ups: a player
-from a lower club side is brought in deliberately, not by habit, so they are
-offered to the usual three and take only a place they improve, rather than
-being pooled into the appearance weighting.
+A captain's own card is the one exception, and only for call-ups. A player
+from a lower club side is not part of the attendance record being weighted,
+and is rung when the side is short of bodies rather than to improve on a
+regular who is free to play. So a call-up takes no place while three of the
+side's own are available; they fill only the places nobody else can, drawn
+from their own side's attendance in turn.
 
 Converted to match points assuming an even split on the doubles, which is not
 modelled — the data does not say who paired up.

@@ -58266,12 +58266,44 @@
     "date": "2026-11-18",
     "home": {
       "name": "Apex 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Sai Ki Lee",
+          "player_id": "sai ki lee",
+          "games_won": 2
+        },
+        {
+          "name": "Shaon Chapman",
+          "player_id": "shaon chapman",
+          "games_won": 0
+        },
+        {
+          "name": "Fabien Mauroy",
+          "player_id": "fabien mauroy",
+          "games_won": 2
+        }
+      ],
       "total_score": 5
     },
     "away": {
       "name": "Fusion 3",
-      "players": [],
+      "players": [
+        {
+          "name": "Richard Jermyn",
+          "player_id": "richard jermyn",
+          "games_won": 3
+        },
+        {
+          "name": "Dominik Hilger",
+          "player_id": "dominik hilger",
+          "games_won": 1
+        },
+        {
+          "name": "Sebastian HITCHCOCK-SPENCER",
+          "player_id": "sebastian hitchcock spencer",
+          "games_won": 1
+        }
+      ],
       "total_score": 5
     }
   },
@@ -58474,12 +58506,39 @@
     "date": "2026-11-25",
     "home": {
       "name": "Fulham Brunswick 2",
-      "players": [],
+      "players": [
+        {
+          "name": "Tony Chen",
+          "player_id": "tony chen",
+          "games_won": 1
+        },
+        {
+          "name": "Stephen Fagan",
+          "player_id": "stephen fagan",
+          "games_won": 1
+        },
+        {
+          "name": "Agnieszka Mazurek",
+          "player_id": "agnieszka mazurek",
+          "games_won": 1
+        }
+      ],
       "total_score": 7
     },
     "away": {
       "name": "Clissold 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Alexander Beerjeraz",
+          "player_id": "alexander beerjeraz",
+          "games_won": 0
+        },
+        {
+          "name": "Chris Beckley",
+          "player_id": "chris beckley",
+          "games_won": 3
+        }
+      ],
       "total_score": 3
     }
   },

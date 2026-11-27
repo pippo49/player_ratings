@@ -15,6 +15,7 @@ from collections import defaultdict
 from cache import load_matches
 from elo import PREDICTION_SCALE, doubles_probability
 from models import Match
+from webapp.api import ATTENDANCE_PRIOR_MATCHES
 
 POINTS_PER_MATCH = 10
 
@@ -23,6 +24,9 @@ POINTS_PER_MATCH = 10
 # player as "best three" is drawn from a pool that never all turns out.
 SHORTFALL_BASE = 36.1
 SHORTFALL_PER_PLAYER = 5.3
+# The scale the two constants above were fitted at. They are rating-point
+# quantities, so they have to be restated whenever the scale moves.
+SHORTFALL_FIT_SCALE = 250.0
 
 
 def standings(matches: list[Match], season: str, division: int) -> list[tuple[str, int, int]]:
@@ -99,37 +103,62 @@ def _expected(a: float, b: float) -> float:
     return 1.0 / (1.0 + 10.0 ** ((b - a) / PREDICTION_SCALE))
 
 
-def _expected_trio(squad: list[tuple[float, int]]) -> list[float]:
-    """The three a team can be expected to field, from [(rating, appearances)].
+def _expected_trio(squad: list[tuple[float, int, float | None]]) -> list[float]:
+    """The three a team can be expected to field, from [(rating, played, prior)].
 
     Assuming a team always plays its strongest three overstates it: across
     937 matches the trio actually fielded averaged 72 rating points below the
     squad's best three. Weighting by how often each player turned out, and
     reading the rating at the 1/6, 1/2 and 5/6 points of that distribution,
     tracks the real fielded average to within about 9 points.
+
+    A player's record before this season counts as a prior worth
+    ATTENDANCE_PRIOR_MATCHES matches, as it does in the app. Weighting on
+    this season alone over-fits a short sample: a regular who missed two
+    early fixtures could not be selected at all, however long their history
+    of playing every week. `prior` is that earlier rate, or None for a player
+    with no history, who is taken as even money.
+
+    Kept deliberately in step with expectedTrio() in webapp/static/app.js.
+    The two ran on different weightings until 27 November 2026, which left
+    this projection and the app disagreeing by about 0.2 of a point a match
+    for the same ratings.
     """
     ranked = sorted(squad, key=lambda x: -x[0])
     if len(ranked) <= 3:
-        return [r for r, _ in ranked]
+        return [r for r, _, _ in ranked]
 
-    total = sum(a for _, a in ranked)
-    if total <= 0:
+    # The app's own guard: it is a squad with no appearances at all that
+    # cannot be weighted, whatever the prior would contribute.
+    if sum(a for _, a, _ in ranked) <= 0:
         # A hand-entered roster carries no appearance history. Treating every
         # player as equally likely over-dilutes a squad whose best three are
         # clearly its first choice, so fall back to the best three shifted
         # down by the shortfall a squad that size typically shows:
         # 36 points, growing about 5 per extra player (fitted over 85 teams).
-        shortfall = SHORTFALL_BASE + SHORTFALL_PER_PLAYER * (len(ranked) - 3)
-        return [rating - shortfall for rating, _ in ranked[:3]]
+        #
+        # Those are rating-point quantities fitted when the scale was 250, so
+        # they are restated in the scale in force now, exactly as the app
+        # does. Leaving them raw made this fallback 36% too small at 340.
+        units = PREDICTION_SCALE / SHORTFALL_FIT_SCALE
+        shortfall = (SHORTFALL_BASE
+                     + SHORTFALL_PER_PLAYER * (len(ranked) - 3)) * units
+        return [rating - shortfall for rating, _, _ in ranked[:3]]
 
+    def weight(entry: tuple[float, int, float | None]) -> float:
+        _, appearances, prior = entry
+        return appearances + ATTENDANCE_PRIOR_MATCHES * (
+            0.5 if prior is None else prior)
+
+    total = sum(weight(e) for e in ranked)
     trio = []
     for q in (1 / 6, 3 / 6, 5 / 6):
         target = q * total
         cumulative = 0.0
-        for rating, appearances in ranked:
-            cumulative += appearances
+        for entry in ranked:
+            cumulative += weight(entry)
             if cumulative >= target:
-                trio.append(rating)
+                trio.append(entry[0])
                 break
         else:
             trio.append(ranked[-1][0])
@@ -160,7 +189,7 @@ def project(division: int, perspective: str | None = None) -> None:
     best: dict[str, list[float]] = {}
     for team in teams:
         squad = [
-            (players[m["id"]]["rating"], m.get("appearances", 0))
+            (players[m["id"]]["rating"], m.get("appearances", 0), m.get("prior"))
             for m in team["players"] if m["id"] in players
         ]
         trio = _expected_trio(squad)

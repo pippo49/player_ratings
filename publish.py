@@ -20,9 +20,14 @@ say so plainly rather than reporting success and publishing nothing.
 """
 
 import argparse
+import json
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 from datetime import date, datetime
+from pathlib import Path
 
 from cache import CACHE_FILE, load_matches, merge_matches, save_matches
 from models import Match
@@ -30,6 +35,50 @@ from scraper import CURRENT_SEASON, SeasonUnreachable, scrape_all_divisions
 from webapp.export import export
 
 PUBLISHED = ["data", "webapp/static/ratings.json"]
+
+# Where the app is actually served from, which is the only place worth
+# checking. A push can succeed and leave the phone showing last week.
+LIVE_PAYLOAD = "https://pippo49.github.io/player_ratings/ratings.json"
+
+
+def confirm_live(timeout: int = 240) -> bool:
+    """Wait until the published app serves the payload we just pushed.
+
+    Pushing is not publishing. GitHub builds the page afterwards, and that
+    step fails on its own occasionally -- once, the upload reported success
+    and the deploy that followed could not find what it had just uploaded.
+    Nothing on the git side shows it: the tree is clean, the refs agree, the
+    payload is written, and the app quietly serves the previous version.
+
+    So this checks the thing that matters rather than a step on the way to
+    it, by comparing the timestamp inside the live file with the local one.
+    """
+    try:
+        want = json.loads(
+            Path("webapp/static/ratings.json").read_text())["generated_at"]
+    except (OSError, ValueError, KeyError):
+        return True                      # nothing to compare; not a failure
+
+    stamp("Waiting for the app to serve it…")
+    deadline = time.time() + timeout
+    seen = None
+    while time.time() < deadline:
+        try:
+            with urllib.request.urlopen(LIVE_PAYLOAD, timeout=20) as r:
+                seen = json.loads(r.read())["generated_at"]
+            if seen == want:
+                stamp("The app is serving the new ratings.")
+                return True
+        except (urllib.error.URLError, ValueError, KeyError, OSError):
+            pass                         # still building, or offline
+        time.sleep(10)
+
+    stamp("The push worked but the app is still serving the old ratings.")
+    print(f"  live says {seen or 'unreadable'}, this run wrote {want}")
+    print("  The page build is a separate step and fails by itself now and\n"
+          "  then. Open the run and re-run the failed job:\n"
+          "    https://github.com/pippo49/player_ratings/actions")
+    return False
 
 
 def git(*args: str, check: bool = True) -> str:
@@ -79,9 +128,8 @@ def commit_and_push(message: str, added: int) -> int:
     git("commit", "-m", message, "--", *PUBLISHED)
     git("push", "origin", "master")
 
-    stamp(f"Done. {added} result(s) published — the app updates in about "
-          "a minute.")
-    return 0
+    stamp(f"Done. {added} result(s) pushed.")
+    return 0 if confirm_live() else 1
 
 
 def main() -> int:

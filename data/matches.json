@@ -57818,12 +57818,44 @@
     "date": "2026-11-18",
     "home": {
       "name": "St Katharines Trust 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Stanislav Chomobalev",
+          "player_id": "stanislav chomobalev",
+          "games_won": 2
+        },
+        {
+          "name": "Derek Abrefa",
+          "player_id": "derek abrefa",
+          "games_won": 1
+        },
+        {
+          "name": "Azeez Jamiu",
+          "player_id": "azeez jamiu",
+          "games_won": 1
+        }
+      ],
       "total_score": 5
     },
     "away": {
       "name": "Apex 1",
-      "players": [],
+      "players": [
+        {
+          "name": "Shayan Siraj",
+          "player_id": "shayan siraj",
+          "games_won": 1
+        },
+        {
+          "name": "Israel Awolaja",
+          "player_id": "israel awolaja",
+          "games_won": 1
+        },
+        {
+          "name": "Larry Trumpauskas",
+          "player_id": "larry trumpauskas",
+          "games_won": 3
+        }
+      ],
       "total_score": 5
     }
   },

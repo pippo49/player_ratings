@@ -161,6 +161,61 @@ and treat the upward drift of that constant as part of the same question.
 
 ---
 
+## The step schedule is slightly too tight
+
+Measured 27 November 2026 by `walkforward_implied.py` and
+`walkforward_step.py`, which walk **both** seasons in date order and score
+21,850 pairings out of sample. `walkforward.py` walks the current season only,
+because that is the only way to see a start-of-season rule; these two walk
+everything, because the question is about the step curve rather than the
+season boundary.
+
+A player's own record holds information the engine has not taken. Predicting
+them at `model + blend x (implied - model)`, where `implied` is solved from
+every singles result so far against the ratings their opponents held at the
+time, beats the engine for blends up to about a quarter:
+
+| blend | Brier | vs engine | 95% paired |
+|---|---|---|---|
+| engine | 0.0935 | | |
+| 0.15 | 0.0932 | -0.00034 | -0.00048 to -0.00021 |
+| 0.25 | 0.0933 | -0.00022 | -0.00045 to -0.00001 |
+| 0.35 | 0.0936 | +0.00011 | crosses zero |
+| 1.00 | 0.0989 | +0.00535 | +0.00465 to +0.00612 |
+
+A single mid-season split had suggested 0.25 was worth -0.0015, seven times
+what both seasons give. One split of one season overstates things; this is
+why the walk exists.
+
+The same gain is available inside the engine, which is the better shape for
+it, since a prediction-time blend leaves every other reader of a rating on the
+old number:
+
+| change | Brier | vs engine | 95% paired |
+|---|---|---|---|
+| `K_HALF_LIFE` 3 -> 4 | 0.0932 | -0.00031 | -0.00040 to -0.00021 |
+| `K_HALF_LIFE` 3 -> 6 | 0.0932 | -0.00026 | -0.00048 to -0.00004 |
+| `K_FLOOR` 20 -> 40 | 0.0934 | -0.00006 | -0.00011 to -0.00001 |
+| `K_HALF_LIFE` 3 -> 9 | 0.0937 | +0.00015 | crosses zero |
+| `K_START` 160 -> 120 | 0.0953 | +0.00184 | +0.00160 to +0.00208 |
+
+**Not applied.** The gain is real and clear of zero, but it is the same order
+as moving `PREDICTION_SCALE` from 320 to 340, which the comment in `elo.py`
+calls worth very little on its own. Changing `K_HALF_LIFE` moves every rating
+in the app and forces a refit of `PREDICTION_SCALE` and the squad-shortfall
+constants, all of which are rating-point quantities keyed to the step. That is
+a lot of movement for 0.0003, and it should be taken as one deliberate change
+with the refits done alongside, not slipped in.
+
+It also does not fix the case that prompted the measurement. Ziye Ke's record
+implied a rating 318 points above his own; his step budget over four nights
+goes from 155 to 191 at `K_HALF_LIFE = 4`. Still nowhere near. A player whose
+rating and record plainly disagree needs something keyed to that disagreement,
+not a uniformly looser step -- and 23% of the league is in that position, worst
+in Divisions 1 and 2 at 30% and 32%, where careers are longest.
+
+---
+
 ## What is known to be wrong
 
 **Cross-division comparisons.** Bias is near zero for players one division

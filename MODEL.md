@@ -142,8 +142,22 @@ regular who is free to play. So a call-up takes no place while three of the
 side's own are available; they fill only the places nobody else can, drawn
 from their own side's attendance in turn.
 
-Converted to match points assuming an even split on the doubles, which is not
-modelled — the data does not say who paired up.
+The doubles is the tenth point and is taken from the gap between the two
+trios' mean ratings, at `DOUBLES_SCALE = 240`. Who paired up is never
+recorded, so it cannot be predicted from names — but the stronger trio takes
+it 71% of the time, and the even split this used to assume was flattening the
+projected table at both ends: modelling it moves the slope of actual on
+projected from 1.61 to 1.38, where 1.00 would be right.
+
+The remaining compression is in the singles curve, and is not yet fixed. It
+runs the same way in all eight divisions, from 1.16 in Division 1 to 2.32 in
+Division 7 after the doubles is allowed for, so lower divisions are squashed
+hardest — consistent with the seed anchoring holding players near their
+division's median. Steepening `PREDICTION_SCALE` from 340 to about 200 closes
+it, and walk-forward Brier mildly prefers 240 over 340, but that rests on 232
+predictions and the rest of the evidence is in-sample. Do not move it on
+these numbers alone; refit properly with `walkforward.py` and `fit_scale.py`,
+and treat the upward drift of that constant as part of the same question.
 
 ---
 

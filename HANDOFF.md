@@ -35,8 +35,14 @@ He can call players up from **Apex 5** (Division 7), the club's only lower
 side. A team match is 9 singles plus 1 doubles, so 10 points. He cares about
 **points, not wins** — the target is a top-two finish for promotion.
 
-Doubles are deliberately not modelled. He said so explicitly; `check_doubles.py`
-only verifies the 9+1 format still holds.
+Who pairs up in the doubles is never recorded, so the doubles cannot be
+predicted from two named players, and `check_doubles.py` only verifies the 9+1
+format still holds. The *outcome* is modelled, though, from the gap between
+the two trios' mean ratings — see `elo.DOUBLES_SCALE`. It was treated as an
+even split for everyone until 27 November 2026, when measuring it showed the
+stronger trio takes it 71% of the time, from 0.16 for the weakest mismatches
+to 0.84 for the strongest. That assumption was flattening the projected table
+at both ends, and he asked for the curve once the measurement was in.
 
 ## Current state
 

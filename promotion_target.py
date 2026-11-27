@@ -13,6 +13,7 @@ import sys
 from collections import defaultdict
 
 from cache import load_matches
+from elo import PREDICTION_SCALE, doubles_probability
 from models import Match
 
 POINTS_PER_MATCH = 10
@@ -88,7 +89,14 @@ def report(matches: list[Match], only: int | None = None) -> None:
 
 
 def _expected(a: float, b: float) -> float:
-    return 1.0 / (1.0 + 10.0 ** ((b - a) / 400.0))
+    """Chance of winning a single. Forecasting, so PREDICTION_SCALE.
+
+    This used a bare 400, which is elo.SCALE -- how far a result moves a
+    rating, not what a gap means as a chance of winning. It is the exact
+    confusion the comment on PREDICTION_SCALE warns about, and it left this
+    projection flatter than the app's for the same ratings.
+    """
+    return 1.0 / (1.0 + 10.0 ** ((b - a) / PREDICTION_SCALE))
 
 
 def _expected_trio(squad: list[tuple[float, int]]) -> list[float]:
@@ -132,11 +140,13 @@ def project(division: int, perspective: str | None = None) -> None:
     """Project a division's table from current ratings.
 
     Every team is modelled on the three it can be expected to field rather
-    than its strongest three, and the doubles is split evenly — it is not
-    modelled, since the data does not record who paired up. The result is
-    each team's expected points per match against this season's actual
-    field, which is a better guide to what promotion will take than last
-    season's table of a different set of teams.
+    than its strongest three. The doubles is taken from the gap between the
+    two trios: who paired up is never recorded, so it cannot be predicted
+    from names, but the stronger trio takes it 71% of the time and splitting
+    it evenly flattened the table at both ends. The result is each team's
+    expected points per match against this season's actual field, which is a
+    better guide to what promotion will take than last season's table of a
+    different set of teams.
     """
     from webapp.api import build_payload
 
@@ -159,8 +169,10 @@ def project(division: int, perspective: str | None = None) -> None:
 
     rows = []
     for name, ours in best.items():
+        mean = lambda trio: sum(trio) / len(trio)
         totals = [
-            sum(_expected(a, b) for a in ours for b in theirs) + 0.5
+            sum(_expected(a, b) for a in ours for b in theirs)
+            + doubles_probability(mean(ours), mean(theirs))
             for other, theirs in best.items() if other != name
         ]
         rows.append((name, sum(totals) / len(totals)))

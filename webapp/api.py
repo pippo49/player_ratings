@@ -13,6 +13,7 @@ from pathlib import Path
 
 from elo import (
     MIN_MATCHES,
+    DOUBLES_SCALE,
     PREDICTION_SCALE,
     PlayerRating,
     calculate_ratings,
@@ -740,6 +741,10 @@ def build_payload(matches: list[Match]) -> dict:
         # when working out who a side is likely to field.
         "attendance_prior_matches": ATTENDANCE_PRIOR_MATCHES,
         "prediction_scale_tt365": TT365_PREDICTION_SCALE,
+        # What a gap between two trios means as a chance of taking the
+        # doubles. Held in the same rating points as prediction_scale, so the
+        # app restates it when it shows the league's ratings instead of ours.
+        "doubles_scale": DOUBLES_SCALE,
         # Which source the app opens on. Both sets of ratings travel in the
         # payload, so switching between them is a toggle, not a rebuild.
         "rating_source": ("tt365" if tt365_used and RATING_SOURCE == "tt365"

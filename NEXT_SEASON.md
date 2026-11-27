@@ -213,6 +213,8 @@ weeks — and eventually folding into the weekly scheduled run.
 
 - The 9 singles + 1 doubles format holds on every match, no anomalies, so the
   conversion between a match-points target and a singles target is sound.
-- The home side wins the doubles 51.6% of the time.
+- The home side wins the doubles 51.6% of the time. Strength matters far
+  more: over 2026/27 the stronger trio takes it 71% of the time, which is why
+  the projection now puts a curve on it rather than splitting it evenly.
 - The published 2026/27 structure returns 94 teams, matching the league's
   stated entry count.

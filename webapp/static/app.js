@@ -72,11 +72,43 @@ function currentScale() {
 const SHORTFALL_FIT_SCALE = 250;
 
 /**
- * Evaluate the 9 singles as a round robin between the two trios.
+ * The scale a trio-to-trio gap means for the doubles, in whatever rating
+ * points are on screen. Null where the payload carries no doubles model, so
+ * an older payload still renders on an even split.
+ */
+function currentDoublesScale() {
+  const fitted = state.data && state.data.doubles_scale;
+  if (!fitted) return null;
+  const base = (state.data && state.data.prediction_scale) || fitted;
+  return fitted * (currentScale() / base);
+}
+
+const trioMean = (trio) =>
+  trio.reduce((sum, p) => sum + p.rating, 0) / (trio.length || 1);
+
+/**
+ * Chance of taking the doubles, from the gap between the two trios.
  *
- * The doubles is deliberately not modelled — the scraped data does not say
- * which two players paired up, so any prediction would be invented. It is
- * treated as an even split when translating a 10-point target below.
+ * Which two players paired up is never recorded, so the doubles cannot be
+ * predicted from names — but it is not a coin toss, which is what this
+ * assumed until now. Across 285 matches the stronger trio took it 71% of the
+ * time, from 0.16 for the weakest mismatches to 0.84 for the strongest, and
+ * a curve on the trio gap beats the even split by a fifth on Brier.
+ *
+ * It matters more than one point in ten sounds, because the error ran the
+ * same way as the table: giving every side 0.5 flattened the projected
+ * spread, and the strong and weak ends both paid for it.
+ */
+function expectedDoubles(ours, theirs) {
+  const scale = currentDoublesScale();
+  if (!scale) return 0.5;
+  return 1 / (1 + 10 ** ((trioMean(theirs) - trioMean(ours)) / scale));
+}
+
+/**
+ * Evaluate a match between two trios: the 9 singles as a round robin, plus
+ * the doubles. `expectedPoints` is the pair added up, which is what a league
+ * table is kept in.
  */
 function evaluateLineup(ours, theirs) {
   let expectedSingles = 0;
@@ -85,7 +117,13 @@ function evaluateLineup(ours, theirs) {
     expectedSingles += p;
     return p;
   }));
-  return { grid, expectedSingles };
+  const doubles = expectedDoubles(ours, theirs);
+  return {
+    grid,
+    expectedSingles,
+    expectedDoubles: doubles,
+    expectedPoints: expectedSingles + doubles,
+  };
 }
 
 /**
@@ -911,10 +949,17 @@ function seasonOutlook(team, squad) {
     .filter(Boolean)
     .sort((a, b) => a.expectedSingles - b.expectedSingles);
 
-  const average = rivals.length
-    ? rivals.reduce((sum, r) => sum + r.expectedSingles, 0) / rivals.length
-    : 0;
-  return { trio, rivals, average };
+  const mean = (pick) => (rivals.length
+    ? rivals.reduce((sum, r) => sum + pick(r), 0) / rivals.length
+    : 0);
+  // `average` stays the singles, which is what the card shows; `points` adds
+  // the doubles, which is what the league table and the bars are kept in.
+  return {
+    trio,
+    rivals,
+    average: mean((r) => r.expectedSingles),
+    points: mean((r) => r.expectedPoints),
+  };
 }
 
 /**
@@ -942,10 +987,12 @@ function divisionProjection(division) {
       if (mine.length < 3) return null;
       const scores = sides
         .filter((o) => o.name !== team.name && (trios.get(o.name) || []).length >= 3)
-        .map((o) => evaluateLineup(mine, trios.get(o.name)).expectedSingles);
+        .map((o) => evaluateLineup(mine, trios.get(o.name)).expectedPoints);
       if (!scores.length) return null;
-      const singles = scores.reduce((a, b) => a + b, 0) / scores.length;
-      return { name: team.name, points: singles + 0.5 };
+      return {
+        name: team.name,
+        points: scores.reduce((a, b) => a + b, 0) / scores.length,
+      };
     })
     .filter(Boolean)
     .sort((a, b) => b.points - a.points);
@@ -963,10 +1010,10 @@ function divisionBars(division) {
 }
 
 function seasonCard(team, squad) {
-  const { trio, rivals, average } = seasonOutlook(team, squad);
-  // The target is set in match points (of 10). The doubles is not modelled,
-  // so an even split on it is assumed when converting to a singles target.
-  const target = state.target - 0.5;
+  const { trio, rivals, average, points } = seasonOutlook(team, squad);
+  // The target is set in match points (of 10). Subtracting the doubles we
+  // would expect to take leaves what has to come from the nine singles.
+  const target = state.target - (points - average);
 
   const card = el("div", "card");
   const h = el("h2");
@@ -996,7 +1043,7 @@ function seasonCard(team, squad) {
   // bottom is what safety costs.
   const bars = divisionBars(team.division);
   if (bars) {
-    const mine = average + 0.5;
+    const mine = points;
     const place = bars.table.findIndex((row) => row.name === team.name) + 1;
     const line = (label, bar, wantAbove) => {
       const row = el("div", "bar-row");
@@ -1036,7 +1083,7 @@ function seasonCard(team, squad) {
   fill.style.width = `${Math.min(100, Math.round((average / state.data.singles_per_match) * 100))}%`;
   // Short of the promotion bar where the division gives one, and of the
   // hand-set target where it does not.
-  const shortOf = bars ? (average + 0.5) < bars.promotion : average < target;
+  const shortOf = bars ? points < bars.promotion : average < target;
   if (shortOf) fill.classList.add("short");
   bar.append(fill);
   card.append(bar);
@@ -1075,7 +1122,7 @@ function seasonCard(team, squad) {
     const th = el("th", "nm-link");
     th.textContent = r.team.name;
     th.onclick = () => openTeamSheet(r.team);
-    const pts = el("td", `pc ${r.expectedSingles >= target ? "win" : "lose"}`);
+    const pts = el("td", `pc ${r.expectedPoints >= state.target ? "win" : "lose"}`);
     pts.textContent = fmtScore(r.expectedSingles);
     const share = el("td", "pc");
     share.textContent = fmtPct(r.expectedSingles / state.data.singles_per_match);
@@ -1089,9 +1136,10 @@ function seasonCard(team, squad) {
   const foot = el("p", "hint");
   foot.textContent =
     `A ${fmtScore(state.target)} of ${state.data.points_per_match} target means ` +
-    `${fmtScore(target)} of ${state.data.singles_per_match} singles, taking an even ` +
-    "split on the doubles — which is not modelled, since the data does not say who " +
-    "paired up. Fixtures you fall short in are where a call-up changes the season.";
+    `${fmtScore(target)} of ${state.data.singles_per_match} singles, once the ` +
+    "doubles you would expect to take is allowed for. Which two players pair up " +
+    "is never recorded, so that is read off the gap between the two trios rather " +
+    "than named. Fixtures you fall short in are where a call-up changes the season.";
   card.append(foot);
 
   // The doubles point is inferred, not scraped directly. Say so when it looks wrong.
@@ -1202,11 +1250,17 @@ function fixtureCard(us, squad) {
   card.append(score);
 
   const prob = el("div", "prob");
-  prob.append(document.createTextNode(`Expected singles, of ${singles}. `));
+  // The scoreline above is the nine singles. The doubles is the tenth point,
+  // and against this opponent it is not an even bet either way, so the
+  // verdict is given on the ten rather than on the nine.
+  prob.append(document.createTextNode(
+    `Expected singles, of ${singles}, plus `
+    + `${fmtPct(result.expectedDoubles)} on the doubles — `
+    + `${fmtScore(result.expectedPoints)} of ${state.data.points_per_match}. `));
   const strong = el("strong");
-  const needed = state.target - 0.5;
-  strong.textContent = result.expectedSingles >= needed ? "Above target" : "Below target";
-  strong.className = result.expectedSingles >= needed ? "good" : "bad";
+  const above = result.expectedPoints >= state.target;
+  strong.textContent = above ? "Above target" : "Below target";
+  strong.className = above ? "good" : "bad";
   prob.append(strong);
   card.append(prob);
 

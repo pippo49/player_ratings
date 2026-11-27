@@ -257,13 +257,41 @@ class PlayerRating:
 # A maximum-likelihood fit says 190, but it assumes a player's three singles
 # are independent and they are not — same player, same night — so it is
 # biased towards overconfidence too. The bucketed curve assumes nothing.
+# DOUBLES_SCALE is the same idea for the tenth point of a match. The data
+# never says who paired up, so the doubles cannot be predicted from two named
+# players -- but it does not have to be treated as a coin toss either, which
+# is what the projection did until now. Over 285 matches of 2026-27 with a
+# clean nine singles and a decided doubles, the side with the stronger trio
+# took it 71% of the time, and the rate runs from 0.16 for the weakest fifth
+# of mismatches to 0.84 for the strongest.
+#
+# Fitted the same way as PREDICTION_SCALE, on the gap between the two trios'
+# mean ratings: 240 minimises Brier, at 0.1996 against the even split's
+# 0.2500, a fifth better. The fit is symmetric in the gap on purpose, so that
+# home advantage -- the home side takes the doubles 54% of the time -- is not
+# smuggled in as team strength.
+#
+# Worth noting what this is not: it is not evidence about the singles. The
+# ratings are built from singles alone, so the doubles is an outcome the
+# model has never seen, which is why a curve fitted to it is worth more than
+# the usual in-sample fit. Every division shows the effect, from 0.59 in
+# Division 7 to 0.88 in Division 3; the per-division fits scatter from 70 to
+# 340 on 30-40 matches each, which is too thin to split, so one league-wide
+# constant it is. Refit alongside PREDICTION_SCALE, and for the same reason:
+# it is a rating-point quantity and the step size sets what those are worth.
 SCALE = 400.0
 PREDICTION_SCALE = 340.0
+DOUBLES_SCALE = 240.0
 
 
 def win_probability(rating: float, opponent_rating: float) -> float:
     """Chance of beating an opponent, for forecasting rather than rating."""
     return 1.0 / (1.0 + 10.0 ** ((opponent_rating - rating) / PREDICTION_SCALE))
+
+
+def doubles_probability(our_trio_mean: float, their_trio_mean: float) -> float:
+    """Chance of taking the doubles, from the gap between the two trios."""
+    return 1.0 / (1.0 + 10.0 ** ((their_trio_mean - our_trio_mean) / DOUBLES_SCALE))
 
 
 def _expected_score(rating: float, opponent_rating: float) -> float:

@@ -127,11 +127,21 @@ and an upset worth everything, and predictions get worse.
 
 ### 6. Team projections
 
-Each side's strongest three against the three each opponent usually fields,
-averaged over the division. The fielded trio is estimated by appearance
-weighting, since assuming everyone plays their best three overstates them by
-about 72 rating points. Converted to match points assuming an even split on
-the doubles, which is not modelled — the data does not say who paired up.
+Every side on the three its appearances say it fields, against the same for
+each opponent, averaged over the division. Assuming a side plays its best
+three overstates it by about 72 rating points, so doing that for the side
+being projected while its opponents rotated overstated every team in the
+league by a full match point (+1.01 mean error across the 91 sides with four
+or more matches played; scoring both ends alike leaves +0.03, and cuts mean
+absolute error from 1.15 to 0.78).
+
+A captain's own card is the one exception, and only for call-ups: a player
+from a lower club side is brought in deliberately, not by habit, so they are
+offered to the usual three and take only a place they improve, rather than
+being pooled into the appearance weighting.
+
+Converted to match points assuming an even split on the doubles, which is not
+modelled — the data does not say who paired up.
 
 ---
 

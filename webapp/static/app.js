@@ -747,11 +747,18 @@ function pooledSquad(team) {
       pool.push(p);
     }
   }
-  return pool.sort((a, b) => b.rating - a.rating);
+  pool.sort((a, b) => b.rating - a.rating);
+  // Carried for expectedTrio, as squadFor does. It weighs the pre-season
+  // prior against how many matches the side has played; the feeders have
+  // played roughly the same number, so the captain's own count stands for all.
+  pool.played = team.played || 0;
+  return pool;
 }
 
 function availableFrom(pool) {
-  return pool.filter((p) => !state.unavailable.has(p.id));
+  const open = pool.filter((p) => !state.unavailable.has(p.id));
+  open.played = pool.played || 0;
+  return open;
 }
 
 function renderLineup() {
@@ -859,9 +866,36 @@ function callUpCard(team) {
 
 /* ── Season outlook ───────────────────────────────────── */
 
+/**
+ * The three a side would most likely field, out of who is available.
+ *
+ * Our own squad is read off attendance the same way the opponents' are, so
+ * this number sits on the same footing as the division bars below it. Using
+ * our strongest available three instead is a different question: we rotate
+ * over a season like everybody else, and scoring our best against bars built
+ * from who each side actually fields flattered us by about a point a match.
+ *
+ * Call-ups are different in kind, though, and cannot go through the same
+ * weighting. A player from a lower club side is not someone who turns up by
+ * habit — they are someone a captain deliberately brings in, and brings in to
+ * strengthen. Pooling them with the regulars and taking the attendance median
+ * of the lot projected Apex 4 on Apex 5's middle order: 2.9 singles against
+ * the 4.0 their own squad gives. So the call-ups are offered to the usual
+ * three and take only a place they improve.
+ *
+ * Unticking a player still removes them, from either group.
+ */
+function likelyTrio(team, available) {
+  const own = new Set(squadFor(team).map((p) => p.id));
+  const regulars = available.filter((p) => own.has(p.id));
+  regulars.played = available.played || 0;
+  const guests = available.filter((p) => !own.has(p.id));
+  return bestTrio(expectedTrio(regulars).concat(guests));
+}
+
 /** Expected points against every other team in the division, and the average. */
 function seasonOutlook(team, squad) {
-  const trio = bestTrio(squad);
+  const trio = likelyTrio(team, squad);
   const rivals = state.data.teams
     .filter((t) => t.division === team.division && t.name !== team.name)
     .map((t) => {
@@ -881,10 +915,17 @@ function seasonOutlook(team, squad) {
 /**
  * Every side in a division, by the points a match they project to take.
  *
- * Each is judged the same way — its strongest three against the three each
- * opponent usually fields — so the ordering is a like-for-like comparison
- * rather than a mix of best cases and likely ones. The doubles is not
- * modelled, so an even split is assumed when turning singles into points.
+ * Each side is judged on the three its attendance says it fields, against the
+ * same for its opponents. The earlier version gave the side being projected
+ * its strongest three while its opponents rotated, which overstated every
+ * team in the league by a full match point on average (+1.01 across the 91
+ * sides with four or more matches played, mean absolute error 1.15). Scoring
+ * both ends the same way leaves a mean error of +0.03 and cuts the absolute
+ * error to 0.78. It is also the honest comparison: nobody fields their best
+ * three every week, and the deeper the squad the less often it happens.
+ *
+ * The doubles is not modelled, so an even split is assumed when turning
+ * singles into points.
  */
 function divisionProjection(division) {
   const sides = state.data.teams.filter((t) => t.division === division);
@@ -892,7 +933,7 @@ function divisionProjection(division) {
 
   return sides
     .map((team) => {
-      const mine = bestTrio(squadFor(team));
+      const mine = trios.get(team.name) || [];
       if (mine.length < 3) return null;
       const scores = sides
         .filter((o) => o.name !== team.name && (trios.get(o.name) || []).length >= 3)
@@ -927,8 +968,9 @@ function seasonCard(team, squad) {
   h.textContent = "Season outlook";
   const hint = el("p", "hint");
   hint.textContent =
-    "Your strongest available three against every other side in " +
-    `${divisionName(team.division)}, against the three each usually fields.`;
+    "The three you'd usually field, plus any call-up who improves on them, " +
+    `against every other side in ${divisionName(team.division)} on the ` +
+    "three they usually field.";
   card.append(h, hint);
 
   if (!rivals.length) {
